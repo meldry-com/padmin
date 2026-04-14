@@ -1,6 +1,7 @@
 [package]
 name = "padmin"
 version = "0.1.0"
+authors = ["Meldry Team"]
 license = "AGPL-3.0-or-later"
 edition = "2024"
 
