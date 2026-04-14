@@ -1,0 +1,32 @@
+{
+  "name": "padmin",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "example": "examples"
+  },
+  "scripts": {
+    "test": "npx playwright test",
+    "test:ui": "npx playwright test --ui",
+    "test:headed": "npx playwright test --headed",
+    "test:debug": "npx playwright test --debug",
+    "test:report": "npx playwright show-report"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/taidge/padmin.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "AGPL-3.0-or-later",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/taidge/padmin/issues"
+  },
+  "homepage": "https://github.com/taidge/padmin#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "pg": "^8.20.0"
+  }
+}

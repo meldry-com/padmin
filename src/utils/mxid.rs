@@ -1,0 +1,28 @@
+use crate::utils::storage;
+
+pub fn is_mxid(id: &str) -> bool {
+    let re = regex_lite::Regex::new(r"^@[^@:]+:[^@:]+$").unwrap();
+    re.is_match(id)
+}
+
+pub fn return_mxid(input: &str) -> String {
+    if is_mxid(input) {
+        return input.to_string();
+    }
+
+    let home_server = storage::get_item("home_server").unwrap_or_default();
+
+    let localpart = input.strip_prefix('@').unwrap_or(input);
+
+    format!("@{localpart}:{home_server}")
+}
+
+pub fn split_mxid(mxid: &str) -> Option<(String, String)> {
+    let mxid = mxid.strip_prefix('@')?;
+    let parts: Vec<&str> = mxid.splitn(2, ':').collect();
+    if parts.len() == 2 {
+        Some((parts[0].to_string(), parts[1].to_string()))
+    } else {
+        None
+    }
+}

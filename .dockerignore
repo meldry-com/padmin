@@ -1,0 +1,9 @@
+target/
+test_data/
+examples/
+.git/
+node_modules/
+e2e/
+playwright-report/
+test-results/
+*.js.map

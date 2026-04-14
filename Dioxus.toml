@@ -1,0 +1,6 @@
+[application]
+name = "palpo-admin"
+default_platform = "web"
+
+[web.app]
+title = "Palpo Admin"

@@ -1,0 +1,18 @@
+# Test-only override applied on top of examples/compose.yml.
+# Usage:  docker compose -f ../compose.yml -f fixtures/compose.override.yml up -d
+#
+# Why this exists: the committed pasion.yaml points email at Gmail SMTP,
+# which fails in CI/test environments and blocks pasion's notification
+# worker queue. We swap pasion's config mount for a blackhole-email copy so
+# the registration flow can complete deterministically.
+
+services:
+  pasion:
+    # Volume paths are resolved relative to the project directory, which
+    # docker compose defines as the directory containing the FIRST -f file
+    # (i.e. examples/compose.yml). Hence these paths are expressed from
+    # examples/ rather than from the override file's own location.
+    volumes:
+      - ./e2e/fixtures/pasion.test.yaml:/config.yaml:ro
+      - ./pasion-signing-key.pem:/keys/pasion-signing-key.pem:ro
+      - pasion_media:/data/media

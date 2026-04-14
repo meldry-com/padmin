@@ -1,0 +1,36 @@
+# Palpo Matrix Homeserver configuration
+# Adjust server_name to your domain before deploying.
+
+server_name = "localhost"
+
+max_upload_size = 20_000_000
+
+allow_registration = false
+
+trusted_servers = ["matrix.org"]
+
+[[listeners]]
+address = "0.0.0.0:8008"
+
+[presence]
+allow_local = true
+
+[federation]
+enable = false
+
+[db]
+url = "postgres://palpo:changeme@postgres:5432/palpo"
+pool_size = 10
+
+[well_known]
+server = "localhost"
+client = "http://localhost:8008"
+
+[admin]
+mas_secret = "replace-with-a-random-secret"
+
+[delegated_auth]
+enable = true
+issuer = "http://localhost:7080/"
+introspection_endpoint = "http://pasion:7080/oauth2/introspect"
+client_id = "01KMQE9VZQ33VQT9GP1WA4265X"

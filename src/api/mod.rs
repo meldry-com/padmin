@@ -1,0 +1,13 @@
+pub mod appservices;
+pub mod auth;
+pub mod client;
+pub mod destinations;
+pub mod matrix;
+pub mod media;
+pub mod palpo_admin;
+pub mod pasion;
+pub mod registration_tokens;
+pub mod reports;
+pub mod rooms;
+pub mod server_info;
+pub mod users;

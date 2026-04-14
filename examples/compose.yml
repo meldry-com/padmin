@@ -1,0 +1,128 @@
+# Palpo Stack: Matrix homeserver + OAuth/OIDC auth + Admin dashboard
+#
+# Services:
+#   - postgres:  PostgreSQL database (shared by palpo and pasion)
+#   - palpo:     Matrix homeserver (Client-Server API on :8008)
+#   - pasion:    OAuth 2.0 / OpenID Connect authentication service (:8090)
+#   - padmin:    Admin dashboard web UI (:9090)
+#   - element:   Element Web Matrix client (:8080)
+#
+# Quick start:
+#   1. Adjust palpo.toml and pasion.yaml settings as needed
+#   2. docker compose up -d --build
+#   3. Open http://localhost:8090 for the admin dashboard
+#   4. Log in with your Matrix admin credentials against http://palpo:8008
+
+services:
+  postgres:
+    image: postgres:18
+    restart: unless-stopped
+    ports:
+      - "15432:5432"
+    environment:
+      POSTGRES_USER: palpo
+      POSTGRES_PASSWORD: changeme
+    volumes:
+      - postgres_data:/var/lib/postgresql
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U palpo"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - internal
+
+  palpo:
+    build:
+      context: ../../../palpo-im/palpo
+      dockerfile: build/docker/Dockerfile.palpo
+    restart: unless-stopped
+    ports:
+      - "8008:8008"
+      - "8448:8448"
+    environment:
+      PALPO_CONFIG: /var/palpo/palpo.toml
+    extra_hosts:
+      - "localhost:host-gateway"
+    volumes:
+      - ./palpo.toml:/var/palpo/palpo.toml:ro
+      - palpo_media:/var/palpo/media
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - internal
+
+  pasion:
+    build:
+      context: ../../pasion
+      dockerfile: Dockerfile
+      target: debug
+    restart: unless-stopped
+    command: server -c /config.yaml
+    # Run as root so the named `pasion_media` volume (created as root by
+    # Docker) is writable. The distroless `nonroot` default user otherwise
+    # cannot create files inside `/data/media`.
+    user: "0:0"
+    ports:
+      - "7080:7080"
+    extra_hosts:
+      - "localhost:host-gateway"
+    environment:
+      RUST_BACKTRACE: "1"
+      RUST_LOG: "debug,hyper=info,salvo=info"
+    volumes:
+      - ./pasion.yaml:/config.yaml:ro
+      - ./pasion-signing-key.pem:/keys/pasion-signing-key.pem:ro
+      - pasion_media:/data/media
+    depends_on:
+      postgres:
+        condition: service_healthy
+      palpo:
+        condition: service_started
+    networks:
+      - internal
+
+  padmin:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "7060:80"
+    extra_hosts:
+      - "localhost:host-gateway"
+    environment:
+      PALPO_URL: http://palpo:8008
+      PASION_URL: http://pasion:7080
+      PASION_PUBLIC_URL: http://localhost:7080
+    depends_on:
+      palpo:
+        condition: service_started
+      pasion:
+        condition: service_started
+    networks:
+      - internal
+
+  element:
+    image: vectorim/element-web:latest
+    restart: unless-stopped
+    ports:
+      - "7070:80"
+    volumes:
+      - ./element-config.json:/app/config.json:ro
+    depends_on:
+      palpo:
+        condition: service_started
+    networks:
+      - internal
+
+networks:
+  internal:
+    attachable: true
+
+volumes:
+  palpo_media:
+  pasion_media:
+  postgres_data:
