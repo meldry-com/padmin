@@ -3,15 +3,15 @@
 # Services:
 #   - postgres:  PostgreSQL database (shared by palpo and pasion)
 #   - palpo:     Matrix homeserver (Client-Server API on :8008)
-#   - pasion:    OAuth 2.0 / OpenID Connect authentication service (:8090)
-#   - padmin:    Admin dashboard web UI (:9090)
-#   - element:   Element Web Matrix client (:8080)
+#   - pasion:    OAuth 2.0 / OpenID Connect authentication service (:7080)
+#   - padmin:    Admin dashboard web UI (:7060)
+#   - element:   Element Web Matrix client (:7070)
 #
 # Quick start:
 #   1. Adjust palpo.toml and pasion.yaml settings as needed
 #   2. docker compose up -d --build
-#   3. Open http://localhost:8090 for the admin dashboard
-#   4. Log in with your Matrix admin credentials against http://palpo:8008
+#   3. Open http://localhost:7060 for the admin dashboard
+#   4. Log in with your Matrix admin credentials against http://localhost:8008
 
 services:
   postgres:

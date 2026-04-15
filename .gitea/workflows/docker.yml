@@ -170,7 +170,7 @@ jobs:
 
           run_case padmin-with-pasion \
             -e PALPO_URL=http://palpo:8008 \
-            -e PASION_URL=http://pasion:8090 \
+            -e PASION_URL=http://pasion:7080 \
             -e PASION_PUBLIC_URL=https://auth.example.com
 
   build-platform:
