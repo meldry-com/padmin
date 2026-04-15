@@ -3,6 +3,11 @@ set -eu
 
 BACKEND_MATRIX="${PALPO_URL:-$MATRIX_URL}"
 
+if [ -z "$BACKEND_MATRIX" ]; then
+    echo "PALPO_URL or MATRIX_URL must be set" >&2
+    exit 1
+fi
+
 printf '{"pasion_public_url":"%s"}' "$PASION_PUBLIC_URL" > /usr/share/nginx/html/config.json
 
 cat > /etc/nginx/conf.d/default.conf <<EOF
@@ -12,8 +17,12 @@ server {
     root /usr/share/nginx/html;
     index index.html;
     resolver 127.0.0.11 valid=30s ipv6=off;
-    set \$pasion_backend ${PASION_URL};
     set \$matrix_backend ${BACKEND_MATRIX};
+EOF
+
+if [ -n "$PASION_URL" ]; then
+cat >> /etc/nginx/conf.d/default.conf <<EOF
+    set \$pasion_backend ${PASION_URL};
 
     location /auth/ {
         proxy_pass \$pasion_backend;
@@ -51,7 +60,10 @@ server {
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
     }
+EOF
+fi
 
+cat >> /etc/nginx/conf.d/default.conf <<EOF
     location /_palpo/ {
         proxy_pass \$matrix_backend;
         proxy_set_header Host \$host;
@@ -81,4 +93,5 @@ server {
 }
 EOF
 
+nginx -t
 exec nginx -g "daemon off;"
