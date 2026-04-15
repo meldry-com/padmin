@@ -3,6 +3,7 @@ set -eu
 
 BACKEND_MATRIX="${PALPO_URL:-$MATRIX_URL}"
 RESOLVERS="$(awk '/^nameserver / { print $2 }' /etc/resolv.conf | paste -sd ' ' -)"
+LOOKUP_UNAVAILABLE=0
 
 if [ -z "$BACKEND_MATRIX" ]; then
     echo "PALPO_URL or MATRIX_URL must be set" >&2
@@ -19,7 +20,15 @@ extract_host() {
 can_resolve_url_host() {
     host="$(extract_host "$1")"
     [ -n "$host" ] || return 1
-    timeout 2 getent hosts "$host" >/dev/null 2>&1
+    [ "$LOOKUP_UNAVAILABLE" -eq 0 ] || return 1
+
+    if timeout 0.5 getent hosts "$host" >/dev/null 2>&1; then
+        return 0
+    fi
+
+    status=$?
+    LOOKUP_UNAVAILABLE=1
+    return 1
 }
 
 write_proxy_location() {
