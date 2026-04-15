@@ -52,6 +52,12 @@ docker run -p 9090:80 palpo-admin
 
 镜像采用多阶段构建：Rust/Dioxus 编译 WASM 应用，然后由 nginx 提供静态文件服务。
 
+GitHub Actions 会将 `linux/amd64` 和 `linux/arm64` 多架构镜像发布到 GHCR：
+
+```bash
+docker pull ghcr.io/meldry-com/padmin:latest
+```
+
 ## 完整技术栈示例
 
 参见 [`examples/`](examples/) 目录，包含完整的 Docker Compose 配置，可同时运行 Palpo Admin、Palpo 服务器、Pasion 认证服务、Element Web 客户端和 PostgreSQL。

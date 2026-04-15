@@ -1,4 +1,4 @@
-FROM rust:bookworm AS builder
+FROM --platform=$BUILDPLATFORM rust:bookworm AS builder
 
 ENV CARGO_HTTP_TIMEOUT=600
 ENV CARGO_HTTP_MULTIPLEXING=false
@@ -31,7 +31,9 @@ RUN --network=default \
     --mount=type=cache,id=padmin-cargo-git,target=/usr/local/cargo/git \
     --mount=type=cache,id=padmin-target,target=/app/target \
     for i in 1 2 3; do dx build --release && break || echo "Retry $i..." && sleep 10; done && \
-    cp -r /app/target/dx/palpo-admin/release/web/public /app/dist
+    dist_dir="$(find /app/target/dx -type d -path '*/release/web/public' | head -n 1)" && \
+    test -n "$dist_dir" && \
+    cp -r "$dist_dir" /app/dist
 
 FROM nginx:alpine
 

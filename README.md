@@ -52,6 +52,12 @@ docker run -p 9090:80 palpo-admin
 
 The image uses a multi-stage build: Rust/Dioxus compiles the WASM app, then nginx serves the static files.
 
+GitHub Actions publishes multi-architecture images for `linux/amd64` and `linux/arm64` to GHCR:
+
+```bash
+docker pull ghcr.io/meldry-com/padmin:latest
+```
+
 ## Full Stack Example
 
 See [`examples/`](examples/) for a complete Docker Compose setup that runs Palpo Admin alongside the Palpo homeserver, Pasion auth service, Element Web client, and PostgreSQL.
