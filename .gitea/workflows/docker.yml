@@ -16,11 +16,21 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  docker:
+  prepare:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
+    outputs:
+      gitea_registry: ${{ steps.image.outputs.gitea_registry }}
+      gitea_registry_user: ${{ steps.image.outputs.gitea_registry_user }}
+      use_gitea_registry: ${{ steps.image.outputs.use_gitea_registry }}
+      use_dockerhub: ${{ steps.image.outputs.use_dockerhub }}
+      push_images: ${{ steps.image.outputs.push_images }}
+      images: ${{ steps.image.outputs.images }}
+      tags: ${{ steps.meta.outputs.tags }}
+      labels: ${{ steps.meta.outputs.labels }}
+      build_id: ${{ steps.build-id.outputs.value }}
 
     steps:
       - name: Check out source
@@ -76,15 +86,45 @@ jobs:
           {
             echo "gitea_registry=$registry_host"
             echo "gitea_registry_user=${REGISTRY_USER:-}"
-            echo "gitea_image=$gitea_image"
             echo "use_gitea_registry=$use_gitea_registry"
             echo "use_dockerhub=$use_dockerhub"
-            echo "dockerhub_image=$dockerhub_image"
             echo "push_images=$push_images"
             echo "images<<EOF"
             printf "%s\n" "${images[@]}"
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
+
+      - name: Compute build identifier
+        id: build-id
+        shell: bash
+        env:
+          GIT_SHA: ${{ gitea.sha }}
+        run: |
+          set -euo pipefail
+          echo "value=${GIT_SHA:0:12}" >> "$GITHUB_OUTPUT"
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.image.outputs.images }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=ref,event=tag
+            type=sha,format=short,prefix=sha-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+  smoke-test:
+    needs:
+      - prepare
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -133,40 +173,127 @@ jobs:
             -e PASION_URL=http://pasion:8090 \
             -e PASION_PUBLIC_URL=https://auth.example.com
 
+  build-platform:
+    needs:
+      - prepare
+      - smoke-test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            platform: linux/amd64
+          - arch: arm64
+            platform: linux/arm64
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Log in to Gitea registry
-        if: steps.image.outputs.push_images == 'true' && steps.image.outputs.use_gitea_registry == 'true'
+        if: needs.prepare.outputs.push_images == 'true' && needs.prepare.outputs.use_gitea_registry == 'true'
         uses: docker/login-action@v3
         with:
-          registry: ${{ steps.image.outputs.gitea_registry }}
-          username: ${{ steps.image.outputs.gitea_registry_user }}
+          registry: ${{ needs.prepare.outputs.gitea_registry }}
+          username: ${{ needs.prepare.outputs.gitea_registry_user }}
           password: ${{ secrets.REGISTRY_TOKEN }}
 
       - name: Log in to Docker Hub
-        if: steps.image.outputs.push_images == 'true' && steps.image.outputs.use_dockerhub == 'true'
+        if: needs.prepare.outputs.push_images == 'true' && needs.prepare.outputs.use_dockerhub == 'true'
         uses: docker/login-action@v3
         with:
           username: ${{ vars.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Extract Docker metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ steps.image.outputs.images }}
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=ref,event=tag
-            type=sha,format=short,prefix=sha-
-            type=raw,value=latest,enable={{is_default_branch}}
+      - name: Compute platform tags
+        id: platform-tags
+        shell: bash
+        env:
+          IMAGES: ${{ needs.prepare.outputs.images }}
+          BUILD_ID: ${{ needs.prepare.outputs.build_id }}
+          ARCH: ${{ matrix.arch }}
+        run: |
+          set -euo pipefail
 
-      - name: Build and push Docker image
+          tags=()
+
+          while IFS= read -r image; do
+            [ -n "$image" ] || continue
+            tags+=("${image}:build-${BUILD_ID}-${ARCH}")
+          done <<EOF
+          $IMAGES
+          EOF
+
+          {
+            echo "tags<<EOF"
+            printf "%s\n" "${tags[@]}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build platform image
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ matrix.platform }}
           pull: true
-          push: ${{ steps.image.outputs.push_images == 'true' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          push: ${{ needs.prepare.outputs.push_images == 'true' }}
+          tags: ${{ steps.platform-tags.outputs.tags }}
+          labels: ${{ needs.prepare.outputs.labels }}
+
+  merge-manifest:
+    needs:
+      - prepare
+      - build-platform
+    if: needs.prepare.outputs.push_images == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Gitea registry
+        if: needs.prepare.outputs.use_gitea_registry == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ needs.prepare.outputs.gitea_registry }}
+          username: ${{ needs.prepare.outputs.gitea_registry_user }}
+          password: ${{ secrets.REGISTRY_TOKEN }}
+
+      - name: Log in to Docker Hub
+        if: needs.prepare.outputs.use_dockerhub == 'true'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Merge multi-arch manifests
+        shell: bash
+        env:
+          TAGS: ${{ needs.prepare.outputs.tags }}
+          BUILD_ID: ${{ needs.prepare.outputs.build_id }}
+        run: |
+          set -euo pipefail
+
+          while IFS= read -r tag; do
+            [ -n "$tag" ] || continue
+
+            image="${tag%:*}"
+
+            docker buildx imagetools create \
+              --tag "$tag" \
+              "${image}:build-${BUILD_ID}-amd64" \
+              "${image}:build-${BUILD_ID}-arm64"
+          done <<EOF
+          $TAGS
+          EOF
