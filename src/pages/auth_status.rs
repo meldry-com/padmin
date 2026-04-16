@@ -37,11 +37,7 @@ pub fn AuthStatusPage() -> Element {
 
     let login_flows = use_resource(move || {
         let url = base_url_for_flows.clone();
-        async move {
-            auth::get_login_flows(&url)
-                .await
-                .map_err(|e| e.message)
-        }
+        async move { auth::get_login_flows(&url).await.map_err(|e| e.message) }
     });
 
     let server_version = use_resource(move || {
@@ -90,8 +86,7 @@ pub fn AuthStatusPage() -> Element {
                             // Check required endpoints
                             let authorization_endpoint =
                                 doc.get("authorization_endpoint").and_then(|v| v.as_str());
-                            let token_endpoint =
-                                doc.get("token_endpoint").and_then(|v| v.as_str());
+                            let token_endpoint = doc.get("token_endpoint").and_then(|v| v.as_str());
                             let registration_endpoint =
                                 doc.get("registration_endpoint").and_then(|v| v.as_str());
                             let device_authorization_endpoint = doc
@@ -106,9 +101,7 @@ pub fn AuthStatusPage() -> Element {
                                 } else {
                                     DiagnosticStatus::Fail
                                 },
-                                detail: authorization_endpoint
-                                    .unwrap_or("Missing")
-                                    .to_string(),
+                                detail: authorization_endpoint.unwrap_or("Missing").to_string(),
                             });
 
                             // Token endpoint
@@ -149,9 +142,8 @@ pub fn AuthStatusPage() -> Element {
                             });
 
                             // Scopes
-                            if let Some(scopes) = doc
-                                .get("scopes_supported")
-                                .and_then(|v| v.as_array())
+                            if let Some(scopes) =
+                                doc.get("scopes_supported").and_then(|v| v.as_array())
                             {
                                 let scope_list: Vec<String> = scopes
                                     .iter()
@@ -474,8 +466,7 @@ fn PasionDiagnosticsPanel(base_url: String) -> Element {
                                     .get("issuer")
                                     .and_then(|v| v.as_str())
                                     .unwrap_or("unknown");
-                                let account =
-                                    block.get("account").and_then(|v| v.as_str());
+                                let account = block.get("account").and_then(|v| v.as_str());
                                 checks.push(DiagnosticCheck {
                                     label: "Delegated Auth (well-known)".to_string(),
                                     status: DiagnosticStatus::Pass,

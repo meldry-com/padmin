@@ -51,7 +51,10 @@ pub fn PersonalSessionsPage() -> Element {
                     if let Some(token) = session.token.clone() {
                         new_token.set(Some(token));
                     }
-                    show_toast(&t("pasion.personal_sessions.created_success"), ToastVariant::Success);
+                    show_toast(
+                        &t("pasion.personal_sessions.created_success"),
+                        ToastVariant::Success,
+                    );
                     create_name.set(String::new());
                     create_scope.set(String::new());
                     create_user_id.set(String::new());
@@ -71,7 +74,10 @@ pub fn PersonalSessionsPage() -> Element {
                     if let Some(token) = session.token {
                         new_token.set(Some(token));
                     }
-                    show_toast(&t("pasion.personal_sessions.regenerated_success"), ToastVariant::Success);
+                    show_toast(
+                        &t("pasion.personal_sessions.regenerated_success"),
+                        ToastVariant::Success,
+                    );
                     sessions_data.restart();
                 }
                 Err(e) => show_toast(&format!("Failed: {}", e.message), ToastVariant::Error),
@@ -85,7 +91,10 @@ pub fn PersonalSessionsPage() -> Element {
             spawn(async move {
                 match pasion::pasion_revoke_personal_session(&id).await {
                     Ok(_) => {
-                        show_toast(&t("pasion.personal_sessions.revoked_success"), ToastVariant::Success);
+                        show_toast(
+                            &t("pasion.personal_sessions.revoked_success"),
+                            ToastVariant::Success,
+                        );
                         confirm_revoke_open.set(false);
                         session_to_revoke.set(None);
                         sessions_data.restart();

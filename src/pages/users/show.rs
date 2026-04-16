@@ -12,9 +12,9 @@ use crate::components::ui::loading::{LoadingSkeleton, PageSkeleton};
 use crate::components::ui::page_header::{BreadcrumbItem, Breadcrumbs, PageHeader};
 use crate::components::ui::relative_time::RelativeTime;
 use crate::components::ui::toast::{ToastVariant, show_toast};
-use crate::utils::date::format_timestamp;
 use crate::components::user_account_data::UserAccountData;
 use crate::components::user_rate_limits::UserRateLimits;
+use crate::utils::date::format_timestamp;
 use crate::utils::i18n::t;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -850,4 +850,3 @@ fn InfoRow(label: String, value: String) -> Element {
         }
     }
 }
-

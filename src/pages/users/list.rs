@@ -129,9 +129,7 @@ pub fn UserList() -> Element {
         let search = search_val.clone();
         let order_by = sort_by_val.clone();
         let order = sort_dir_val.clone();
-        async move {
-            users::get_users_cached(page_val, per_page_val, &order_by, &order, &search).await
-        }
+        async move { users::get_users_cached(page_val, per_page_val, &order_by, &order, &search).await }
     });
 
     let handle_export_csv = move |_: MouseEvent| {

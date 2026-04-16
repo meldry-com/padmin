@@ -303,10 +303,7 @@ fn is_route_active(current: &Route, target: &Route) -> bool {
             Route::UserList {} | Route::UserShow { .. } | Route::UserCreate {}
         ),
         Route::RoomList {} => matches!(current, Route::RoomList {} | Route::RoomShow { .. }),
-        Route::ReportList {} => matches!(
-            current,
-            Route::ReportList {} | Route::ReportShow { .. }
-        ),
+        Route::ReportList {} => matches!(current, Route::ReportList {} | Route::ReportShow { .. }),
         Route::DestinationList {} => matches!(
             current,
             Route::DestinationList {} | Route::DestinationShow { .. }

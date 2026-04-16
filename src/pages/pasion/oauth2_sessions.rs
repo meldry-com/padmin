@@ -17,7 +17,11 @@ pub fn OAuth2SessionsPage() -> Element {
     let mut sessions_data = use_resource(move || {
         let uid = user_filter.read().clone();
         async move {
-            let filter = if uid.is_empty() { None } else { Some(uid.as_str()) };
+            let filter = if uid.is_empty() {
+                None
+            } else {
+                Some(uid.as_str())
+            };
             pasion::pasion_get_oauth2_sessions(filter).await
         }
     });
@@ -31,7 +35,10 @@ pub fn OAuth2SessionsPage() -> Element {
             spawn(async move {
                 match pasion::pasion_finish_oauth2_session(&id).await {
                     Ok(_) => {
-                        show_toast(&t("pasion.oauth2_sessions.finished_success"), ToastVariant::Success);
+                        show_toast(
+                            &t("pasion.oauth2_sessions.finished_success"),
+                            ToastVariant::Success,
+                        );
                         confirm_open.set(false);
                         session_to_finish.set(None);
                         sessions_data.restart();

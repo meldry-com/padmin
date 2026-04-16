@@ -17,9 +17,7 @@ fn user_list_cache_key(
     search_term: &str,
 ) -> String {
     let encoded_search = urlencoding::encode(search_term);
-    format!(
-        "{USER_LIST_CACHE_PREFIX}{page}:{per_page}:{order_by}:{order}:{encoded_search}"
-    )
+    format!("{USER_LIST_CACHE_PREFIX}{page}:{per_page}:{order_by}:{order}:{encoded_search}")
 }
 
 fn invalidate_user_related_caches() {

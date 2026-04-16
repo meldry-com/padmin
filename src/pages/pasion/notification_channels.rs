@@ -9,27 +9,22 @@ use crate::components::ui::page_header::PageHeader;
 use crate::components::ui::table::*;
 use crate::utils::i18n::t;
 
-fn channel_status_badge(status: &str) -> Element {
-    let (variant, label) = match status {
-        "active" => (BadgeVariant::Success, "Active"),
-        "degraded" => (BadgeVariant::Secondary, "Degraded"),
-        "down" => (BadgeVariant::Destructive, "Down"),
-        _ => (BadgeVariant::Outline, status),
-    };
-    rsx! {
-        Badge { variant, "{label}" }
-    }
-}
-
-fn channel_type_badge(channel_type: &str) -> Element {
-    let variant = match channel_type {
+fn channel_badge(channel: &str) -> Element {
+    let variant = match channel {
         "email" => BadgeVariant::Default,
         "sms" => BadgeVariant::Secondary,
         _ => BadgeVariant::Outline,
     };
-    rsx! {
-        Badge { variant, "{channel_type}" }
-    }
+    rsx! { Badge { variant, "{channel}" } }
+}
+
+fn configuration_badge(configured: bool) -> Element {
+    let (variant, label) = if configured {
+        (BadgeVariant::Success, "Configured")
+    } else {
+        (BadgeVariant::Secondary, "Not configured")
+    };
+    rsx! { Badge { variant, "{label}" } }
 }
 
 #[component]
@@ -55,37 +50,26 @@ pub fn NotificationChannelsPage() -> Element {
                         Table {
                             TableHeader {
                                 TableRow {
-                                    TableHead { "Name" }
-                                    TableHead { "Type" }
-                                    TableHead { "Provider" }
+                                    TableHead { "Channel" }
                                     TableHead { "Status" }
                                 }
                             }
                             TableBody {
                                 if channels.is_empty() {
-                                    EmptyRow { colspan: 4, message: t("pasion.notification_channels.empty") }
+                                    EmptyRow { colspan: 2, message: t("pasion.notification_channels.empty") }
                                 } else {
                                     for channel in channels.iter() {
                                         {
-                                            let cid = channel.id.clone();
-                                            let name = channel.name.clone();
-                                            let ctype = channel.channel_type.clone();
-                                            let provider = channel.provider.clone();
-                                            let status = channel.status.clone();
+                                            let channel_name = channel.channel.clone();
+                                            let configured = channel.configured;
 
                                             rsx! {
-                                                TableRow { key: "{cid}",
+                                                TableRow { key: "{channel_name}",
                                                     TableCell {
-                                                        span { class: "font-medium", "{name}" }
+                                                        {channel_badge(&channel_name)}
                                                     }
                                                     TableCell {
-                                                        {channel_type_badge(&ctype)}
-                                                    }
-                                                    TableCell {
-                                                        span { class: "text-sm text-muted-foreground", "{provider}" }
-                                                    }
-                                                    TableCell {
-                                                        {channel_status_badge(&status)}
+                                                        {configuration_badge(configured)}
                                                     }
                                                 }
                                             }

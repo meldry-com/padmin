@@ -143,21 +143,13 @@ pub struct PasionUpstreamProvider {
     #[serde(default)]
     pub id: String,
     #[serde(default)]
-    pub name: String,
-    #[serde(default)]
     pub issuer: Option<String>,
-    #[serde(default)]
-    pub client_id: Option<String>,
-    #[serde(default)]
-    pub scope: Option<String>,
-    #[serde(default)]
-    pub created_at: String,
-    #[serde(default)]
-    pub provider_type: Option<String>, // generic, qq, wechat, wecom, feishu, lark, dingtalk
     #[serde(default)]
     pub human_name: Option<String>,
     #[serde(default)]
     pub brand_name: Option<String>,
+    #[serde(default)]
+    pub created_at: String,
     #[serde(default)]
     pub disabled_at: Option<String>,
     /// "config" or "manual". Config-sourced rows reject edits via the admin API.
@@ -171,15 +163,15 @@ pub struct PasionUpstreamLink {
     #[serde(default)]
     pub id: String,
     #[serde(default)]
-    pub user_id: String,
+    pub user_id: Option<String>,
     #[serde(default)]
-    pub upstream_provider_id: String,
+    pub provider_id: String,
     #[serde(default)]
     pub subject: String,
     #[serde(default)]
     pub created_at: String,
     #[serde(default)]
-    pub provider_name: Option<String>,
+    pub human_account_name: Option<String>,
 }
 
 // Audit Log
@@ -192,65 +184,37 @@ pub struct PasionAuditEntry {
     #[serde(default)]
     pub operation: String,
     #[serde(default)]
-    pub admin_id: Option<String>,
+    pub admin_user_id: Option<String>,
     #[serde(default)]
     pub resource_type: Option<String>,
     #[serde(default)]
     pub resource_id: Option<String>,
     #[serde(default)]
-    pub ip_address: Option<String>,
-    #[serde(default)]
-    pub detail: Option<serde_json::Value>,
+    pub details: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct PasionAuditFeedResponse {
     #[serde(default)]
     pub data: Vec<PasionAuditEntry>,
-    #[serde(default)]
-    pub meta: PasionCursorMeta,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct PasionCursorMeta {
-    #[serde(default)]
-    pub has_next: bool,
-    #[serde(default)]
-    pub end_cursor: Option<String>,
 }
 
 // Notification Channel
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct PasionNotificationChannel {
     #[serde(default)]
-    pub id: String,
+    pub channel: String,
     #[serde(default)]
-    pub name: String,
-    #[serde(default)]
-    pub channel_type: String, // email, sms
-    #[serde(default)]
-    pub provider: String, // smtp, sendmail, twilio, aliyun_sms, tencent_sms
-    #[serde(default)]
-    pub status: String, // active, degraded, down
+    pub configured: bool,
 }
 
 // Notification Template
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct PasionNotificationTemplate {
     #[serde(default)]
-    pub id: String,
+    pub key: String,
     #[serde(default)]
-    pub name: String,
-    #[serde(default)]
-    pub locale: String,
-    #[serde(default)]
-    pub channel: String,
-    #[serde(default)]
-    pub subject: Option<String>,
-    #[serde(default)]
-    pub body: Option<String>,
-    #[serde(default)]
-    pub updated_at: String,
+    pub description: String,
 }
 
 // Connector Health

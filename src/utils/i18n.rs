@@ -83,13 +83,34 @@ impl I18n {
         m.insert("auth.sso_sign_in".into(), "Sign in with SSO".into());
         m.insert("auth.server_version".into(), "Server version:".into());
         m.insert("auth.supports_specs".into(), "Supports specs:".into());
-        m.insert("auth.fields_required".into(), "Please enter your username and password.".into());
-        m.insert("auth.invalid_credentials".into(), "Invalid username or password.".into());
-        m.insert("auth.rate_limited".into(), "Too many attempts. Please try again later.".into());
-        m.insert("auth.account_deactivated".into(), "This account has been deactivated.".into());
-        m.insert("auth.account_locked".into(), "This account has been locked.".into());
-        m.insert("auth.username_placeholder".into(), "Username or email".into());
-        m.insert("auth.oauth_hint".into(), "Sign in with your account to access the admin dashboard.".into());
+        m.insert(
+            "auth.fields_required".into(),
+            "Please enter your username and password.".into(),
+        );
+        m.insert(
+            "auth.invalid_credentials".into(),
+            "Invalid username or password.".into(),
+        );
+        m.insert(
+            "auth.rate_limited".into(),
+            "Too many attempts. Please try again later.".into(),
+        );
+        m.insert(
+            "auth.account_deactivated".into(),
+            "This account has been deactivated.".into(),
+        );
+        m.insert(
+            "auth.account_locked".into(),
+            "This account has been locked.".into(),
+        );
+        m.insert(
+            "auth.username_placeholder".into(),
+            "Username or email".into(),
+        );
+        m.insert(
+            "auth.oauth_hint".into(),
+            "Sign in with your account to access the admin dashboard.".into(),
+        );
         m.insert("auth.processing".into(), "Signing in...".into());
         m.insert("auth.try_again".into(), "Try again".into());
         m.insert(
@@ -117,10 +138,7 @@ impl I18n {
         m.insert("nav.management".into(), "Management".into());
         m.insert("nav.section_identity".into(), "Identity".into());
         m.insert("nav.section_moderation".into(), "Moderation".into());
-        m.insert(
-            "nav.section_infrastructure".into(),
-            "Infrastructure".into(),
-        );
+        m.insert("nav.section_infrastructure".into(), "Infrastructure".into());
         m.insert("nav.section_server_ops".into(), "Server Ops".into());
         m.insert("nav.section_pasion".into(), "Identity Provider".into());
         m.insert("nav.audit_log".into(), "Audit Log".into());
@@ -128,7 +146,10 @@ impl I18n {
         m.insert("nav.personal_tokens".into(), "Personal Tokens".into());
         m.insert("nav.upstream_providers".into(), "Upstream Providers".into());
         m.insert("nav.connector_health".into(), "Connector Health".into());
-        m.insert("nav.notification_channels".into(), "Notification Channels".into());
+        m.insert(
+            "nav.notification_channels".into(),
+            "Notification Channels".into(),
+        );
         m.insert(
             "nav.notification_prefs".into(),
             "Notification Preferences".into(),
@@ -313,18 +334,9 @@ impl I18n {
             "users.revoke_all_sessions".into(),
             "Revoke All Sessions".into(),
         );
-        m.insert(
-            "users.remove_threepid".into(),
-            "Remove".into(),
-        );
-        m.insert(
-            "users.verified".into(),
-            "Verified".into(),
-        );
-        m.insert(
-            "users.unverified".into(),
-            "Unverified".into(),
-        );
+        m.insert("users.remove_threepid".into(), "Remove".into());
+        m.insert("users.verified".into(), "Verified".into());
+        m.insert("users.unverified".into(), "Unverified".into());
         m.insert("common.remove".into(), "Remove".into());
         m.insert("common.enable".into(), "Enable".into());
         m.insert("common.user".into(), "User".into());
@@ -426,9 +438,15 @@ impl I18n {
         m.insert("rooms.add_alias".into(), "Add Alias".into());
         m.insert("rooms.delete_alias".into(), "Delete".into());
         m.insert("rooms.new_alias".into(), "New alias".into());
-        m.insert("rooms.forward_extremities".into(), "Forward Extremities".into());
+        m.insert(
+            "rooms.forward_extremities".into(),
+            "Forward Extremities".into(),
+        );
         m.insert("rooms.forward_extremities_desc".into(), "Forward extremities are the leaf events in the room DAG. Multiple extremities may indicate fragmentation.".into());
-        m.insert("rooms.no_forward_extremities".into(), "No forward extremities found.".into());
+        m.insert(
+            "rooms.no_forward_extremities".into(),
+            "No forward extremities found.".into(),
+        );
         m.insert("rooms.forward_extremities_warning".into(), "Warning: Multiple forward extremities detected. This may indicate DAG fragmentation and could impact performance.".into());
         m.insert("rooms.count".into(), "Count".into());
         m.insert("rooms.directory_listing".into(), "Directory Listing".into());
@@ -437,7 +455,10 @@ impl I18n {
         m.insert("rooms.publish".into(), "Publish".into());
         m.insert("rooms.unpublish".into(), "Unpublish".into());
         m.insert("rooms.event_lookup".into(), "Event Lookup".into());
-        m.insert("rooms.event_lookup_desc".into(), "Look up any event by its event ID.".into());
+        m.insert(
+            "rooms.event_lookup_desc".into(),
+            "Look up any event by its event ID.".into(),
+        );
         m.insert("rooms.lookup".into(), "Lookup".into());
 
         // Reports
@@ -675,14 +696,8 @@ impl I18n {
             "pasion.personal_sessions.revoke_description".into(),
             "Are you sure you want to revoke this access token? This cannot be undone.".into(),
         );
-        m.insert(
-            "pasion.personal_sessions.col_scope".into(),
-            "Scope".into(),
-        );
-        m.insert(
-            "pasion.personal_sessions.col_owner".into(),
-            "Owner".into(),
-        );
+        m.insert("pasion.personal_sessions.col_scope".into(), "Scope".into());
+        m.insert("pasion.personal_sessions.col_owner".into(), "Owner".into());
         m.insert(
             "pasion.personal_sessions.col_created".into(),
             "Created".into(),
@@ -705,17 +720,15 @@ impl I18n {
             "pasion.oauth2_sessions.empty".into(),
             "No OAuth2 sessions found".into(),
         );
-        m.insert(
-            "pasion.oauth2_sessions.finish".into(),
-            "Finish".into(),
-        );
+        m.insert("pasion.oauth2_sessions.finish".into(), "Finish".into());
         m.insert(
             "pasion.oauth2_sessions.finish_title".into(),
             "Finish Session".into(),
         );
         m.insert(
             "pasion.oauth2_sessions.finish_description".into(),
-            "End this OAuth2 session? The user will be signed out from the corresponding client.".into(),
+            "End this OAuth2 session? The user will be signed out from the corresponding client."
+                .into(),
         );
         m.insert(
             "pasion.oauth2_sessions.finished_success".into(),
@@ -833,14 +846,8 @@ impl I18n {
             "registration_tokens.search_placeholder".into(),
             "Search tokens...".into(),
         );
-        m.insert(
-            "registration_tokens.filter_all".into(),
-            "All".into(),
-        );
-        m.insert(
-            "registration_tokens.filter_active".into(),
-            "Active".into(),
-        );
+        m.insert("registration_tokens.filter_all".into(), "All".into());
+        m.insert("registration_tokens.filter_active".into(), "Active".into());
         m.insert(
             "registration_tokens.filter_expired".into(),
             "Expired".into(),
@@ -1025,14 +1032,32 @@ impl I18n {
             "\u{4e0d}\u{662f}\u{6709}\u{6548}\u{7684}\u{670d}\u{52a1}\u{5668}\u{5730}\u{5740}"
                 .into(),
         );
-        m.insert("auth.fields_required".into(), "\u{8bf7}\u{8f93}\u{5165}\u{7528}\u{6237}\u{540d}\u{548c}\u{5bc6}\u{7801}".into());
-        m.insert("auth.invalid_credentials".into(), "\u{7528}\u{6237}\u{540d}\u{6216}\u{5bc6}\u{7801}\u{9519}\u{8bef}".into());
+        m.insert(
+            "auth.fields_required".into(),
+            "\u{8bf7}\u{8f93}\u{5165}\u{7528}\u{6237}\u{540d}\u{548c}\u{5bc6}\u{7801}".into(),
+        );
+        m.insert(
+            "auth.invalid_credentials".into(),
+            "\u{7528}\u{6237}\u{540d}\u{6216}\u{5bc6}\u{7801}\u{9519}\u{8bef}".into(),
+        );
         m.insert("auth.rate_limited".into(), "\u{5c1d}\u{8bd5}\u{6b21}\u{6570}\u{8fc7}\u{591a}\u{ff0c}\u{8bf7}\u{7a0d}\u{540e}\u{518d}\u{8bd5}".into());
-        m.insert("auth.account_deactivated".into(), "\u{8be5}\u{8d26}\u{6237}\u{5df2}\u{88ab}\u{505c}\u{7528}".into());
-        m.insert("auth.account_locked".into(), "\u{8be5}\u{8d26}\u{6237}\u{5df2}\u{88ab}\u{9501}\u{5b9a}".into());
-        m.insert("auth.username_placeholder".into(), "\u{7528}\u{6237}\u{540d}\u{6216}\u{90ae}\u{7bb1}".into());
+        m.insert(
+            "auth.account_deactivated".into(),
+            "\u{8be5}\u{8d26}\u{6237}\u{5df2}\u{88ab}\u{505c}\u{7528}".into(),
+        );
+        m.insert(
+            "auth.account_locked".into(),
+            "\u{8be5}\u{8d26}\u{6237}\u{5df2}\u{88ab}\u{9501}\u{5b9a}".into(),
+        );
+        m.insert(
+            "auth.username_placeholder".into(),
+            "\u{7528}\u{6237}\u{540d}\u{6216}\u{90ae}\u{7bb1}".into(),
+        );
         m.insert("auth.oauth_hint".into(), "\u{767b}\u{5f55}\u{60a8}\u{7684}\u{8d26}\u{6237}\u{4ee5}\u{8bbf}\u{95ee}\u{7ba1}\u{7406}\u{540e}\u{53f0}".into());
-        m.insert("auth.processing".into(), "\u{6b63}\u{5728}\u{767b}\u{5f55}...".into());
+        m.insert(
+            "auth.processing".into(),
+            "\u{6b63}\u{5728}\u{767b}\u{5f55}...".into(),
+        );
         m.insert("auth.try_again".into(), "\u{91cd}\u{8bd5}".into());
 
         // Navigation
@@ -1063,38 +1088,92 @@ impl I18n {
         m.insert("nav.management".into(), "\u{7ba1}\u{7406}".into());
         m.insert("nav.section_identity".into(), "\u{8eab}\u{4efd}".into());
         m.insert("nav.section_moderation".into(), "\u{5ba1}\u{6838}".into());
-        m.insert("nav.section_infrastructure".into(), "\u{57fa}\u{7840}\u{8bbe}\u{65bd}".into());
-        m.insert("nav.section_server_ops".into(), "\u{670d}\u{52a1}\u{5668}\u{64cd}\u{4f5c}".into());
-        m.insert("nav.section_pasion".into(), "\u{8eab}\u{4efd}\u{63d0}\u{4f9b}\u{8005}".into());
-        m.insert("nav.audit_log".into(), "\u{5ba1}\u{8ba1}\u{65e5}\u{5fd7}".into());
-        m.insert("nav.oauth2_sessions".into(), "OAuth2 \u{4f1a}\u{8bdd}".into());
-        m.insert("nav.personal_tokens".into(), "\u{4e2a}\u{4eba}\u{4ee4}\u{724c}".into());
-        m.insert("nav.upstream_providers".into(), "\u{4e0a}\u{6e38}\u{63d0}\u{4f9b}\u{8005}".into());
-        m.insert("nav.connector_health".into(), "\u{8fde}\u{63a5}\u{5668}\u{5065}\u{5eb7}".into());
-        m.insert("nav.notification_channels".into(), "\u{901a}\u{77e5}\u{6e20}\u{9053}".into());
+        m.insert(
+            "nav.section_infrastructure".into(),
+            "\u{57fa}\u{7840}\u{8bbe}\u{65bd}".into(),
+        );
+        m.insert(
+            "nav.section_server_ops".into(),
+            "\u{670d}\u{52a1}\u{5668}\u{64cd}\u{4f5c}".into(),
+        );
+        m.insert(
+            "nav.section_pasion".into(),
+            "\u{8eab}\u{4efd}\u{63d0}\u{4f9b}\u{8005}".into(),
+        );
+        m.insert(
+            "nav.audit_log".into(),
+            "\u{5ba1}\u{8ba1}\u{65e5}\u{5fd7}".into(),
+        );
+        m.insert(
+            "nav.oauth2_sessions".into(),
+            "OAuth2 \u{4f1a}\u{8bdd}".into(),
+        );
+        m.insert(
+            "nav.personal_tokens".into(),
+            "\u{4e2a}\u{4eba}\u{4ee4}\u{724c}".into(),
+        );
+        m.insert(
+            "nav.upstream_providers".into(),
+            "\u{4e0a}\u{6e38}\u{63d0}\u{4f9b}\u{8005}".into(),
+        );
+        m.insert(
+            "nav.connector_health".into(),
+            "\u{8fde}\u{63a5}\u{5668}\u{5065}\u{5eb7}".into(),
+        );
+        m.insert(
+            "nav.notification_channels".into(),
+            "\u{901a}\u{77e5}\u{6e20}\u{9053}".into(),
+        );
         m.insert(
             "nav.notification_prefs".into(),
             "\u{901a}\u{77e5}\u{8bbe}\u{7f6e}".into(),
         );
-        m.insert("nav.auth_status".into(), "\u{8ba4}\u{8bc1}\u{72b6}\u{6001}".into());
+        m.insert(
+            "nav.auth_status".into(),
+            "\u{8ba4}\u{8bc1}\u{72b6}\u{6001}".into(),
+        );
         // 应用服务
-        m.insert("nav.appservices".into(), "\u{5e94}\u{7528}\u{670d}\u{52a1}".into());
+        m.insert(
+            "nav.appservices".into(),
+            "\u{5e94}\u{7528}\u{670d}\u{52a1}".into(),
+        );
         m.insert("nav.logout".into(), "\u{9000}\u{51fa}".into());
 
         // Auth Status page
-        m.insert("auth_status.title".into(), "\u{8ba4}\u{8bc1}\u{72b6}\u{6001}".into());
+        m.insert(
+            "auth_status.title".into(),
+            "\u{8ba4}\u{8bc1}\u{72b6}\u{6001}".into(),
+        );
         m.insert("auth_status.subtitle".into(), "\u{59d4}\u{6258}\u{8ba4}\u{8bc1}\u{80fd}\u{529b}\u{548c}\u{767b}\u{5f55}\u{6d41}\u{72b6}\u{6001}".into());
-        m.insert("auth_status.server_info".into(), "\u{670d}\u{52a1}\u{5668}\u{8fde}\u{63a5}".into());
+        m.insert(
+            "auth_status.server_info".into(),
+            "\u{670d}\u{52a1}\u{5668}\u{8fde}\u{63a5}".into(),
+        );
         m.insert("auth_status.base_url".into(), "\u{57fa}\u{7840} URL".into());
-        m.insert("auth_status.server_version".into(), "\u{670d}\u{52a1}\u{5668}\u{7248}\u{672c}".into());
-        m.insert("auth_status.auth_capabilities".into(), "\u{8ba4}\u{8bc1}\u{80fd}\u{529b}".into());
+        m.insert(
+            "auth_status.server_version".into(),
+            "\u{670d}\u{52a1}\u{5668}\u{7248}\u{672c}".into(),
+        );
+        m.insert(
+            "auth_status.auth_capabilities".into(),
+            "\u{8ba4}\u{8bc1}\u{80fd}\u{529b}".into(),
+        );
         m.insert("auth_status.auth_capabilities_desc".into(), "\u{6b64}\u{670d}\u{52a1}\u{5668}\u{652f}\u{6301}\u{7684}\u{767b}\u{5f55}\u{65b9}\u{5f0f}".into());
-        m.insert("auth_status.login_flows".into(), "\u{767b}\u{5f55}\u{6d41}".into());
+        m.insert(
+            "auth_status.login_flows".into(),
+            "\u{767b}\u{5f55}\u{6d41}".into(),
+        );
         m.insert("auth_status.no_password_warning".into(), "\u{6b64}\u{670d}\u{52a1}\u{5668}\u{4e0d}\u{652f}\u{6301}\u{5bc6}\u{7801}\u{767b}\u{5f55}\u{3002}\u{7528}\u{6237}\u{5fc5}\u{987b}\u{901a}\u{8fc7} SSO \u{6216}\u{8bbf}\u{95ee}\u{4ee4}\u{724c}\u{8fdb}\u{884c}\u{8eab}\u{4efd}\u{9a8c}\u{8bc1}\u{3002}".into());
         m.insert("auth_status.sso_only_hint".into(), "\u{6b64}\u{670d}\u{52a1}\u{5668}\u{914d}\u{7f6e}\u{4e3a}\u{4ec5} SSO \u{8ba4}\u{8bc1}\u{3002}\u{7ba1}\u{7406}\u{5458}\u{8bbf}\u{95ee}\u{9700}\u{8981}\u{8bbf}\u{95ee}\u{4ee4}\u{724c}\u{6216} SSO \u{4f1a}\u{8bdd}\u{3002}".into());
-        m.insert("auth_status.diagnostics_title".into(), "\u{59d4}\u{6258}\u{8ba4}\u{8bc1}\u{8bca}\u{65ad}".into());
+        m.insert(
+            "auth_status.diagnostics_title".into(),
+            "\u{59d4}\u{6258}\u{8ba4}\u{8bc1}\u{8bca}\u{65ad}".into(),
+        );
         m.insert("auth_status.diagnostics_desc".into(), "\u{68c0}\u{67e5} OIDC/MAS \u{53d1}\u{884c}\u{8005}\u{53d1}\u{73b0}\u{3001}\u{7aef}\u{70b9}\u{53ef}\u{7528}\u{6027}\u{3001}DCR \u{652f}\u{6301}\u{548c}\u{4f5c}\u{7528}\u{57df}\u{914d}\u{7f6e}".into());
-        m.insert("auth_status.dev_diagnostics_title".into(), "\u{5f00}\u{53d1}\u{8bca}\u{65ad}".into());
+        m.insert(
+            "auth_status.dev_diagnostics_title".into(),
+            "\u{5f00}\u{53d1}\u{8bca}\u{65ad}".into(),
+        );
         m.insert("auth_status.dev_diagnostics_desc".into(), "\u{63a2}\u{6d4b} MAS/Pasion \u{7aef}\u{70b9}\u{4ee5}\u{8c03}\u{8bd5}\u{6ce8}\u{518c}\u{3001}\u{540c}\u{610f}\u{548c} well-known \u{53d1}\u{73b0}".into());
         m.insert("nav.palpo_admin".into(), "Palpo Admin".into());
         m.insert("nav.server".into(), "\u{670d}\u{52a1}\u{5668}".into());
@@ -1355,18 +1434,9 @@ impl I18n {
             "users.revoke_all_sessions".into(),
             "\u{64a4}\u{9500}\u{6240}\u{6709}\u{4f1a}\u{8bdd}".into(),
         );
-        m.insert(
-            "users.remove_threepid".into(),
-            "\u{79fb}\u{9664}".into(),
-        );
-        m.insert(
-            "users.verified".into(),
-            "\u{5df2}\u{9a8c}\u{8bc1}".into(),
-        );
-        m.insert(
-            "users.unverified".into(),
-            "\u{672a}\u{9a8c}\u{8bc1}".into(),
-        );
+        m.insert("users.remove_threepid".into(), "\u{79fb}\u{9664}".into());
+        m.insert("users.verified".into(), "\u{5df2}\u{9a8c}\u{8bc1}".into());
+        m.insert("users.unverified".into(), "\u{672a}\u{9a8c}\u{8bc1}".into());
         m.insert("common.remove".into(), "\u{79fb}\u{9664}".into());
         m.insert("common.enable".into(), "\u{542f}\u{7528}".into());
         m.insert("common.user".into(), "\u{7528}\u{6237}".into());
@@ -1533,19 +1603,46 @@ impl I18n {
             "\u{521b}\u{5efa}\u{65f6}\u{95f4}".into(),
         );
         m.insert("rooms.kick".into(), "\u{8e22}\u{51fa}".into());
-        m.insert("rooms.unban".into(), "\u{89e3}\u{9664}\u{5c01}\u{7981}".into());
+        m.insert(
+            "rooms.unban".into(),
+            "\u{89e3}\u{9664}\u{5c01}\u{7981}".into(),
+        );
         m.insert("rooms.invite".into(), "\u{9080}\u{8bf7}".into());
-        m.insert("rooms.promote".into(), "\u{8bbe}\u{4e3a}\u{7ba1}\u{7406}\u{5458}".into());
-        m.insert("rooms.invite_user_id".into(), "\u{8981}\u{9080}\u{8bf7}\u{7684}\u{7528}\u{6237} ID".into());
-        m.insert("rooms.edit_room".into(), "\u{7f16}\u{8f91}\u{623f}\u{95f4}".into());
-        m.insert("rooms.save_changes".into(), "\u{4fdd}\u{5b58}\u{66f4}\u{6539}".into());
-        m.insert("rooms.add_alias".into(), "\u{6dfb}\u{52a0}\u{522b}\u{540d}".into());
+        m.insert(
+            "rooms.promote".into(),
+            "\u{8bbe}\u{4e3a}\u{7ba1}\u{7406}\u{5458}".into(),
+        );
+        m.insert(
+            "rooms.invite_user_id".into(),
+            "\u{8981}\u{9080}\u{8bf7}\u{7684}\u{7528}\u{6237} ID".into(),
+        );
+        m.insert(
+            "rooms.edit_room".into(),
+            "\u{7f16}\u{8f91}\u{623f}\u{95f4}".into(),
+        );
+        m.insert(
+            "rooms.save_changes".into(),
+            "\u{4fdd}\u{5b58}\u{66f4}\u{6539}".into(),
+        );
+        m.insert(
+            "rooms.add_alias".into(),
+            "\u{6dfb}\u{52a0}\u{522b}\u{540d}".into(),
+        );
         m.insert("rooms.delete_alias".into(), "\u{5220}\u{9664}".into());
         m.insert("rooms.new_alias".into(), "\u{65b0}\u{522b}\u{540d}".into());
         m.insert("rooms.forward_extremities".into(), "前向极端事件".into());
-        m.insert("rooms.forward_extremities_desc".into(), "前向极端事件是房间 DAG 中的叶子事件。多个极端事件可能表示碎片化。".into());
-        m.insert("rooms.no_forward_extremities".into(), "没有找到前向极端事件。".into());
-        m.insert("rooms.forward_extremities_warning".into(), "警告：检测到多个前向极端事件。这可能表示 DAG 碎片化，可能影响性能。".into());
+        m.insert(
+            "rooms.forward_extremities_desc".into(),
+            "前向极端事件是房间 DAG 中的叶子事件。多个极端事件可能表示碎片化。".into(),
+        );
+        m.insert(
+            "rooms.no_forward_extremities".into(),
+            "没有找到前向极端事件。".into(),
+        );
+        m.insert(
+            "rooms.forward_extremities_warning".into(),
+            "警告：检测到多个前向极端事件。这可能表示 DAG 碎片化，可能影响性能。".into(),
+        );
         m.insert("rooms.count".into(), "数量".into());
         m.insert("rooms.directory_listing".into(), "目录列表".into());
         m.insert("rooms.published".into(), "已发布".into());
@@ -1553,7 +1650,10 @@ impl I18n {
         m.insert("rooms.publish".into(), "发布".into());
         m.insert("rooms.unpublish".into(), "取消发布".into());
         m.insert("rooms.event_lookup".into(), "事件查找".into());
-        m.insert("rooms.event_lookup_desc".into(), "通过事件 ID 查找任意事件。".into());
+        m.insert(
+            "rooms.event_lookup_desc".into(),
+            "通过事件 ID 查找任意事件。".into(),
+        );
         m.insert("rooms.lookup".into(), "查找".into());
 
         // Reports
@@ -1750,15 +1850,12 @@ impl I18n {
 
         // Pasion 共享 —— 状态标签
         m.insert("pasion.status_active".into(), "\u{6d3b}\u{8dc3}".into());
-        m.insert("pasion.status_revoked".into(), "\u{5df2}\u{64a4}\u{9500}".into());
         m.insert(
-            "pasion.status_healthy".into(),
-            "\u{5065}\u{5eb7}".into(),
+            "pasion.status_revoked".into(),
+            "\u{5df2}\u{64a4}\u{9500}".into(),
         );
-        m.insert(
-            "pasion.status_degraded".into(),
-            "\u{964d}\u{7ea7}".into(),
-        );
+        m.insert("pasion.status_healthy".into(), "\u{5065}\u{5eb7}".into());
+        m.insert("pasion.status_degraded".into(), "\u{964d}\u{7ea7}".into());
         m.insert(
             "pasion.status_unhealthy".into(),
             "\u{4e0d}\u{5065}\u{5eb7}".into(),
@@ -2105,14 +2202,36 @@ impl I18n {
             "registration_tokens.delete_token".into(),
             "\u{5220}\u{9664}\u{4ee4}\u{724c}".into(),
         );
-        m.insert("registration_tokens.search_placeholder".into(), "\u{641c}\u{7d22}\u{4ee4}\u{724c}...".into());
-        m.insert("registration_tokens.filter_all".into(), "\u{5168}\u{90e8}".into());
-        m.insert("registration_tokens.filter_active".into(), "\u{6d3b}\u{8dc3}".into());
-        m.insert("registration_tokens.filter_expired".into(), "\u{5df2}\u{8fc7}\u{671f}".into());
+        m.insert(
+            "registration_tokens.search_placeholder".into(),
+            "\u{641c}\u{7d22}\u{4ee4}\u{724c}...".into(),
+        );
+        m.insert(
+            "registration_tokens.filter_all".into(),
+            "\u{5168}\u{90e8}".into(),
+        );
+        m.insert(
+            "registration_tokens.filter_active".into(),
+            "\u{6d3b}\u{8dc3}".into(),
+        );
+        m.insert(
+            "registration_tokens.filter_expired".into(),
+            "\u{5df2}\u{8fc7}\u{671f}".into(),
+        );
         m.insert("registration_tokens.create_description".into(), "\u{521b}\u{5efa}\u{5e26}\u{53ef}\u{9009}\u{7ea6}\u{675f}\u{7684}\u{65b0}\u{6ce8}\u{518c}\u{4ee4}\u{724c}".into());
-        m.insert("registration_tokens.custom_token".into(), "\u{81ea}\u{5b9a}\u{4e49}\u{4ee4}\u{724c}\u{503c}".into());
-        m.insert("registration_tokens.custom_token_placeholder".into(), "\u{7559}\u{7a7a}\u{81ea}\u{52a8}\u{751f}\u{6210}".into());
-        m.insert("registration_tokens.custom_token_hint".into(), "\u{7559}\u{7a7a}\u{5c06}\u{81ea}\u{52a8}\u{751f}\u{6210}16\u{4f4d}\u{4ee4}\u{724c}".into());
+        m.insert(
+            "registration_tokens.custom_token".into(),
+            "\u{81ea}\u{5b9a}\u{4e49}\u{4ee4}\u{724c}\u{503c}".into(),
+        );
+        m.insert(
+            "registration_tokens.custom_token_placeholder".into(),
+            "\u{7559}\u{7a7a}\u{81ea}\u{52a8}\u{751f}\u{6210}".into(),
+        );
+        m.insert(
+            "registration_tokens.custom_token_hint".into(),
+            "\u{7559}\u{7a7a}\u{5c06}\u{81ea}\u{52a8}\u{751f}\u{6210}16\u{4f4d}\u{4ee4}\u{724c}"
+                .into(),
+        );
 
         // Destinations
         m.insert(
@@ -2164,9 +2283,18 @@ impl I18n {
         m.insert("destinations.failed".into(), "\u{5931}\u{8d25}".into());
         m.insert("destinations.ok".into(), "\u{6b63}\u{5e38}".into());
         m.insert("destinations.detail_description".into(), "\u{8054}\u{90a6}\u{76ee}\u{6807}\u{8be6}\u{60c5}\u{548c}\u{91cd}\u{8bd5}\u{72b6}\u{6001}".into());
-        m.insert("destinations.connection_info".into(), "\u{8fde}\u{63a5}\u{4fe1}\u{606f}".into());
-        m.insert("destinations.retry_info".into(), "\u{91cd}\u{8bd5}\u{4fe1}\u{606f}".into());
-        m.insert("destinations.last_successful_stream".into(), "\u{6700}\u{540e}\u{6210}\u{529f}\u{6d41}".into());
+        m.insert(
+            "destinations.connection_info".into(),
+            "\u{8fde}\u{63a5}\u{4fe1}\u{606f}".into(),
+        );
+        m.insert(
+            "destinations.retry_info".into(),
+            "\u{91cd}\u{8bd5}\u{4fe1}\u{606f}".into(),
+        );
+        m.insert(
+            "destinations.last_successful_stream".into(),
+            "\u{6700}\u{540e}\u{6210}\u{529f}\u{6d41}".into(),
+        );
         m.insert("destinations.status".into(), "\u{72b6}\u{6001}".into());
 
         // Billing

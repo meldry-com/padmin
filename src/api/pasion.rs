@@ -117,10 +117,7 @@ pub async fn pasion_get_users(
     page: u64,
     per_page: u64,
 ) -> Result<PasionListResponse<PasionUser>, HttpError> {
-    pasion_fetch_list(&format!(
-        "/users?page[number]={page}&page[size]={per_page}"
-    ))
-    .await
+    pasion_fetch_list(&format!("/users?page[number]={page}&page[size]={per_page}")).await
 }
 
 pub async fn pasion_get_user(id: &str) -> Result<PasionUser, HttpError> {
@@ -141,8 +138,12 @@ pub async fn pasion_update_user(
 
 pub async fn pasion_set_password(id: &str, password: &str) -> Result<(), HttpError> {
     let body = serde_json::json!({ "password": password });
-    let _: serde_json::Value =
-        pasion_fetch(&format!("/users/{id}/set-password"), "POST", Some(body.to_string())).await?;
+    let _: serde_json::Value = pasion_fetch(
+        &format!("/users/{id}/set-password"),
+        "POST",
+        Some(body.to_string()),
+    )
+    .await?;
     Ok(())
 }
 
@@ -160,9 +161,7 @@ pub async fn pasion_risk_action(id: &str, action: &str) -> Result<(), HttpError>
     Ok(())
 }
 
-pub async fn pasion_batch_invite(
-    emails: Vec<String>,
-) -> Result<serde_json::Value, HttpError> {
+pub async fn pasion_batch_invite(emails: Vec<String>) -> Result<serde_json::Value, HttpError> {
     let body = serde_json::json!({ "emails": emails });
     pasion_fetch("/users/batch-invite", "POST", Some(body.to_string())).await
 }
@@ -201,8 +200,7 @@ pub async fn pasion_update_user_email(
 }
 
 pub async fn pasion_delete_user_email(id: &str) -> Result<(), HttpError> {
-    let _: serde_json::Value =
-        pasion_fetch(&format!("/user-emails/{id}"), "DELETE", None).await?;
+    let _: serde_json::Value = pasion_fetch(&format!("/user-emails/{id}"), "DELETE", None).await?;
     Ok(())
 }
 
@@ -257,9 +255,11 @@ pub async fn pasion_finish_oauth2_session(id: &str) -> Result<(), HttpError> {
 // access token attached.
 
 pub async fn pasion_get_personal_sessions() -> Result<Vec<PasionPersonalSession>, HttpError> {
-    Ok(pasion_fetch_list::<PasionPersonalSession>("/personal-sessions")
-        .await?
-        .data)
+    Ok(
+        pasion_fetch_list::<PasionPersonalSession>("/personal-sessions")
+            .await?
+            .data,
+    )
 }
 
 pub async fn pasion_create_personal_session(
@@ -275,12 +275,7 @@ pub async fn pasion_get_personal_session(id: &str) -> Result<PasionPersonalSessi
 pub async fn pasion_regenerate_personal_session(
     id: &str,
 ) -> Result<PasionPersonalSession, HttpError> {
-    pasion_fetch_one(
-        &format!("/personal-sessions/{id}/regenerate"),
-        "POST",
-        None,
-    )
-    .await
+    pasion_fetch_one(&format!("/personal-sessions/{id}/regenerate"), "POST", None).await
 }
 
 pub async fn pasion_revoke_personal_session(id: &str) -> Result<(), HttpError> {
@@ -303,12 +298,7 @@ pub async fn pasion_get_registration_tokens() -> Result<Vec<PasionRegistrationTo
 pub async fn pasion_create_registration_token(
     data: serde_json::Value,
 ) -> Result<PasionRegistrationToken, HttpError> {
-    pasion_fetch_one(
-        "/user-registration-tokens",
-        "POST",
-        Some(data.to_string()),
-    )
-    .await
+    pasion_fetch_one("/user-registration-tokens", "POST", Some(data.to_string())).await
 }
 
 pub async fn pasion_update_registration_token(
@@ -346,26 +336,21 @@ pub async fn pasion_unrevoke_registration_token(id: &str) -> Result<(), HttpErro
 // ── Upstream OAuth Providers ───────────────────────────────────────────────
 
 pub async fn pasion_get_upstream_providers() -> Result<Vec<PasionUpstreamProvider>, HttpError> {
-    Ok(pasion_fetch_list::<PasionUpstreamProvider>("/upstream-oauth-providers")
-        .await?
-        .data)
+    Ok(
+        pasion_fetch_list::<PasionUpstreamProvider>("/upstream-oauth-providers")
+            .await?
+            .data,
+    )
 }
 
-pub async fn pasion_get_upstream_provider(
-    id: &str,
-) -> Result<PasionUpstreamProvider, HttpError> {
+pub async fn pasion_get_upstream_provider(id: &str) -> Result<PasionUpstreamProvider, HttpError> {
     pasion_fetch_one(&format!("/upstream-oauth-providers/{id}"), "GET", None).await
 }
 
 pub async fn pasion_create_upstream_provider(
     data: serde_json::Value,
 ) -> Result<PasionUpstreamProvider, HttpError> {
-    pasion_fetch_one(
-        "/upstream-oauth-providers",
-        "POST",
-        Some(data.to_string()),
-    )
-    .await
+    pasion_fetch_one("/upstream-oauth-providers", "POST", Some(data.to_string())).await
 }
 
 pub async fn pasion_update_upstream_provider(
@@ -441,15 +426,8 @@ pub async fn pasion_delete_upstream_link(id: &str) -> Result<(), HttpError> {
 
 // ── Audit Log ──────────────────────────────────────────────────────────────
 
-pub async fn pasion_get_audit_feed(
-    cursor: Option<&str>,
-    limit: u64,
-) -> Result<PasionAuditFeedResponse, HttpError> {
-    let path = if let Some(c) = cursor {
-        format!("/audit-feed?page[after]={c}&page[size]={limit}")
-    } else {
-        format!("/audit-feed?page[size]={limit}")
-    };
+pub async fn pasion_get_audit_feed(limit: u64) -> Result<PasionAuditFeedResponse, HttpError> {
+    let path = format!("/audit-feed?limit={limit}");
     pasion_fetch(&path, "GET", None).await
 }
 
@@ -474,8 +452,8 @@ pub async fn pasion_get_notification_channels() -> Result<Vec<PasionNotification
 // ── Notification Templates ─────────────────────────────────────────────────
 // Pasion returns `{templates: [{key, description}]}` (not JSON:API).
 
-pub async fn pasion_get_notification_templates(
-) -> Result<Vec<PasionNotificationTemplate>, HttpError> {
+pub async fn pasion_get_notification_templates()
+-> Result<Vec<PasionNotificationTemplate>, HttpError> {
     let raw: serde_json::Value = pasion_fetch("/notification-templates", "GET", None).await?;
     let templates = raw
         .get("templates")
@@ -490,8 +468,12 @@ pub async fn pasion_get_notification_templates(
 }
 
 pub async fn pasion_publish_template(data: serde_json::Value) -> Result<(), HttpError> {
-    let _: serde_json::Value =
-        pasion_fetch("/notification-templates", "POST", Some(data.to_string())).await?;
+    let _: serde_json::Value = pasion_fetch(
+        "/notification-templates/publish",
+        "POST",
+        Some(data.to_string()),
+    )
+    .await?;
     Ok(())
 }
 

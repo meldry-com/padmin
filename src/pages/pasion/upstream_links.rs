@@ -19,8 +19,16 @@ pub fn UpstreamLinksPage() -> Element {
         let uid = user_filter.read().clone();
         let pid = provider_filter.read().clone();
         async move {
-            let user = if uid.is_empty() { None } else { Some(uid.as_str()) };
-            let provider = if pid.is_empty() { None } else { Some(pid.as_str()) };
+            let user = if uid.is_empty() {
+                None
+            } else {
+                Some(uid.as_str())
+            };
+            let provider = if pid.is_empty() {
+                None
+            } else {
+                Some(pid.as_str())
+            };
             pasion::pasion_get_upstream_links(user, provider).await
         }
     });
@@ -100,9 +108,9 @@ pub fn UpstreamLinksPage() -> Element {
                                         {
                                             let lid = link.id.clone();
                                             let lid2 = lid.clone();
-                                            let user_id = link.user_id.clone();
-                                            let provider = link.provider_name.clone()
-                                                .unwrap_or_else(|| link.upstream_provider_id.clone());
+                                            let user_id = link.user_id.clone().unwrap_or_else(|| "-".to_string());
+                                            let provider_id = link.provider_id.clone();
+                                            let account_name = link.human_account_name.clone();
                                             let subject = link.subject.clone();
                                             let created = link.created_at.clone();
 
@@ -112,7 +120,14 @@ pub fn UpstreamLinksPage() -> Element {
                                                         span { class: "text-xs font-mono", "{user_id}" }
                                                     }
                                                     TableCell {
-                                                        span { class: "text-sm", "{provider}" }
+                                                        div { class: "space-y-1",
+                                                            span { class: "text-xs font-mono", "{provider_id}" }
+                                                            if let Some(account_name) = account_name.clone() {
+                                                                if !account_name.is_empty() {
+                                                                    div { class: "text-xs text-muted-foreground", "{account_name}" }
+                                                                }
+                                                            }
+                                                        }
                                                     }
                                                     TableCell {
                                                         span { class: "text-xs font-mono text-muted-foreground", "{subject}" }

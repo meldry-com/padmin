@@ -299,9 +299,7 @@ fn default_namespaces(template: &Template) -> String {
             template.alias_prefix
         )
     };
-    format!(
-        "{{\n  \"users\": {users},\n  \"aliases\": {aliases},\n  \"rooms\": []\n}}"
-    )
+    format!("{{\n  \"users\": {users},\n  \"aliases\": {aliases},\n  \"rooms\": []\n}}")
 }
 
 // ── Configure form state ─────────────────────────────────────────────────────
@@ -439,9 +437,7 @@ pub fn AppserviceList() -> Element {
                         delete_target.set(None);
                         data.restart();
                     }
-                    Err(e) => {
-                        show_toast(&format!("Failed: {}", e.message), ToastVariant::Error)
-                    }
+                    Err(e) => show_toast(&format!("Failed: {}", e.message), ToastVariant::Error),
                 }
             });
         }

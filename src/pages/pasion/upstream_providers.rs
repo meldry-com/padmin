@@ -22,8 +22,6 @@ use crate::utils::i18n::t;
 
 #[derive(Default, Clone, PartialEq)]
 struct ProviderForm {
-    /// When `Some`, we are editing an existing provider; otherwise creating.
-    id: Option<String>,
     issuer: String,
     human_name: String,
     brand_name: String,
@@ -49,15 +47,6 @@ impl ProviderForm {
             ..Default::default()
         }
     }
-}
-
-fn provider_type_badge(provider_type: &str) -> Element {
-    let variant = match provider_type {
-        "generic" => BadgeVariant::Secondary,
-        "qq" | "wechat" | "wecom" | "feishu" | "lark" | "dingtalk" => BadgeVariant::Default,
-        _ => BadgeVariant::Outline,
-    };
-    rsx! { Badge { variant, "{provider_type}" } }
 }
 
 #[component]
@@ -115,18 +104,14 @@ pub fn UpstreamProvidersPage() -> Element {
             }
         }
 
-        let editing = f.id.clone();
         saving.set(true);
         spawn(async move {
-            let res = match editing {
-                Some(id) => pasion::pasion_update_upstream_provider(&id, body).await,
-                None => pasion::pasion_create_upstream_provider(body).await,
-            };
+            let res = pasion::pasion_create_upstream_provider(body).await;
             match res {
                 Ok(_) => {
-                    show_toast("Provider saved", ToastVariant::Success);
+                    show_toast("Provider created", ToastVariant::Success);
                     form_open.set(false);
-                    form.set(ProviderForm::default());
+                    form.set(ProviderForm::for_create());
                     providers_data.restart();
                 }
                 Err(e) => show_toast(&format!("Failed: {}", e.message), ToastVariant::Error),
@@ -145,9 +130,7 @@ pub fn UpstreamProvidersPage() -> Element {
                         delete_target.set(None);
                         providers_data.restart();
                     }
-                    Err(e) => {
-                        show_toast(&format!("Failed: {}", e.message), ToastVariant::Error)
-                    }
+                    Err(e) => show_toast(&format!("Failed: {}", e.message), ToastVariant::Error),
                 }
             });
         }
@@ -182,7 +165,6 @@ pub fn UpstreamProvidersPage() -> Element {
                             TableHeader {
                                 TableRow {
                                     TableHead { "Name" }
-                                    TableHead { "Type" }
                                     TableHead { "Issuer" }
                                     TableHead { "Source" }
                                     TableHead { "Status" }
@@ -191,50 +173,48 @@ pub fn UpstreamProvidersPage() -> Element {
                             }
                             TableBody {
                                 if providers.is_empty() {
-                                    EmptyRow { colspan: 6, message: t("pasion.upstream_providers.empty") }
+                                    EmptyRow { colspan: 5, message: t("pasion.upstream_providers.empty") }
                                 } else {
                                     for provider in providers.iter() {
                                         {
                                             let pid = provider.id.clone();
-                                            let pid_edit = pid.clone();
                                             let pid_toggle = pid.clone();
                                             let pid_delete = pid.clone();
                                             let display_name = provider
                                                 .human_name
                                                 .clone()
                                                 .filter(|s| !s.is_empty())
-                                                .unwrap_or_else(|| provider.name.clone());
-                                            let ptype = provider
-                                                .provider_type
-                                                .clone()
-                                                .unwrap_or_else(|| "generic".into());
+                                                .or_else(|| {
+                                                    provider
+                                                        .brand_name
+                                                        .clone()
+                                                        .filter(|s| !s.is_empty())
+                                                })
+                                                .or_else(|| {
+                                                    provider
+                                                        .issuer
+                                                        .clone()
+                                                        .filter(|s| !s.is_empty())
+                                                })
+                                                .unwrap_or_else(|| pid.clone());
                                             let issuer = provider.issuer.clone().unwrap_or_else(|| "-".into());
                                             let source = provider.source.clone().unwrap_or_else(|| "manual".into());
                                             let is_config = source == "config";
                                             let is_disabled = provider.disabled_at.is_some();
                                             let busy = toggling.read().as_deref() == Some(pid.as_str());
 
-                                            // Snapshot for the edit handler so it can hydrate the form.
-                                            let prefill = ProviderForm {
-                                                id: Some(pid.clone()),
-                                                issuer: provider.issuer.clone().unwrap_or_default(),
-                                                human_name: provider.human_name.clone().unwrap_or_default(),
-                                                brand_name: provider.brand_name.clone().unwrap_or_default(),
-                                                client_id: provider.client_id.clone().unwrap_or_default(),
-                                                client_secret: String::new(),
-                                                scope: provider.scope.clone().unwrap_or_else(|| "openid email profile".into()),
-                                                token_endpoint_auth_method: "client_secret_basic".into(),
-                                                id_token_signed_response_alg: "RS256".into(),
-                                                discovery_mode: "oidc".into(),
-                                                pkce_mode: "auto".into(),
-                                                fetch_userinfo: false,
-                                                claims_imports: String::new(),
-                                            };
-
                                             rsx! {
                                                 TableRow { key: "{pid}",
-                                                    TableCell { span { class: "font-medium", "{display_name}" } }
-                                                    TableCell { {provider_type_badge(&ptype)} }
+                                                    TableCell {
+                                                        div { class: "space-y-1",
+                                                            span { class: "font-medium", "{display_name}" }
+                                                            if let Some(brand_name) = provider.brand_name.clone() {
+                                                                if !brand_name.is_empty() {
+                                                                    div { class: "text-xs text-muted-foreground", "{brand_name}" }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
                                                     TableCell {
                                                         span { class: "text-xs text-muted-foreground font-mono", "{issuer}" }
                                                     }
@@ -253,17 +233,6 @@ pub fn UpstreamProvidersPage() -> Element {
                                                         }
                                                     }
                                                     TableCell { class: "text-right space-x-1".to_string(),
-                                                        if !is_config {
-                                                            Button {
-                                                                variant: ButtonVariant::Ghost,
-                                                                size: ButtonSize::Sm,
-                                                                onclick: move |_| {
-                                                                    form.set(prefill.clone());
-                                                                    form_open.set(true);
-                                                                },
-                                                                "Edit"
-                                                            }
-                                                        }
                                                         Button {
                                                             variant: ButtonVariant::Ghost,
                                                             size: ButtonSize::Sm,
@@ -304,8 +273,6 @@ pub fn UpstreamProvidersPage() -> Element {
                                                                 "Delete"
                                                             }
                                                         }
-                                                        // Avoid an unused-variable warning when the Edit button isn't rendered.
-                                                        { let _ = &pid_edit; rsx!{} }
                                                     }
                                                 }
                                             }
@@ -333,9 +300,7 @@ pub fn UpstreamProvidersPage() -> Element {
                     onclick: move |_| if !is_saving { form_open.set(false); },
                 }
                 div { class: "relative z-50 w-full max-w-2xl rounded-lg border bg-background p-6 shadow-lg max-h-[90vh] overflow-y-auto",
-                    h2 { class: "text-lg font-semibold",
-                        if form.read().id.is_some() { "Edit Upstream Provider" } else { "Add Upstream Provider" }
-                    }
+                    h2 { class: "text-lg font-semibold", "Add Upstream Provider" }
                     p { class: "text-sm text-muted-foreground mb-4",
                         "Configure an OIDC / OAuth2 identity provider that users can sign in with."
                     }
@@ -379,7 +344,7 @@ pub fn UpstreamProvidersPage() -> Element {
                             Label { "Client secret" }
                             Input {
                                 r#type: "password".to_string(),
-                                placeholder: if form.read().id.is_some() { "Leave blank to keep existing".to_string() } else { String::new() },
+                                placeholder: String::new(),
                                 value: form.read().client_secret.clone(),
                                 oninput: move |e: FormEvent| form.write().client_secret = e.value(),
                                 disabled: is_saving,
@@ -463,7 +428,7 @@ pub fn UpstreamProvidersPage() -> Element {
                             disabled: is_saving,
                             onclick: handle_save,
                             if is_saving { Spinner { class: "mr-2".to_string() } }
-                            "Save"
+                            "Create"
                         }
                     }
                 }

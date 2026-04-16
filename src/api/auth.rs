@@ -82,8 +82,7 @@ pub async fn start_oauth_login() {
 
     // Use Pasion's public URL for the browser redirect.
     // The /authorize endpoint is on Pasion's domain (not proxied through padmin).
-    let pasion_base = crate::utils::config::get_pasion_public_url()
-        .unwrap_or_default();
+    let pasion_base = crate::utils::config::get_pasion_public_url().unwrap_or_default();
 
     let auth_url = format!(
         "{pasion_base}/authorize?response_type=code\
@@ -148,7 +147,9 @@ pub async fn handle_oauth_callback(code: &str) -> Result<(), HttpError> {
     let text = response.text().await.map_err(|e| make_err(e.to_string()))?;
 
     if status >= 400 {
-        return Err(make_err(format!("Token exchange failed ({status}): {text}")));
+        return Err(make_err(format!(
+            "Token exchange failed ({status}): {text}"
+        )));
     }
 
     let token_resp: TokenResponse =
@@ -171,8 +172,7 @@ pub async fn handle_oauth_callback(code: &str) -> Result<(), HttpError> {
         .map_err(|e| make_err(e.to_string()))?;
 
     if userinfo.status() < 400 {
-        let info: serde_json::Value =
-            userinfo.json().await.map_err(|e| make_err(e.to_string()))?;
+        let info: serde_json::Value = userinfo.json().await.map_err(|e| make_err(e.to_string()))?;
         if let Some(sub) = info.get("sub").and_then(|v| v.as_str()) {
             storage::set_item("user_id", sub);
         }
@@ -311,8 +311,8 @@ pub async fn refresh_oauth_token() -> bool {
 /// The result is cached in `localStorage.is_admin` so subsequent page
 /// loads don't re-probe. [`logout`] clears the cache.
 pub async fn verify_admin() -> Result<bool, HttpError> {
-    let access_token = storage::get_item("access_token")
-        .ok_or_else(|| make_err("Not authenticated".into()))?;
+    let access_token =
+        storage::get_item("access_token").ok_or_else(|| make_err("Not authenticated".into()))?;
 
     let response = Request::get("/_palpo/admin/v1/server_version")
         .header("Accept", "application/json")
@@ -409,21 +409,31 @@ pub async fn get_identity() -> Option<(String, Option<String>, Option<String>)> 
 // ── Utility endpoints (used by auth_status page) ─────────────────────────────
 
 fn make_err(msg: String) -> HttpError {
-    HttpError { message: msg, status: 0, body: None, request_id: None }
+    HttpError {
+        message: msg,
+        status: 0,
+        body: None,
+        request_id: None,
+    }
 }
 
 pub async fn get_login_flows(_base_url: &str) -> Result<Vec<LoginFlow>, HttpError> {
     let response = Request::get("/_matrix/client/v3/login")
         .header("Accept", "application/json")
-        .send().await.map_err(|e| make_err(e.to_string()))?;
-    let flows_resp: LoginFlowsResponse = response.json().await.map_err(|e| make_err(e.to_string()))?;
+        .send()
+        .await
+        .map_err(|e| make_err(e.to_string()))?;
+    let flows_resp: LoginFlowsResponse =
+        response.json().await.map_err(|e| make_err(e.to_string()))?;
     Ok(flows_resp.flows)
 }
 
 pub async fn get_auth_issuer(_base_url: &str) -> Result<serde_json::Value, HttpError> {
     let response = Request::get("/_matrix/client/unstable/org.matrix.msc2965/auth_issuer")
         .header("Accept", "application/json")
-        .send().await.map_err(|e| make_err(e.to_string()))?;
+        .send()
+        .await
+        .map_err(|e| make_err(e.to_string()))?;
     if response.status() >= 400 {
         return Err(make_err(format!("HTTP {}", response.status())));
     }
@@ -431,10 +441,15 @@ pub async fn get_auth_issuer(_base_url: &str) -> Result<serde_json::Value, HttpE
 }
 
 pub async fn get_oidc_discovery(issuer_url: &str) -> Result<serde_json::Value, HttpError> {
-    let url = format!("{}/.well-known/openid-configuration", issuer_url.trim_end_matches('/'));
+    let url = format!(
+        "{}/.well-known/openid-configuration",
+        issuer_url.trim_end_matches('/')
+    );
     let response = Request::get(&url)
         .header("Accept", "application/json")
-        .send().await.map_err(|e| make_err(e.to_string()))?;
+        .send()
+        .await
+        .map_err(|e| make_err(e.to_string()))?;
     if response.status() >= 400 {
         return Err(make_err(format!("HTTP {}", response.status())));
     }

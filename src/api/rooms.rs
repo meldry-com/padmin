@@ -289,8 +289,9 @@ pub async fn set_room_state(
     let encoded_type = urlencoding::encode(event_type);
     let encoded_key = urlencoding::encode(state_key);
     let base_url = get_base_url()?;
-    let url =
-        format!("{base_url}/_matrix/client/v3/rooms/{encoded_room}/state/{encoded_type}/{encoded_key}");
+    let url = format!(
+        "{base_url}/_matrix/client/v3/rooms/{encoded_room}/state/{encoded_type}/{encoded_key}"
+    );
     let body = content.to_string();
     let _: serde_json::Value = api_client(&url, "PUT", Some(body)).await?;
     invalidate_room_related_caches();
@@ -298,7 +299,13 @@ pub async fn set_room_state(
 }
 
 pub async fn set_room_name(room_id: &str, name: &str) -> Result<(), HttpError> {
-    set_room_state(room_id, "m.room.name", "", serde_json::json!({ "name": name })).await
+    set_room_state(
+        room_id,
+        "m.room.name",
+        "",
+        serde_json::json!({ "name": name }),
+    )
+    .await
 }
 
 pub async fn set_room_topic(room_id: &str, topic: &str) -> Result<(), HttpError> {
@@ -321,10 +328,7 @@ pub async fn set_room_join_rules(room_id: &str, join_rule: &str) -> Result<(), H
     .await
 }
 
-pub async fn set_room_history_visibility(
-    room_id: &str,
-    visibility: &str,
-) -> Result<(), HttpError> {
+pub async fn set_room_history_visibility(room_id: &str, visibility: &str) -> Result<(), HttpError> {
     set_room_state(
         room_id,
         "m.room.history_visibility",
@@ -355,10 +359,7 @@ pub async fn delete_room_alias(alias: &str) -> Result<(), HttpError> {
 
 pub async fn get_room_hierarchy(room_id: &str) -> Result<Vec<HierarchyRoom>, HttpError> {
     let encoded = urlencoding::encode(room_id);
-    let url = build_url(
-        &format!("/_palpo/admin/v1/rooms/{encoded}/hierarchy"),
-        &[],
-    )?;
+    let url = build_url(&format!("/_palpo/admin/v1/rooms/{encoded}/hierarchy"), &[])?;
     let response: HierarchyResponse = api_client(&url, "GET", None).await?;
     Ok(response.rooms)
 }
@@ -377,10 +378,7 @@ pub async fn get_forward_extremities(
 
 pub async fn fetch_event(event_id: &str) -> Result<serde_json::Value, HttpError> {
     let encoded = urlencoding::encode(event_id);
-    let url = build_url(
-        &format!("/_palpo/admin/v1/fetch_event/{encoded}"),
-        &[],
-    )?;
+    let url = build_url(&format!("/_palpo/admin/v1/fetch_event/{encoded}"), &[])?;
 
     #[derive(serde::Deserialize)]
     struct Resp {
@@ -405,10 +403,7 @@ pub async fn get_room_directory_visibility(room_id: &str) -> Result<bool, HttpEr
     Ok(response.visibility == "public")
 }
 
-pub async fn set_room_directory_visibility(
-    room_id: &str,
-    public: bool,
-) -> Result<(), HttpError> {
+pub async fn set_room_directory_visibility(room_id: &str, public: bool) -> Result<(), HttpError> {
     let encoded = urlencoding::encode(room_id);
     let base_url = get_base_url()?;
     let url = format!("{base_url}/_matrix/client/v3/directory/list/room/{encoded}");
