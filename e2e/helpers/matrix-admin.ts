@@ -166,6 +166,39 @@ export async function matrixSendMessage(
 }
 
 /**
+ * Report an event in a room to the homeserver admins.
+ */
+export async function matrixReportEvent(
+  request: APIRequestContext,
+  accessToken: string,
+  roomId: string,
+  eventId: string,
+  options: {
+    reason?: string;
+    score?: number;
+  } = {}
+): Promise<void> {
+  const encodedRoomId = encodeURIComponent(roomId);
+  const encodedEventId = encodeURIComponent(eventId);
+
+  const resp = await request.post(
+    `${PALPO_URL}/_matrix/client/v3/rooms/${encodedRoomId}/report/${encodedEventId}`,
+    {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      data: {
+        reason: options.reason,
+        score: options.score,
+      },
+    }
+  );
+
+  if (!resp.ok()) {
+    const responseBody = await resp.text();
+    throw new Error(`Report event failed (${resp.status()}): ${responseBody}`);
+  }
+}
+
+/**
  * Poll /sync until a room message body becomes visible to the target user.
  */
 export async function syncUntilMessage(
