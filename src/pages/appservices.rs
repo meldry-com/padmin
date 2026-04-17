@@ -738,7 +738,7 @@ fn ConfigureDialog(
                 class: "fixed inset-0 bg-black/80",
                 onclick: move |e| on_close.call(e),
             }
-            div { class: "relative z-50 my-4 flex w-full max-w-2xl flex-col overflow-hidden rounded-lg border bg-background shadow-lg max-h-[calc(100vh-2rem)]",
+            div { class: "relative z-50 my-4 flex min-h-0 w-full max-w-2xl flex-col overflow-hidden rounded-lg border bg-background shadow-lg max-h-[calc(100vh-2rem)]",
                 // Header with template brand
                 div { class: "flex items-start gap-4 border-b p-6",
                     div { class: "flex h-10 w-10 items-center justify-center rounded-lg {accent} shrink-0",
@@ -757,7 +757,7 @@ fn ConfigureDialog(
                 }
 
                 // Body — form fields
-                div { class: "flex-1 overflow-y-auto p-6 space-y-4",
+                div { class: "min-h-0 flex-1 overflow-y-auto p-6 space-y-4",
                     if !notes.is_empty() {
                         div { class: "rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground flex gap-2",
                             Icon { name: "info".to_string(), class: "h-4 w-4 shrink-0 mt-0.5".to_string() }

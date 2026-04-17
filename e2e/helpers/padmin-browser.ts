@@ -91,8 +91,7 @@ export async function createAppservice(
     await button.click();
   }
 
-  const dialog = page.getByRole("heading", { name: /Install Custom Appservice/i }).locator("..").locator("..");
-  const install = dialog.getByRole("button", { name: "Install", exact: true });
+  const install = page.getByRole("button", { name: "Install", exact: true }).last();
   await install.scrollIntoViewIfNeeded().catch(() => {});
   await install.click();
   await expect(page.locator("main")).toContainText(details.id);

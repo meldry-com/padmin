@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y binaryen && rm -rf /var/lib/apt/lists/*
 
 RUN --mount=type=cache,id=padmin-cargo-registry,target=/usr/local/cargo/registry \
     --mount=type=cache,id=padmin-cargo-git,target=/usr/local/cargo/git \
-    cargo install dioxus-cli@0.7.4 --locked
+    cargo install dioxus-cli@0.7.5 --locked
 
 WORKDIR /app
 

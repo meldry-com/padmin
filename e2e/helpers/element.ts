@@ -5,11 +5,30 @@ import { ELEMENT_URL } from "./services";
 export async function loginElement(page: Page): Promise<void> {
   await page.goto(`${ELEMENT_URL}/#/login`);
   await page.getByRole("button", { name: "Continue" }).click();
-  await allowPasionConsentIfPresent(page);
-  await page.waitForURL("**/#/home", { timeout: 30_000 });
-  await expect(page.getByRole("button", { name: "User menu" })).toBeVisible({
-    timeout: 30_000,
-  });
+  const deadline = Date.now() + 45_000;
+  const userMenu = page.getByRole("button", { name: "User menu" });
+
+  while (Date.now() < deadline) {
+    await allowPasionConsentIfPresent(page);
+
+    const skipVerification = page.getByLabel("Skip verification for now");
+    if (await skipVerification.isVisible().catch(() => false)) {
+      await skipVerification.click();
+    }
+
+    const verifyLater = page.getByRole("button", { name: /I'll verify later/i });
+    if (await verifyLater.isVisible().catch(() => false)) {
+      await verifyLater.click();
+    }
+
+    if (await userMenu.isVisible().catch(() => false)) {
+      return;
+    }
+
+    await page.waitForTimeout(500);
+  }
+
+  await expect(userMenu).toBeVisible({ timeout: 5_000 });
 }
 
 export async function createRoom(
