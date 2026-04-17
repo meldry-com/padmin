@@ -8,7 +8,24 @@ use crate::components::ui::input::{Input, Label};
 use crate::components::ui::loading::{LoadingSkeleton, Spinner};
 use crate::components::ui::table::*;
 use crate::components::ui::toast::{ToastVariant, show_toast};
-use crate::types::ScheduledCommand;
+use crate::types::{RecurringCommand, ScheduledCommand};
+
+fn command_args_input(args: &Option<serde_json::Value>) -> String {
+    args.as_ref()
+        .map(|value| match value {
+            serde_json::Value::String(text) => text.clone(),
+            _ => value.to_string(),
+        })
+        .unwrap_or_default()
+}
+
+fn command_args_value(input: &str) -> Option<serde_json::Value> {
+    if input.is_empty() {
+        None
+    } else {
+        Some(serde_json::json!(input))
+    }
+}
 
 // ── Scheduled Commands List ──
 
@@ -21,6 +38,7 @@ pub fn ScheduledCommandsList(palpo_admin_url: String) -> Element {
         async move { palpo_admin::get_scheduled_commands(&u).await.ok() }
     });
     let mut show_create = use_signal(|| false);
+    let mut edit_command = use_signal(|| Option::<ScheduledCommand>::None);
     let mut delete_id = use_signal(|| Option::<String>::None);
 
     rsx! {
@@ -29,7 +47,10 @@ pub fn ScheduledCommandsList(palpo_admin_url: String) -> Element {
                 CardTitle { class: "text-base".to_string(), "Scheduled Commands" }
                 Button {
                     size: ButtonSize::Sm,
-                    onclick: move |_| show_create.set(true),
+                    onclick: move |_| {
+                        edit_command.set(None);
+                        show_create.set(true);
+                    },
                     "Create"
                 }
             }
@@ -55,6 +76,7 @@ pub fn ScheduledCommandsList(palpo_admin_url: String) -> Element {
                                                 let name = cmd.command.clone();
                                                 let args = cmd.args.as_ref().map(|a| a.to_string()).unwrap_or_else(|| "-".to_string());
                                                 let scheduled = cmd.scheduled_at.clone().unwrap_or_else(|| "-".to_string());
+                                                let editable_cmd = cmd.clone();
                                                 let cmd_id = cmd.id.clone();
                                                 rsx! {
                                                     TableRow {
@@ -62,6 +84,15 @@ pub fn ScheduledCommandsList(palpo_admin_url: String) -> Element {
                                                         TableCell { class: "text-muted-foreground text-xs font-mono".to_string(), "{args}" }
                                                         TableCell { "{scheduled}" }
                                                         TableCell { class: "text-right".to_string(),
+                                                            Button {
+                                                                variant: ButtonVariant::Ghost,
+                                                                size: ButtonSize::Sm,
+                                                                onclick: move |_| {
+                                                                    show_create.set(false);
+                                                                    edit_command.set(Some(editable_cmd.clone()));
+                                                                },
+                                                                "Edit"
+                                                            }
                                                             Button {
                                                                 variant: ButtonVariant::Ghost,
                                                                 size: ButtonSize::Sm,
@@ -90,10 +121,19 @@ pub fn ScheduledCommandsList(palpo_admin_url: String) -> Element {
             }
         }
 
-        if *show_create.read() {
-            ScheduledCommandCreateDialog {
+        if *show_create.read() || edit_command.read().is_some() {
+            ScheduledCommandDialog {
                 palpo_admin_url: url.clone(),
-                on_close: move |_| { show_create.set(false); data.restart(); },
+                initial_command: edit_command.read().clone(),
+                on_close: move |_| {
+                    show_create.set(false);
+                    edit_command.set(None);
+                },
+                on_saved: move |_| {
+                    show_create.set(false);
+                    edit_command.set(None);
+                    data.restart();
+                },
             }
         }
 
@@ -125,11 +165,35 @@ pub fn ScheduledCommandsList(palpo_admin_url: String) -> Element {
 }
 
 #[component]
-fn ScheduledCommandCreateDialog(palpo_admin_url: String, on_close: EventHandler<()>) -> Element {
-    let mut command = use_signal(|| String::new());
-    let mut scheduled_at = use_signal(|| String::new());
-    let mut args = use_signal(|| String::new());
+fn ScheduledCommandDialog(
+    palpo_admin_url: String,
+    initial_command: Option<ScheduledCommand>,
+    on_close: EventHandler<()>,
+    on_saved: EventHandler<()>,
+) -> Element {
+    let initial_command_for_name = initial_command.clone();
+    let mut command = use_signal(move || {
+        initial_command_for_name
+            .as_ref()
+            .map(|cmd| cmd.command.clone())
+            .unwrap_or_default()
+    });
+    let initial_command_for_schedule = initial_command.clone();
+    let mut scheduled_at = use_signal(move || {
+        initial_command_for_schedule
+            .as_ref()
+            .and_then(|cmd| cmd.scheduled_at.clone())
+            .unwrap_or_default()
+    });
+    let initial_command_for_args = initial_command.clone();
+    let mut args = use_signal(move || {
+        initial_command_for_args
+            .as_ref()
+            .map(|cmd| command_args_input(&cmd.args))
+            .unwrap_or_default()
+    });
     let mut loading = use_signal(|| false);
+    let is_editing = initial_command.is_some();
 
     let url = palpo_admin_url.clone();
     let handle_save = move |_: MouseEvent| {
@@ -137,6 +201,7 @@ fn ScheduledCommandCreateDialog(palpo_admin_url: String, on_close: EventHandler<
         let cmd = command.read().clone();
         let at = scheduled_at.read().clone();
         let a = args.read().clone();
+        let existing = initial_command.clone();
 
         if cmd.is_empty() || at.is_empty() {
             show_toast(
@@ -149,19 +214,34 @@ fn ScheduledCommandCreateDialog(palpo_admin_url: String, on_close: EventHandler<
         loading.set(true);
         spawn(async move {
             let sc = ScheduledCommand {
+                id: existing
+                    .as_ref()
+                    .map(|scheduled| scheduled.id.clone())
+                    .unwrap_or_default(),
                 command: cmd,
                 scheduled_at: Some(at),
-                args: if a.is_empty() {
-                    None
-                } else {
-                    Some(serde_json::json!(a))
-                },
-                ..Default::default()
+                args: command_args_value(&a),
+                is_recurring: existing
+                    .as_ref()
+                    .map(|scheduled| scheduled.is_recurring)
+                    .unwrap_or(false),
             };
-            match palpo_admin::create_scheduled_command(&u, &sc).await {
+            let result = if is_editing {
+                palpo_admin::update_scheduled_command(&u, &sc).await
+            } else {
+                palpo_admin::create_scheduled_command(&u, &sc).await
+            };
+            match result {
                 Ok(_) => {
-                    show_toast("Command scheduled", ToastVariant::Success);
-                    on_close.call(());
+                    show_toast(
+                        if is_editing {
+                            "Command updated"
+                        } else {
+                            "Command scheduled"
+                        },
+                        ToastVariant::Success,
+                    );
+                    on_saved.call(());
                 }
                 Err(e) => {
                     show_toast(&format!("Failed: {}", e.message), ToastVariant::Error);
@@ -172,12 +252,18 @@ fn ScheduledCommandCreateDialog(palpo_admin_url: String, on_close: EventHandler<
     };
 
     let is_loading = *loading.read();
+    let dialog_title = if is_editing {
+        "Edit Scheduled Command"
+    } else {
+        "Schedule Command"
+    };
+    let submit_label = if is_editing { "Save" } else { "Schedule" };
 
     rsx! {
         div { class: "fixed inset-0 z-50 flex items-center justify-center",
             div { class: "fixed inset-0 bg-black/80", onclick: move |_| on_close.call(()) }
             div { class: "relative z-50 w-full max-w-lg rounded-lg border bg-background p-6 shadow-lg",
-                h2 { class: "text-lg font-semibold mb-4", "Schedule Command" }
+                h2 { class: "text-lg font-semibold mb-4", "{dialog_title}" }
                 div { class: "space-y-4",
                     div { class: "space-y-2",
                         Label { "Command" }
@@ -194,7 +280,7 @@ fn ScheduledCommandCreateDialog(palpo_admin_url: String, on_close: EventHandler<
                 }
                 div { class: "responsive-action-row mt-4",
                     Button { variant: ButtonVariant::Outline, onclick: move |_| on_close.call(()), "Cancel" }
-                    Button { disabled: is_loading, onclick: handle_save, if is_loading { Spinner { class: "mr-2".to_string() } } "Schedule" }
+                    Button { disabled: is_loading, onclick: handle_save, if is_loading { Spinner { class: "mr-2".to_string() } } "{submit_label}" }
                 }
             }
         }
@@ -212,6 +298,7 @@ pub fn RecurringCommandsList(palpo_admin_url: String) -> Element {
         async move { palpo_admin::get_recurring_commands(&u).await.ok() }
     });
     let mut show_create = use_signal(|| false);
+    let mut edit_command = use_signal(|| Option::<RecurringCommand>::None);
     let mut delete_id = use_signal(|| Option::<String>::None);
 
     rsx! {
@@ -220,7 +307,10 @@ pub fn RecurringCommandsList(palpo_admin_url: String) -> Element {
                 CardTitle { class: "text-base".to_string(), "Recurring Commands" }
                 Button {
                     size: ButtonSize::Sm,
-                    onclick: move |_| show_create.set(true),
+                    onclick: move |_| {
+                        edit_command.set(None);
+                        show_create.set(true);
+                    },
                     "Create"
                 }
             }
@@ -246,6 +336,7 @@ pub fn RecurringCommandsList(palpo_admin_url: String) -> Element {
                                                 let name = cmd.command.clone();
                                                 let args = cmd.args.as_ref().map(|a| a.to_string()).unwrap_or_else(|| "-".to_string());
                                                 let time = cmd.time.clone().unwrap_or_else(|| "-".to_string());
+                                                let editable_cmd = cmd.clone();
                                                 let cmd_id = cmd.id.clone();
                                                 rsx! {
                                                     TableRow {
@@ -253,6 +344,15 @@ pub fn RecurringCommandsList(palpo_admin_url: String) -> Element {
                                                         TableCell { class: "text-muted-foreground text-xs font-mono".to_string(), "{args}" }
                                                         TableCell { "{time}" }
                                                         TableCell { class: "text-right".to_string(),
+                                                            Button {
+                                                                variant: ButtonVariant::Ghost,
+                                                                size: ButtonSize::Sm,
+                                                                onclick: move |_| {
+                                                                    show_create.set(false);
+                                                                    edit_command.set(Some(editable_cmd.clone()));
+                                                                },
+                                                                "Edit"
+                                                            }
                                                             Button {
                                                                 variant: ButtonVariant::Ghost,
                                                                 size: ButtonSize::Sm,
@@ -281,10 +381,19 @@ pub fn RecurringCommandsList(palpo_admin_url: String) -> Element {
             }
         }
 
-        if *show_create.read() {
-            RecurringCommandCreateDialog {
+        if *show_create.read() || edit_command.read().is_some() {
+            RecurringCommandDialog {
                 palpo_admin_url: url.clone(),
-                on_close: move |_| { show_create.set(false); data.restart(); },
+                initial_command: edit_command.read().clone(),
+                on_close: move |_| {
+                    show_create.set(false);
+                    edit_command.set(None);
+                },
+                on_saved: move |_| {
+                    show_create.set(false);
+                    edit_command.set(None);
+                    data.restart();
+                },
             }
         }
 
@@ -316,11 +425,35 @@ pub fn RecurringCommandsList(palpo_admin_url: String) -> Element {
 }
 
 #[component]
-fn RecurringCommandCreateDialog(palpo_admin_url: String, on_close: EventHandler<()>) -> Element {
-    let mut command = use_signal(|| String::new());
-    let mut time = use_signal(|| String::new());
-    let mut args = use_signal(|| String::new());
+fn RecurringCommandDialog(
+    palpo_admin_url: String,
+    initial_command: Option<RecurringCommand>,
+    on_close: EventHandler<()>,
+    on_saved: EventHandler<()>,
+) -> Element {
+    let initial_command_for_name = initial_command.clone();
+    let mut command = use_signal(move || {
+        initial_command_for_name
+            .as_ref()
+            .map(|cmd| cmd.command.clone())
+            .unwrap_or_default()
+    });
+    let initial_command_for_time = initial_command.clone();
+    let mut time = use_signal(move || {
+        initial_command_for_time
+            .as_ref()
+            .and_then(|cmd| cmd.time.clone())
+            .unwrap_or_default()
+    });
+    let initial_command_for_args = initial_command.clone();
+    let mut args = use_signal(move || {
+        initial_command_for_args
+            .as_ref()
+            .map(|cmd| command_args_input(&cmd.args))
+            .unwrap_or_default()
+    });
     let mut loading = use_signal(|| false);
+    let is_editing = initial_command.is_some();
 
     let url = palpo_admin_url.clone();
     let handle_save = move |_: MouseEvent| {
@@ -328,6 +461,7 @@ fn RecurringCommandCreateDialog(palpo_admin_url: String, on_close: EventHandler<
         let cmd = command.read().clone();
         let t = time.read().clone();
         let a = args.read().clone();
+        let existing = initial_command.clone();
 
         if cmd.is_empty() || t.is_empty() {
             show_toast("Command and time are required", ToastVariant::Error);
@@ -336,20 +470,34 @@ fn RecurringCommandCreateDialog(palpo_admin_url: String, on_close: EventHandler<
 
         loading.set(true);
         spawn(async move {
-            let rc = crate::types::RecurringCommand {
+            let rc = RecurringCommand {
+                id: existing
+                    .as_ref()
+                    .map(|recurring| recurring.id.clone())
+                    .unwrap_or_default(),
                 command: cmd,
                 time: Some(t),
-                args: if a.is_empty() {
-                    None
-                } else {
-                    Some(serde_json::json!(a))
-                },
-                ..Default::default()
+                args: command_args_value(&a),
+                scheduled_at: existing
+                    .as_ref()
+                    .and_then(|recurring| recurring.scheduled_at.clone()),
             };
-            match palpo_admin::create_recurring_command(&u, &rc).await {
+            let result = if is_editing {
+                palpo_admin::update_recurring_command(&u, &rc).await
+            } else {
+                palpo_admin::create_recurring_command(&u, &rc).await
+            };
+            match result {
                 Ok(_) => {
-                    show_toast("Recurring command created", ToastVariant::Success);
-                    on_close.call(());
+                    show_toast(
+                        if is_editing {
+                            "Recurring command updated"
+                        } else {
+                            "Recurring command created"
+                        },
+                        ToastVariant::Success,
+                    );
+                    on_saved.call(());
                 }
                 Err(e) => {
                     show_toast(&format!("Failed: {}", e.message), ToastVariant::Error);
@@ -360,12 +508,18 @@ fn RecurringCommandCreateDialog(palpo_admin_url: String, on_close: EventHandler<
     };
 
     let is_loading = *loading.read();
+    let dialog_title = if is_editing {
+        "Edit Recurring Command"
+    } else {
+        "Create Recurring Command"
+    };
+    let submit_label = if is_editing { "Save" } else { "Create" };
 
     rsx! {
         div { class: "fixed inset-0 z-50 flex items-center justify-center",
             div { class: "fixed inset-0 bg-black/80", onclick: move |_| on_close.call(()) }
             div { class: "relative z-50 w-full max-w-lg rounded-lg border bg-background p-6 shadow-lg",
-                h2 { class: "text-lg font-semibold mb-4", "Create Recurring Command" }
+                h2 { class: "text-lg font-semibold mb-4", "{dialog_title}" }
                 div { class: "space-y-4",
                     div { class: "space-y-2",
                         Label { "Command" }
@@ -382,7 +536,7 @@ fn RecurringCommandCreateDialog(palpo_admin_url: String, on_close: EventHandler<
                 }
                 div { class: "responsive-action-row mt-4",
                     Button { variant: ButtonVariant::Outline, onclick: move |_| on_close.call(()), "Cancel" }
-                    Button { disabled: is_loading, onclick: handle_save, if is_loading { Spinner { class: "mr-2".to_string() } } "Create" }
+                    Button { disabled: is_loading, onclick: handle_save, if is_loading { Spinner { class: "mr-2".to_string() } } "{submit_label}" }
                 }
             }
         }

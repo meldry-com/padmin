@@ -145,7 +145,12 @@ impl I18n {
         m.insert("nav.oauth2_sessions".into(), "OAuth2 Sessions".into());
         m.insert("nav.personal_tokens".into(), "Personal Tokens".into());
         m.insert("nav.upstream_providers".into(), "Upstream Providers".into());
+        m.insert("nav.upstream_links".into(), "Upstream Links".into());
         m.insert("nav.connector_health".into(), "Connector Health".into());
+        m.insert(
+            "nav.notification_templates".into(),
+            "Notification Templates".into(),
+        );
         m.insert(
             "nav.notification_channels".into(),
             "Notification Channels".into(),
@@ -470,6 +475,10 @@ impl I18n {
         m.insert("reports.new".into(), "New".into());
         m.insert("reports.in_review".into(), "In Review".into());
         m.insert("reports.resolved".into(), "Resolved".into());
+        m.insert(
+            "reports.status_local_only".into(),
+            "Stored only in this browser.".into(),
+        );
         m.insert("reports.redact".into(), "Redact Event".into());
         m.insert("reports.ban_user".into(), "Ban User".into());
         m.insert("reports.block_room".into(), "Block Room".into());
@@ -1117,8 +1126,16 @@ impl I18n {
             "\u{4e0a}\u{6e38}\u{63d0}\u{4f9b}\u{8005}".into(),
         );
         m.insert(
+            "nav.upstream_links".into(),
+            "\u{4e0a}\u{6e38}\u{94fe}\u{63a5}".into(),
+        );
+        m.insert(
             "nav.connector_health".into(),
             "\u{8fde}\u{63a5}\u{5668}\u{5065}\u{5eb7}".into(),
+        );
+        m.insert(
+            "nav.notification_templates".into(),
+            "\u{901a}\u{77e5}\u{6a21}\u{677f}".into(),
         );
         m.insert(
             "nav.notification_channels".into(),
@@ -1674,6 +1691,10 @@ impl I18n {
             "\u{5ba1}\u{6838}\u{4e2d}".into(),
         );
         m.insert("reports.resolved".into(), "\u{5df2}\u{89e3}\u{51b3}".into());
+        m.insert(
+            "reports.status_local_only".into(),
+            "\u{4ec5}\u{4fdd}\u{5b58}\u{5728}\u{5f53}\u{524d}\u{6d4f}\u{89c8}\u{5668}".into(),
+        );
         m.insert(
             "reports.redact".into(),
             "\u{64a4}\u{56de}\u{4e8b}\u{4ef6}".into(),

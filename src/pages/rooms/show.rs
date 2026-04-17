@@ -51,7 +51,7 @@ pub fn RoomShow(room_id: String) -> Element {
     let mut show_purge_dialog = use_signal(|| false);
     let mut purge_date = use_signal(|| String::new());
     let mut purge_loading = use_signal(|| false);
-    let mut is_blocked = use_signal(|| false);
+    let mut blocked_override = use_signal(|| Option::<bool>::None);
     let mut block_loading = use_signal(|| false);
 
     // Room edit state
@@ -90,7 +90,8 @@ pub fn RoomShow(room_id: String) -> Element {
                     let room_id_for_block = room_id_str.clone();
                     let room_id_for_purge = room_id_str.clone();
                     let current_tab = active_tab.read().clone();
-                    let blocked = *is_blocked.read();
+                    let blocked =
+                        (*blocked_override.read()).unwrap_or(room.room.is_blocked_effective());
                     let is_block_loading = *block_loading.read();
                     let is_purge_loading = *purge_loading.read();
 
@@ -154,7 +155,7 @@ pub fn RoomShow(room_id: String) -> Element {
                                         spawn(async move {
                                             match rooms::block_room(&rid, new_blocked).await {
                                                 Ok(_) => {
-                                                    is_blocked.set(new_blocked);
+                                                    blocked_override.set(Some(new_blocked));
                                                     let msg = if new_blocked { "Room blocked" } else { "Room unblocked" };
                                                     show_toast(msg, ToastVariant::Success);
                                                 }

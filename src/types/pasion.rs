@@ -155,6 +155,22 @@ pub struct PasionUpstreamProvider {
     /// "config" or "manual". Config-sourced rows reject edits via the admin API.
     #[serde(default)]
     pub source: Option<String>,
+    #[serde(default)]
+    pub client_id: Option<String>,
+    #[serde(default)]
+    pub scope: String,
+    #[serde(default)]
+    pub token_endpoint_auth_method: Option<String>,
+    #[serde(default)]
+    pub id_token_signed_response_alg: Option<String>,
+    #[serde(default)]
+    pub discovery_mode: Option<String>,
+    #[serde(default)]
+    pub pkce_mode: Option<String>,
+    #[serde(default)]
+    pub fetch_userinfo: bool,
+    #[serde(default)]
+    pub claims_imports: Option<serde_json::Value>,
 }
 
 // Upstream OAuth Link

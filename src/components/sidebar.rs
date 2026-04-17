@@ -173,6 +173,16 @@ pub fn AppSidebar(collapsed: Signal<bool>, mobile_open: Signal<bool>) -> Element
                     icon: "link",
                 },
                 NavItem {
+                    title: t("nav.upstream_links"),
+                    route: Route::PasionUpstreamLinks {},
+                    icon: "link",
+                },
+                NavItem {
+                    title: t("nav.notification_templates"),
+                    route: Route::PasionNotificationTemplates {},
+                    icon: "scroll-text",
+                },
+                NavItem {
                     title: t("nav.connector_health"),
                     route: Route::PasionConnectorHealth {},
                     icon: "heart-pulse",

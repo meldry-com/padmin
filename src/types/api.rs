@@ -98,6 +98,18 @@ pub struct Room {
     pub topic: Option<String>,
     #[serde(default)]
     pub avatar_url: Option<String>,
+    #[serde(default)]
+    pub blocked: bool,
+    #[serde(default)]
+    pub is_blocked: bool,
+    #[serde(default)]
+    pub blocked_by: Option<String>,
+}
+
+impl Room {
+    pub fn is_blocked_effective(&self) -> bool {
+        self.blocked || self.is_blocked || self.blocked_by.is_some()
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -590,7 +602,7 @@ pub struct ServerCommand {
     pub additional_args: Option<serde_json::Value>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 pub struct ScheduledCommand {
     #[serde(default)]
     pub args: Option<serde_json::Value>,
@@ -604,7 +616,7 @@ pub struct ScheduledCommand {
     pub scheduled_at: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 pub struct RecurringCommand {
     #[serde(default)]
     pub args: Option<serde_json::Value>,

@@ -265,6 +265,7 @@ pub fn ReportShow(report_id: String) -> Element {
                                     option { value: "In Review", {t("reports.in_review")} }
                                     option { value: "Resolved", {t("reports.resolved")} }
                                 }
+                                span { class: "text-xs text-muted-foreground", {t("reports.status_local_only")} }
                             }
                         }
 

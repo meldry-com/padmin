@@ -10,7 +10,6 @@ use crate::components::ui::loading::PageSkeleton;
 use crate::components::ui::page_header::PageHeader;
 use crate::components::ui::pagination::Pagination;
 use crate::components::ui::table::*;
-use crate::components::ui::toast::{ToastVariant, show_toast};
 use crate::router::Route;
 use crate::utils::i18n::t;
 
@@ -18,6 +17,7 @@ const PAGE_SIZE: u64 = 25;
 
 #[component]
 pub fn MediaList() -> Element {
+    let nav = use_navigator();
     let mut search = use_signal(|| String::new());
     let mut page = use_signal(|| 1u64);
     let mut show_delete_dialog = use_signal(|| false);
@@ -92,6 +92,7 @@ pub fn MediaList() -> Element {
                                     for stat in data.data.iter() {
                                         {
                                             let user_id = stat.statistic.user_id.clone();
+                                            let user_id_for_action = user_id.clone();
                                             let display_name = stat.statistic.displayname.clone().unwrap_or_else(|| "-".to_string());
                                             let media_count = stat.statistic.media_count;
                                             let media_length = format_bytes(stat.statistic.media_length);
@@ -114,9 +115,12 @@ pub fn MediaList() -> Element {
                                                                 variant: ButtonVariant::Ghost,
                                                                 size: ButtonSize::Sm,
                                                                 onclick: move |_| {
-                                                                    show_toast("Use per-media quarantine from user detail", ToastVariant::Default);
+                                                                    nav.push(Route::UserShow {
+                                                                        user_id: urlencoding::encode(&user_id_for_action).to_string(),
+                                                                    });
                                                                 },
-                                                                Icon { name: "shield".to_string(), class: "h-4 w-4".to_string() }
+                                                                Icon { name: "user".to_string(), class: "h-4 w-4".to_string() }
+                                                                "User"
                                                             }
                                                         }
                                                     }
