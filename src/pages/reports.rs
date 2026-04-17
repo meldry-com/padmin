@@ -18,7 +18,6 @@ use crate::components::ui::table::*;
 use crate::components::ui::toast::{ToastVariant, show_toast};
 use crate::router::Route;
 use crate::utils::i18n::t;
-use crate::utils::storage;
 
 #[derive(Debug, Clone, PartialEq)]
 enum ReportStatus {
@@ -28,11 +27,11 @@ enum ReportStatus {
 }
 
 impl ReportStatus {
-    fn as_str(&self) -> &'static str {
+    fn as_api_value(&self) -> &'static str {
         match self {
-            ReportStatus::New => "New",
-            ReportStatus::InReview => "In Review",
-            ReportStatus::Resolved => "Resolved",
+            ReportStatus::New => "new",
+            ReportStatus::InReview => "in_review",
+            ReportStatus::Resolved => "resolved",
         }
     }
 
@@ -44,10 +43,10 @@ impl ReportStatus {
         }
     }
 
-    fn from_str(s: &str) -> Self {
+    fn from_api_value(s: &str) -> Self {
         match s {
-            "In Review" => ReportStatus::InReview,
-            "Resolved" => ReportStatus::Resolved,
+            "in_review" | "In Review" => ReportStatus::InReview,
+            "resolved" | "Resolved" => ReportStatus::Resolved,
             _ => ReportStatus::New,
         }
     }
@@ -59,18 +58,6 @@ impl ReportStatus {
             ReportStatus::Resolved => BadgeVariant::Success,
         }
     }
-}
-
-fn get_report_status(id: u64) -> ReportStatus {
-    let key = format!("report_status_{}", id);
-    storage::get_item(&key)
-        .map(|s| ReportStatus::from_str(&s))
-        .unwrap_or(ReportStatus::New)
-}
-
-fn set_report_status(id: u64, status: &ReportStatus) {
-    let key = format!("report_status_{}", id);
-    storage::set_item(&key, status.as_str());
 }
 
 const PAGE_SIZE: u64 = 25;
@@ -140,7 +127,7 @@ pub fn ReportList() -> Element {
                                             let room_id = report.room_id.clone();
                                             let reason = report.reason.clone().unwrap_or_else(|| "-".to_string());
                                             let received = format_timestamp(report.received_ts);
-                                            let status = get_report_status(id);
+                                            let status = ReportStatus::from_api_value(&report.status);
                                             let status_label = status.display();
                                             let status_variant = status.badge_variant();
 
@@ -213,7 +200,8 @@ pub fn ReportShow(report_id: String) -> Element {
     let mut redact_loading = use_signal(|| false);
     let mut ban_loading = use_signal(|| false);
     let mut block_loading = use_signal(|| false);
-    let mut current_status = use_signal(move || get_report_status(report_id_parsed));
+    let mut current_status = use_signal(|| Option::<ReportStatus>::None);
+    let mut status_loading = use_signal(|| false);
 
     rsx! {
         div { class: "space-y-6",
@@ -244,7 +232,12 @@ pub fn ReportShow(report_id: String) -> Element {
                     let is_redact_loading = *redact_loading.read();
                     let is_ban_loading = *ban_loading.read();
                     let is_block_loading = *block_loading.read();
-                    let status_value = current_status.read().as_str().to_string();
+                    let effective_status = current_status
+                        .read()
+                        .clone()
+                        .unwrap_or_else(|| ReportStatus::from_api_value(&report.status));
+                    let is_status_loading = *status_loading.read();
+                    let status_value = effective_status.as_api_value().to_string();
 
                     rsx! {
                         PageHeader {
@@ -254,18 +247,31 @@ pub fn ReportShow(report_id: String) -> Element {
                                 label { class: "text-sm font-medium text-muted-foreground", "Status:" }
                                 select {
                                     class: "rounded-md border bg-background px-3 py-1.5 text-sm touch-target",
+                                    disabled: is_status_loading,
                                     value: "{status_value}",
                                     onchange: move |evt: Event<FormData>| {
-                                        let new_status = ReportStatus::from_str(&evt.value());
-                                        set_report_status(id, &new_status);
-                                        current_status.set(new_status);
-                                        show_toast("Status updated", ToastVariant::Success);
+                                        let new_status = ReportStatus::from_api_value(&evt.value());
+                                        let status_for_api = new_status.as_api_value().to_string();
+                                        status_loading.set(true);
+                                        spawn(async move {
+                                            match reports::update_report_status(id, &status_for_api).await {
+                                                Ok(updated) => {
+                                                    current_status.set(Some(ReportStatus::from_api_value(&updated.status)));
+                                                    report_data.restart();
+                                                    show_toast("Status updated", ToastVariant::Success);
+                                                }
+                                                Err(e) => show_toast(&format!("Failed: {}", e.message), ToastVariant::Error),
+                                            }
+                                            status_loading.set(false);
+                                        });
                                     },
-                                    option { value: "New", {t("reports.new")} }
-                                    option { value: "In Review", {t("reports.in_review")} }
-                                    option { value: "Resolved", {t("reports.resolved")} }
+                                    option { value: "new", {t("reports.new")} }
+                                    option { value: "in_review", {t("reports.in_review")} }
+                                    option { value: "resolved", {t("reports.resolved")} }
                                 }
-                                span { class: "text-xs text-muted-foreground", {t("reports.status_local_only")} }
+                                if is_status_loading {
+                                    Spinner { class: "ml-2".to_string() }
+                                }
                             }
                         }
 

@@ -79,6 +79,14 @@ pub async fn get_report(id: u64) -> Result<EventReport, HttpError> {
     api_client(&url, "GET", None).await
 }
 
+pub async fn update_report_status(id: u64, status: &str) -> Result<EventReport, HttpError> {
+    let url = build_url(&format!("/_palpo/admin/v1/event_reports/{id}"), &[])?;
+    let body = serde_json::json!({ "status": status }).to_string();
+    let report: EventReport = api_client(&url, "PUT", Some(body)).await?;
+    invalidate_report_related_caches();
+    Ok(report)
+}
+
 pub async fn delete_report(id: u64) -> Result<(), HttpError> {
     let url = build_url(&format!("/_palpo/admin/v1/event_reports/{id}"), &[])?;
     let _: serde_json::Value = api_client(&url, "DELETE", None).await?;

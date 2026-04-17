@@ -220,6 +220,8 @@ pub struct EventReport {
     #[serde(default)]
     pub received_ts: u64,
     #[serde(default)]
+    pub status: String,
+    #[serde(default)]
     pub room_id: String,
     #[serde(default)]
     pub event_id: String,
