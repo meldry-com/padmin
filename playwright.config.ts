@@ -1,13 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
-
-// Service URLs matching examples/compose.yml
-export const PADMIN_URL = process.env.PADMIN_URL || "http://localhost:9090";
-export const PALPO_URL = process.env.PALPO_URL || "http://localhost:8008";
-export const PASION_URL = process.env.PASION_URL || "http://localhost:8090";
-export const ELEMENT_URL = process.env.ELEMENT_URL || "http://localhost:8080";
+import { PADMIN_URL } from "./e2e/helpers/services";
 
 export default defineConfig({
   testDir: "./e2e",
+  testIgnore: ["**/example-stack/**"],
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,

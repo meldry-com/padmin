@@ -1,0 +1,14 @@
+# Test-only override applied on top of examples/compose.yml.
+# Usage:
+#   docker compose -f examples/compose.yml -f e2e/fixtures/example-stack/compose.override.yml up -d
+#
+# Why this exists: the committed examples/pasion.yaml points email at Gmail
+# SMTP, which blocks the notification worker in CI and local smoke runs. Swap
+# in a blackhole-email config so registration completes deterministically.
+
+services:
+  pasion:
+    volumes:
+      - ../e2e/fixtures/example-stack/pasion.test.yaml:/config.yaml:ro
+      - ./pasion-signing-key.pem:/keys/pasion-signing-key.pem:ro
+      - pasion_media:/data/media

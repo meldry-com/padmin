@@ -65,7 +65,7 @@ clients:
     client_auth_method: none
     client_name: Palpo Homeserver
     redirect_uris:
-      - http://localhost:8080/
+      - http://localhost:7070/
 
   - client_id: 01KMQPADM1N000000000000000
     client_auth_method: none

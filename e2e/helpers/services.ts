@@ -2,9 +2,9 @@ import { APIRequestContext } from "@playwright/test";
 
 // Service URLs matching examples/compose.yml
 export const PALPO_URL = process.env.PALPO_URL || "http://localhost:8008";
-export const PASION_URL = process.env.PASION_URL || "http://localhost:8090";
-export const PADMIN_URL = process.env.PADMIN_URL || "http://localhost:9090";
-export const ELEMENT_URL = process.env.ELEMENT_URL || "http://localhost:8080";
+export const PASION_URL = process.env.PASION_URL || "http://localhost:7080";
+export const PADMIN_URL = process.env.PADMIN_URL || "http://localhost:7060";
+export const ELEMENT_URL = process.env.ELEMENT_URL || "http://localhost:7070";
 
 const SERVICE_READY_TIMEOUT_MS = Number(process.env.SERVICE_READY_TIMEOUT_MS || "180000");
 const SERVICE_RETRY_INTERVAL_MS = 1_500;

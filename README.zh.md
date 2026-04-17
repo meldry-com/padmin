@@ -65,12 +65,35 @@ docker pull ghcr.io/meldry-com/padmin:latest
 ```bash
 cd examples
 docker compose up -d --build
-# 访问 http://localhost:9090
+# 访问 http://localhost:7060
 ```
+
+Compose 示例统一使用 [`examples/README.zh.md`](examples/README.zh.md) 中的本地端口：
+
+- `padmin`：`http://localhost:7060`
+- `pasion`：`http://localhost:7080`
+- `element`：`http://localhost:7070`
+
+## 端到端测试
+
+仓库现在只保留一套根目录 `e2e/` Playwright 工作区。
+
+```bash
+# padmin 主回归套件
+npm test
+
+# examples/compose.yml 示例栈 smoke 套件
+npm run test:example-stack:fresh
+```
+
+示例栈 smoke 的运行方式、fixture 和限制见 [`e2e/example-stack/README.md`](e2e/example-stack/README.md)。
 
 ## 项目结构
 
 ```
+playwright.config.ts               # padmin 主 Playwright 配置
+playwright.example-stack.config.ts # 示例栈 smoke 配置
+e2e/                              # 统一后的 Playwright 工作区
 src/
   main.rs          # 应用入口
   router.rs        # 客户端路由
@@ -84,7 +107,7 @@ examples/
   compose.yml      # 完整技术栈 Docker Compose
   palpo.toml       # Palpo 服务器配置
   pasion.yaml      # Pasion 认证配置
-  ...
+  README.md        # 示例栈部署说明
 ```
 
 ## 许可证

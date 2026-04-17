@@ -30,6 +30,28 @@ docker compose up -d --build
 #    Matrix API：  http://localhost:8008
 ```
 
+## Smoke 测试
+
+示例栈 smoke 测试已经并入仓库根目录的 Playwright 工作区，不再单独放在
+`examples/e2e/` 下。
+
+请在仓库根目录执行：
+
+```bash
+npm install
+npx playwright install chromium
+npm run test:example-stack:fresh
+```
+
+如果需要单独观察重置流程：
+
+```bash
+npm run stack:reset
+npm run test:example-stack
+```
+
+具体实现和限制说明见 [`../e2e/example-stack/README.md`](../e2e/example-stack/README.md)。
+
 ## 架构
 
 ```

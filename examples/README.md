@@ -30,6 +30,29 @@ docker compose up -d --build
 #    Matrix API:       http://localhost:8008
 ```
 
+## Smoke Tests
+
+The example-stack smoke tests now live in the root Playwright workspace rather
+than under `examples/e2e/`.
+
+Run them from the repository root:
+
+```bash
+npm install
+npx playwright install chromium
+npm run test:example-stack:fresh
+```
+
+If you need to inspect the reset flow separately:
+
+```bash
+npm run stack:reset
+npm run test:example-stack
+```
+
+The smoke-suite implementation and caveats are documented in
+[`../e2e/example-stack/README.md`](../e2e/example-stack/README.md).
+
 ## Architecture
 
 ```

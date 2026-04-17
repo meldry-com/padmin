@@ -154,6 +154,18 @@ export async function waitForPalpoUser(
   throw new Error(`Palpo user ${userId} was not provisioned within ${timeoutMs}ms`);
 }
 
+export async function getPalpoUserFlags(
+  userId: string
+): Promise<{ is_admin: boolean; is_guest: boolean } | null> {
+  return withClient("palpo", async (client) => {
+    const result = await client.query<{ is_admin: boolean; is_guest: boolean }>(
+      "SELECT is_admin, is_guest FROM users WHERE id = $1 LIMIT 1",
+      [userId]
+    );
+    return result.rows[0] ?? null;
+  });
+}
+
 export async function setPalpoUserAdmin(
   userId: string,
   isAdmin: boolean = true
@@ -168,6 +180,23 @@ export async function setPalpoUserAdmin(
 
   if (rowCount === 0) {
     throw new Error(`Could not update admin flag for ${userId}`);
+  }
+}
+
+export async function setPalpoUserGuest(
+  userId: string,
+  isGuest: boolean = true
+): Promise<void> {
+  const rowCount = await withClient("palpo", async (client) => {
+    const result = await client.query(
+      "UPDATE users SET is_guest = $2 WHERE id = $1",
+      [userId, isGuest]
+    );
+    return result.rowCount ?? 0;
+  });
+
+  if (rowCount === 0) {
+    throw new Error(`Could not update guest flag for ${userId}`);
   }
 }
 

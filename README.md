@@ -65,12 +65,35 @@ See [`examples/`](examples/) for a complete Docker Compose setup that runs Palpo
 ```bash
 cd examples
 docker compose up -d --build
-# Open http://localhost:9090
+# Open http://localhost:7060
 ```
+
+The compose example uses the canonical local ports from [`examples/README.md`](examples/README.md):
+
+- `padmin`: `http://localhost:7060`
+- `pasion`: `http://localhost:7080`
+- `element`: `http://localhost:7070`
+
+## End-to-End Tests
+
+The repository now has a single Playwright workspace rooted at `e2e/`.
+
+```bash
+# Main padmin regression suite
+npm test
+
+# Example-stack smoke suite against examples/compose.yml
+npm run test:example-stack:fresh
+```
+
+The example-stack smoke workflow, fixtures, and known limitations are documented in [`e2e/example-stack/README.md`](e2e/example-stack/README.md).
 
 ## Project Structure
 
 ```
+playwright.config.ts              # Main padmin Playwright config
+playwright.example-stack.config.ts# Example-stack smoke config
+e2e/                             # Unified Playwright workspace
 src/
   main.rs          # App entry point
   router.rs        # Client-side routing
@@ -84,7 +107,7 @@ examples/
   compose.yml      # Full stack Docker Compose
   palpo.toml       # Palpo homeserver config
   pasion.yaml      # Pasion auth config
-  ...
+  README.md        # Example-stack deployment notes
 ```
 
 ## License

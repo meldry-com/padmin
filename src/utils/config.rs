@@ -44,7 +44,7 @@ pub fn get_home_server() -> Option<String> {
 
 #[derive(Debug, Clone, Default, serde::Deserialize)]
 pub struct RuntimeConfig {
-    /// Pasion public URL for browser OAuth2 redirects (e.g. http://localhost:8090)
+    /// Pasion public URL for browser OAuth2 redirects (e.g. http://localhost:7080)
     #[serde(default)]
     pub pasion_public_url: String,
 }

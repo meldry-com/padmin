@@ -1,6 +1,8 @@
 import { APIRequestContext } from "@playwright/test";
 import { PALPO_URL } from "./services";
 
+const PALPO_MAS_SECRET = process.env.PALPO_MAS_SECRET || "replace-with-a-random-secret";
+
 /**
  * Check if the Palpo Matrix server is reachable.
  */
@@ -287,5 +289,33 @@ export async function getAuthMetadata(
     return null;
   } catch {
     return null;
+  }
+}
+
+/**
+ * Seed a device row directly through the Palpo MAS admin API so delegated-auth
+ * users can access the admin endpoints during example-stack smoke tests.
+ */
+export async function upsertDevice(
+  localpart: string,
+  deviceId: string = "E2E_SEED"
+): Promise<void> {
+  const response = await fetch(`${PALPO_URL}/_palpo/admin/upsert_device`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${PALPO_MAS_SECRET}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      localpart,
+      device_id: deviceId,
+    }),
+  });
+
+  if (!response.ok()) {
+    const body = await response.text().catch(() => "");
+    throw new Error(
+      `upsert_device ${localpart}/${deviceId} failed (${response.status()}): ${body}`
+    );
   }
 }
