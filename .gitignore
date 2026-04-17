@@ -13,3 +13,4 @@ tmp*
 *.map
 *.log
 .vscode
+.claude

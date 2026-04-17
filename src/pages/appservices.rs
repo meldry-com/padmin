@@ -733,12 +733,12 @@ fn ConfigureDialog(
     let notes = template.map(|t| t.notes).unwrap_or("");
 
     rsx! {
-        div { class: "fixed inset-0 z-50 flex items-center justify-center p-4",
+        div { class: "fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 sm:items-center",
             div {
                 class: "fixed inset-0 bg-black/80",
                 onclick: move |e| on_close.call(e),
             }
-            div { class: "relative z-50 w-full max-w-2xl rounded-lg border bg-background shadow-lg max-h-[90vh] flex flex-col",
+            div { class: "relative z-50 my-4 flex w-full max-w-2xl flex-col overflow-hidden rounded-lg border bg-background shadow-lg max-h-[calc(100vh-2rem)]",
                 // Header with template brand
                 div { class: "flex items-start gap-4 border-b p-6",
                     div { class: "flex h-10 w-10 items-center justify-center rounded-lg {accent} shrink-0",

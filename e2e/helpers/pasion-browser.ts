@@ -35,16 +35,37 @@ async function gotoWithRetry(page: Page, url: string, attempts: number = 5): Pro
 }
 
 export async function registerPasionUser(page: Page, user: UserCreds): Promise<void> {
-  await gotoWithRetry(page, `${PASION_URL}/register`);
-  await page.getByPlaceholder("Choose a username").fill(user.username);
-  await page.getByPlaceholder("your@email.com").fill(user.email);
-  const passwords = page.locator('input[type="password"]');
-  await passwords.nth(0).fill(user.password);
-  await passwords.nth(1).fill(user.password);
-  await Promise.all([
-    page.waitForURL(/\/register\/[^/]+\/verify-email/, { timeout: 20_000 }),
-    page.getByRole("button", { name: "Create account" }).click(),
-  ]);
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await gotoWithRetry(page, `${PASION_URL}/register`);
+    await page.getByPlaceholder("Choose a username").fill(user.username);
+    await page.getByPlaceholder("your@email.com").fill(user.email);
+    const passwords = page.locator('input[type="password"]');
+    await passwords.nth(0).fill(user.password);
+    await passwords.nth(1).fill(user.password);
+    await page.getByRole("button", { name: "Create account" }).click();
+
+    try {
+      await page.waitForURL(/\/register\/steps\/.+\/verify-email/, { timeout: 20_000 });
+      break;
+    } catch (error) {
+      const bodyText = (await page.locator("body").textContent()) || "";
+
+      // Playwright retries rerun the same test without resetting the stack.
+      // If the user was already created by an earlier attempt, continue by
+      // signing into the existing account instead of failing on duplicates.
+      if (bodyText.includes("username_exists") || bodyText.includes("email_in_use")) {
+        await loginPasionUser(page, user);
+        return;
+      }
+
+      const transient = bodyText.includes("rate_limited");
+      if (!transient || attempt === 2) {
+        throw error;
+      }
+
+      await page.waitForTimeout(2_000 * (attempt + 1));
+    }
+  }
 
   const codeInput = page.getByPlaceholder("6-digit code");
   await codeInput.waitFor({ state: "visible", timeout: 15_000 });

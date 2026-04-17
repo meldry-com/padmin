@@ -312,7 +312,7 @@ export async function upsertDevice(
     }),
   });
 
-  if (!response.ok()) {
+  if (!response.ok) {
     const body = await response.text().catch(() => "");
     throw new Error(
       `upsert_device ${localpart}/${deviceId} failed (${response.status()}): ${body}`

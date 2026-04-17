@@ -143,8 +143,8 @@ function dropPasionCrashLoopConstraints() {
     run("docker", ["compose", ...COMPOSE_FILES, "down", "-v"]);
   }
 
-  console.log("[reset-example-stack] docker compose up -d");
-  run("docker", ["compose", ...COMPOSE_FILES, "up", "-d"]);
+  console.log("[reset-example-stack] docker compose up -d --build");
+  run("docker", ["compose", ...COMPOSE_FILES, "up", "-d", "--build"]);
   await new Promise((resolveSleep) => setTimeout(resolveSleep, 10_000));
   dropPasionCrashLoopConstraints();
   await waitHealthy();
