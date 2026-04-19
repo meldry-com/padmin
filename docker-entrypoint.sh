@@ -2,6 +2,7 @@
 set -eu
 
 BACKEND_MATRIX="${PALPO_URL:-$MATRIX_URL}"
+PADMIN_PORT="${PADMIN_PORT:-80}"
 RESOLVERS="$(awk '/^nameserver / { print $2 }' /etc/resolv.conf | paste -sd ' ' -)"
 LOOKUP_UNAVAILABLE=0
 
@@ -81,7 +82,7 @@ printf '{"pasion_public_url":"%s"}' "$PASION_PUBLIC_URL" > /usr/share/nginx/html
 
 cat > /etc/nginx/conf.d/default.conf <<EOF
 server {
-    listen 80;
+    listen ${PADMIN_PORT};
     server_name _;
     root /usr/share/nginx/html;
     index index.html;
