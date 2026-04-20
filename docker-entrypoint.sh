@@ -86,6 +86,12 @@ server {
     server_name _;
     root /usr/share/nginx/html;
     index index.html;
+
+    location = /healthz {
+        access_log off;
+        default_type text/plain;
+        return 200 'ok';
+    }
 EOF
 
 if [ -n "$PASION_URL" ]; then

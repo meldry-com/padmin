@@ -50,4 +50,5 @@ ENV PASION_PUBLIC_URL=""
 ENV PADMIN_PORT="80"
 
 EXPOSE 80
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD wget -q --spider "http://127.0.0.1:${PADMIN_PORT:-80}/healthz" || exit 1
 CMD ["/docker-entrypoint.sh"]

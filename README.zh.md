@@ -51,6 +51,7 @@ docker run -p 9090:80 palpo-admin
 ```
 
 镜像采用多阶段构建：Rust/Dioxus 编译 WASM 应用，然后由 nginx 提供静态文件服务。
+Nginx entrypoint 也会暴露 `/healthz`，方便容器与平台进行存活检查。
 
 GitHub Actions 会将 `linux/amd64` 和 `linux/arm64` 多架构镜像发布到 GHCR：
 

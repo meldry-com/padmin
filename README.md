@@ -51,6 +51,7 @@ docker run -p 9090:80 palpo-admin
 ```
 
 The image uses a multi-stage build: Rust/Dioxus compiles the WASM app, then nginx serves the static files.
+The nginx entrypoint also exposes `/healthz` for container and platform liveness checks.
 
 GitHub Actions publishes multi-architecture images for `linux/amd64` and `linux/arm64` to GHCR:
 
