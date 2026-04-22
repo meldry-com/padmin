@@ -4,19 +4,46 @@ use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
 
 use crate::types::*;
-use crate::utils::error::{HttpError, MatrixError, display_error};
+use crate::utils::error::HttpError;
 use crate::utils::storage;
 
 // ── OAuth2 client configuration ──────────────────────────────────────────────
 // Must match the client_id registered in pasion.yaml
 const OAUTH_CLIENT_ID: &str = "01KMQPADM1N000000000000000";
+const MATRIX_API_SCOPE: &str = "urn:matrix:org.matrix.msc2967.client:api:*";
+const MATRIX_DEVICE_SCOPE_PREFIX: &str = "urn:matrix:org.matrix.msc2967.client:device:";
+const PASION_ADMIN_SCOPE: &str = "urn:pasion:admin";
+const OAUTH_DEVICE_ID_STORAGE_KEY: &str = "oauth_device_id";
+
 // - openid: userinfo access
-// - urn:matrix:...:api:*, :device:*  palpo admin endpoints gated by delegated
-//   introspection
+// - urn:matrix:...:api:* + :device:{device_id}: delegated Matrix/Palpo access
 // - urn:pasion:admin: pasion's /api/admin/v1/* endpoints (upstream providers,
-//   personal sessions, audit feed, …). Without it every pasion admin call
+//   personal sessions, audit feed, ...). Without it every pasion admin call
 //   returns 401 "Missing admin scope".
-const OAUTH_SCOPE: &str = "openid urn:matrix:org.matrix.msc2967.client:api:* urn:matrix:org.matrix.msc2967.client:device:* urn:pasion:admin";
+fn build_oauth_scope(device_id: &str) -> String {
+    format!(
+        "openid {MATRIX_API_SCOPE} {MATRIX_DEVICE_SCOPE_PREFIX}{device_id} {PASION_ADMIN_SCOPE}"
+    )
+}
+
+fn get_or_create_device_id() -> String {
+    if let Some(device_id) = storage::get_item(OAUTH_DEVICE_ID_STORAGE_KEY)
+        && is_valid_device_id(&device_id)
+    {
+        return device_id;
+    }
+
+    let device_id = crate::utils::password::generate_device_id();
+    storage::set_item(OAUTH_DEVICE_ID_STORAGE_KEY, &device_id);
+    device_id
+}
+
+fn is_valid_device_id(device_id: &str) -> bool {
+    device_id.len() >= 10
+        && device_id
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '-')
+}
 
 // ── PKCE helpers ─────────────────────────────────────────────────────────────
 
@@ -63,6 +90,8 @@ fn base64url_encode(data: &[u8]) -> String {
 pub async fn start_oauth_login() {
     let verifier = generate_code_verifier();
     let challenge = compute_code_challenge(&verifier).await;
+    let device_id = get_or_create_device_id();
+    let scope = build_oauth_scope(&device_id);
 
     // Store verifier in sessionStorage for the callback
     let session = web_sys::window()
@@ -92,7 +121,7 @@ pub async fn start_oauth_login() {
          &code_challenge_method=S256\
          &scope={}",
         urlencoding::encode(&redirect_uri),
-        urlencoding::encode(OAUTH_SCOPE),
+        urlencoding::encode(&scope),
     );
 
     // Full page redirect to Pasion login
@@ -414,6 +443,19 @@ fn make_err(msg: String) -> HttpError {
         status: 0,
         body: None,
         request_id: None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::build_oauth_scope;
+
+    #[test]
+    fn oauth_scope_uses_concrete_device_id() {
+        let scope = build_oauth_scope("ABCdef123456");
+
+        assert!(scope.contains("urn:matrix:org.matrix.msc2967.client:device:ABCdef123456"));
+        assert!(!scope.contains("urn:matrix:org.matrix.msc2967.client:device:*"));
     }
 }
 
