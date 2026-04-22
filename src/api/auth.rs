@@ -2,6 +2,7 @@ use gloo_net::http::Request;
 use serde::Deserialize;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
+use web_sys::RequestMode;
 
 use crate::types::*;
 use crate::utils::error::HttpError;
@@ -14,6 +15,13 @@ const MATRIX_API_SCOPE: &str = "urn:matrix:org.matrix.msc2967.client:api:*";
 const MATRIX_DEVICE_SCOPE_PREFIX: &str = "urn:matrix:org.matrix.msc2967.client:device:";
 const PASION_ADMIN_SCOPE: &str = "urn:pasion:admin";
 const OAUTH_DEVICE_ID_STORAGE_KEY: &str = "oauth_device_id";
+
+#[derive(Debug)]
+struct TextResponse {
+    status: u16,
+    text: String,
+    sentry_event_id: Option<String>,
+}
 
 // - openid: userinfo access
 // - urn:matrix:...:api:* + :device:{device_id}: delegated Matrix/Palpo access
@@ -36,6 +44,170 @@ fn get_or_create_device_id() -> String {
     let device_id = crate::utils::password::generate_device_id();
     storage::set_item(OAUTH_DEVICE_ID_STORAGE_KEY, &device_id);
     device_id
+}
+
+fn pasion_public_base() -> Option<String> {
+    crate::utils::config::get_pasion_public_url()
+        .map(|value| value.trim().trim_end_matches('/').to_string())
+        .filter(|value| !value.is_empty())
+}
+
+fn oauth_public_url(path: &str) -> Option<String> {
+    pasion_public_base().map(|base| format!("{base}{path}"))
+}
+
+fn sentry_event_id(response: &gloo_net::http::Response) -> Option<String> {
+    response
+        .headers()
+        .get("X-Sentry-Event-Id")
+        .filter(|value| value.chars().any(|c| c != '0' && c != '-'))
+}
+
+fn error_suffix(response: &TextResponse) -> String {
+    response
+        .sentry_event_id
+        .as_ref()
+        .map(|event_id| format!(" [event_id: {event_id}]"))
+        .unwrap_or_default()
+}
+
+fn make_http_error(prefix: &str, response: &TextResponse) -> HttpError {
+    make_err(format!(
+        "{prefix} ({}): {}{}",
+        response.status,
+        response.text,
+        error_suffix(response),
+    ))
+}
+
+fn is_public_oauth_url(url: &str) -> bool {
+    url.starts_with("https://") || url.starts_with("http://")
+}
+
+async fn read_text_response(response: gloo_net::http::Response) -> Result<TextResponse, HttpError> {
+    let sentry_event_id = sentry_event_id(&response);
+    let status = response.status();
+    let text = response.text().await.map_err(|e| make_err(e.to_string()))?;
+
+    Ok(TextResponse {
+        status,
+        text,
+        sentry_event_id,
+    })
+}
+
+async fn send_form_post(url: &str, body: &str) -> Result<TextResponse, HttpError> {
+    let mut builder = Request::post(url)
+        .header("Content-Type", "application/x-www-form-urlencoded")
+        .header("Accept", "application/json");
+
+    if is_public_oauth_url(url) {
+        builder = builder.mode(RequestMode::Cors);
+    }
+
+    let response = builder
+        .body(body.to_string())
+        .map_err(|e| make_err(e.to_string()))?
+        .send()
+        .await
+        .map_err(|e| make_err(e.to_string()))?;
+
+    read_text_response(response).await
+}
+
+async fn send_bearer_get(url: &str, access_token: &str) -> Result<TextResponse, HttpError> {
+    let mut builder = Request::get(url)
+        .header("Accept", "application/json")
+        .header("Authorization", &format!("Bearer {access_token}"));
+
+    if is_public_oauth_url(url) {
+        builder = builder.mode(RequestMode::Cors);
+    }
+
+    let response = builder
+        .send()
+        .await
+        .map_err(|e| make_err(e.to_string()))?;
+
+    read_text_response(response).await
+}
+
+async fn send_oauth_form_request(path: &str, body: &str) -> Result<TextResponse, HttpError> {
+    match send_form_post(path, body).await {
+        Ok(response) if response.status < 500 => Ok(response),
+        Ok(proxy_response) => {
+            let Some(public_url) = oauth_public_url(path) else {
+                return Ok(proxy_response);
+            };
+
+            log::warn!(
+                "OAuth proxy request to {path} failed with {}, retrying {public_url}",
+                proxy_response.status
+            );
+
+            match send_form_post(&public_url, body).await {
+                Ok(public_response) => Ok(public_response),
+                Err(err) => {
+                    log::warn!("OAuth direct retry to {public_url} failed: {}", err.message);
+                    Ok(proxy_response)
+                }
+            }
+        }
+        Err(proxy_err) => {
+            let Some(public_url) = oauth_public_url(path) else {
+                return Err(proxy_err);
+            };
+
+            log::warn!(
+                "OAuth proxy request to {path} failed before a response, retrying {public_url}: {}",
+                proxy_err.message
+            );
+
+            match send_form_post(&public_url, body).await {
+                Ok(public_response) => Ok(public_response),
+                Err(_) => Err(proxy_err),
+            }
+        }
+    }
+}
+
+async fn send_oauth_bearer_get(path: &str, access_token: &str) -> Result<TextResponse, HttpError> {
+    match send_bearer_get(path, access_token).await {
+        Ok(response) if response.status < 500 => Ok(response),
+        Ok(proxy_response) => {
+            let Some(public_url) = oauth_public_url(path) else {
+                return Ok(proxy_response);
+            };
+
+            log::warn!(
+                "OAuth proxy request to {path} failed with {}, retrying {public_url}",
+                proxy_response.status
+            );
+
+            match send_bearer_get(&public_url, access_token).await {
+                Ok(public_response) => Ok(public_response),
+                Err(err) => {
+                    log::warn!("OAuth direct retry to {public_url} failed: {}", err.message);
+                    Ok(proxy_response)
+                }
+            }
+        }
+        Err(proxy_err) => {
+            let Some(public_url) = oauth_public_url(path) else {
+                return Err(proxy_err);
+            };
+
+            log::warn!(
+                "OAuth proxy request to {path} failed before a response, retrying {public_url}: {}",
+                proxy_err.message
+            );
+
+            match send_bearer_get(&public_url, access_token).await {
+                Ok(public_response) => Ok(public_response),
+                Err(_) => Err(proxy_err),
+            }
+        }
+    }
 }
 
 fn is_valid_device_id(device_id: &str) -> bool {
@@ -111,7 +283,7 @@ pub async fn start_oauth_login() {
 
     // Use Pasion's public URL for the browser redirect.
     // The /authorize endpoint is on Pasion's domain (not proxied through padmin).
-    let pasion_base = crate::utils::config::get_pasion_public_url().unwrap_or_default();
+    let pasion_base = pasion_public_base().unwrap_or_default();
 
     let auth_url = format!(
         "{pasion_base}/authorize?response_type=code\
@@ -163,26 +335,14 @@ pub async fn handle_oauth_callback(code: &str) -> Result<(), HttpError> {
         urlencoding::encode(&verifier),
     );
 
-    let response = Request::post("/oauth2/token")
-        .header("Content-Type", "application/x-www-form-urlencoded")
-        .header("Accept", "application/json")
-        .body(form_body)
-        .map_err(|e| make_err(e.to_string()))?
-        .send()
-        .await
-        .map_err(|e| make_err(e.to_string()))?;
+    let response = send_oauth_form_request("/oauth2/token", &form_body).await?;
 
-    let status = response.status();
-    let text = response.text().await.map_err(|e| make_err(e.to_string()))?;
-
-    if status >= 400 {
-        return Err(make_err(format!(
-            "Token exchange failed ({status}): {text}"
-        )));
+    if response.status >= 400 {
+        return Err(make_http_error("Token exchange failed", &response));
     }
 
     let token_resp: TokenResponse =
-        serde_json::from_str(&text).map_err(|e| make_err(e.to_string()))?;
+        serde_json::from_str(&response.text).map_err(|e| make_err(e.to_string()))?;
 
     storage::set_item("access_token", &token_resp.access_token);
     if let Some(ref rt) = token_resp.refresh_token {
@@ -190,18 +350,11 @@ pub async fn handle_oauth_callback(code: &str) -> Result<(), HttpError> {
     }
 
     // Fetch user identity from userinfo endpoint
-    let userinfo = Request::get("/oauth2/userinfo")
-        .header("Accept", "application/json")
-        .header(
-            "Authorization",
-            &format!("Bearer {}", token_resp.access_token),
-        )
-        .send()
-        .await
-        .map_err(|e| make_err(e.to_string()))?;
+    let userinfo = send_oauth_bearer_get("/oauth2/userinfo", &token_resp.access_token).await?;
 
-    if userinfo.status() < 400 {
-        let info: serde_json::Value = userinfo.json().await.map_err(|e| make_err(e.to_string()))?;
+    if userinfo.status < 400 {
+        let info: serde_json::Value =
+            serde_json::from_str(&userinfo.text).map_err(|e| make_err(e.to_string()))?;
         if let Some(sub) = info.get("sub").and_then(|v| v.as_str()) {
             storage::set_item("user_id", sub);
         }
@@ -286,28 +439,16 @@ pub async fn refresh_oauth_token() -> bool {
         urlencoding::encode(&refresh_token),
     );
 
-    let response = match Request::post("/oauth2/token")
-        .header("Content-Type", "application/x-www-form-urlencoded")
-        .header("Accept", "application/json")
-        .body(form_body)
-    {
-        Ok(req) => match req.send().await {
-            Ok(resp) => resp,
-            Err(_) => return false,
-        },
+    let response = match send_oauth_form_request("/oauth2/token", &form_body).await {
+        Ok(response) => response,
         Err(_) => return false,
     };
 
-    if response.status() >= 400 {
+    if response.status >= 400 {
         return false;
     }
 
-    let text = match response.text().await {
-        Ok(t) => t,
-        Err(_) => return false,
-    };
-
-    let token_resp: TokenResponse = match serde_json::from_str(&text) {
+    let token_resp: TokenResponse = match serde_json::from_str(&response.text) {
         Ok(t) => t,
         Err(_) => return false,
     };
@@ -379,12 +520,7 @@ pub async fn logout() -> Result<(), HttpError> {
             "token={}&client_id={OAUTH_CLIENT_ID}",
             urlencoding::encode(&token)
         );
-        if let Ok(req) = Request::post("/oauth2/revoke")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body(body)
-        {
-            let _ = req.send().await;
-        }
+        let _ = send_oauth_form_request("/oauth2/revoke", &body).await;
     }
 
     // Step 2: end the pasion browser session. Without this, clicking
