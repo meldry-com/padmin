@@ -26,6 +26,7 @@ jobs:
       gitea_registry_user: ${{ steps.image.outputs.gitea_registry_user }}
       use_gitea_registry: ${{ steps.image.outputs.use_gitea_registry }}
       use_dockerhub: ${{ steps.image.outputs.use_dockerhub }}
+      cache_image: ${{ steps.image.outputs.cache_image }}
       push_images: ${{ steps.image.outputs.push_images }}
       images: ${{ steps.image.outputs.images }}
       tags: ${{ steps.meta.outputs.tags }}
@@ -57,11 +58,13 @@ jobs:
           gitea_image="$registry_host/$REPOSITORY"
           use_gitea_registry="false"
           use_dockerhub="false"
+          cache_image=""
 
           images=()
 
           if [ -n "${REGISTRY_USER:-}" ] && [ -n "${REGISTRY_TOKEN:-}" ]; then
             use_gitea_registry="true"
+            cache_image="$gitea_image"
             images+=("$gitea_image")
           fi
 
@@ -69,6 +72,9 @@ jobs:
             dockerhub_namespace="${DOCKERHUB_NAMESPACE:-$DOCKERHUB_USER}"
             dockerhub_image="$dockerhub_namespace/$repo_name"
             use_dockerhub="true"
+            if [ -z "$cache_image" ]; then
+              cache_image="$dockerhub_image"
+            fi
             images+=("$dockerhub_image")
           else
             dockerhub_image=""
@@ -88,6 +94,7 @@ jobs:
             echo "gitea_registry_user=${REGISTRY_USER:-}"
             echo "use_gitea_registry=$use_gitea_registry"
             echo "use_dockerhub=$use_dockerhub"
+            echo "cache_image=$cache_image"
             echo "push_images=$push_images"
             echo "images<<EOF"
             printf "%s\n" "${images[@]}"
@@ -129,12 +136,63 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Smoke test runtime configuration
+      - name: Log in to Gitea registry
+        if: needs.prepare.outputs.use_gitea_registry == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ needs.prepare.outputs.gitea_registry }}
+          username: ${{ needs.prepare.outputs.gitea_registry_user }}
+          password: ${{ secrets.REGISTRY_TOKEN }}
+
+      - name: Log in to Docker Hub
+        if: needs.prepare.outputs.use_gitea_registry != 'true' && needs.prepare.outputs.use_dockerhub == 'true'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Compute smoke-test cache refs
+        id: smoke-cache
         shell: bash
+        env:
+          CACHE_IMAGE: ${{ needs.prepare.outputs.cache_image }}
+          PUSH_IMAGES: ${{ needs.prepare.outputs.push_images }}
         run: |
           set -euo pipefail
 
-          docker buildx build --load --tag padmin-smoke .
+          cache_from=""
+          cache_to=""
+
+          if [ -n "$CACHE_IMAGE" ]; then
+            cache_from="type=registry,ref=${CACHE_IMAGE}:buildcache-amd64"
+
+            if [ "$PUSH_IMAGES" = "true" ]; then
+              cache_to="type=registry,ref=${CACHE_IMAGE}:buildcache-amd64,mode=max"
+            fi
+          fi
+
+          echo "cache_from=$cache_from" >> "$GITHUB_OUTPUT"
+          echo "cache_to=$cache_to" >> "$GITHUB_OUTPUT"
+
+      - name: Smoke test runtime configuration
+        shell: bash
+        env:
+          CACHE_FROM: ${{ steps.smoke-cache.outputs.cache_from }}
+          CACHE_TO: ${{ steps.smoke-cache.outputs.cache_to }}
+        run: |
+          set -euo pipefail
+
+          build_args=(--load --tag padmin-smoke)
+
+          if [ -n "${CACHE_FROM:-}" ]; then
+            build_args+=(--cache-from "$CACHE_FROM")
+          fi
+
+          if [ -n "${CACHE_TO:-}" ]; then
+            build_args+=(--cache-to "$CACHE_TO")
+          fi
+
+          docker buildx build "${build_args[@]}" .
 
           run_case() {
             local name="$1"
@@ -198,7 +256,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Log in to Gitea registry
-        if: needs.prepare.outputs.push_images == 'true' && needs.prepare.outputs.use_gitea_registry == 'true'
+        if: needs.prepare.outputs.use_gitea_registry == 'true'
         uses: docker/login-action@v3
         with:
           registry: ${{ needs.prepare.outputs.gitea_registry }}
@@ -206,11 +264,35 @@ jobs:
           password: ${{ secrets.REGISTRY_TOKEN }}
 
       - name: Log in to Docker Hub
-        if: needs.prepare.outputs.push_images == 'true' && needs.prepare.outputs.use_dockerhub == 'true'
+        if: needs.prepare.outputs.use_dockerhub == 'true' && (needs.prepare.outputs.push_images == 'true' || needs.prepare.outputs.use_gitea_registry != 'true')
         uses: docker/login-action@v3
         with:
           username: ${{ vars.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Compute build cache refs
+        id: build-cache
+        shell: bash
+        env:
+          CACHE_IMAGE: ${{ needs.prepare.outputs.cache_image }}
+          PUSH_IMAGES: ${{ needs.prepare.outputs.push_images }}
+          ARCH: ${{ matrix.arch }}
+        run: |
+          set -euo pipefail
+
+          cache_from=""
+          cache_to=""
+
+          if [ -n "$CACHE_IMAGE" ]; then
+            cache_from="type=registry,ref=${CACHE_IMAGE}:buildcache-${ARCH}"
+
+            if [ "$PUSH_IMAGES" = "true" ]; then
+              cache_to="type=registry,ref=${CACHE_IMAGE}:buildcache-${ARCH},mode=max"
+            fi
+          fi
+
+          echo "cache_from=$cache_from" >> "$GITHUB_OUTPUT"
+          echo "cache_to=$cache_to" >> "$GITHUB_OUTPUT"
 
       - name: Compute platform tags
         id: platform-tags
@@ -247,6 +329,8 @@ jobs:
           push: ${{ needs.prepare.outputs.push_images == 'true' }}
           tags: ${{ steps.platform-tags.outputs.tags }}
           labels: ${{ needs.prepare.outputs.labels }}
+          cache-from: ${{ steps.build-cache.outputs.cache_from }}
+          cache-to: ${{ steps.build-cache.outputs.cache_to }}
 
   merge-manifest:
     needs:
