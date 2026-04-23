@@ -23,7 +23,7 @@ test.describe("Sidebar Navigation", () => {
       await expect(sidebar.locator("button", { hasText: item })).toBeVisible();
     }
 
-    await expect(sidebar.locator("button", { hasText: "Logout" })).toBeVisible();
+    await expect(page.locator("header").getByRole("button", { name: "Logout" })).toBeVisible();
   });
 
   test("navigates to each section and highlights active item", async ({ page }) => {
@@ -75,7 +75,7 @@ test.describe("Sidebar Navigation", () => {
       await page.goto(`${PADMIN_URL}/`);
       await expect(page.locator("aside")).toBeVisible({ timeout: 20_000 });
 
-      await page.locator("aside").locator("button", { hasText: "Logout" }).click();
+      await page.locator("header").getByRole("button", { name: "Logout" }).click();
       await expect(
         page.getByRole("heading", { name: "Palpo Admin" })
       ).toBeVisible({ timeout: 20_000 });

@@ -277,24 +277,6 @@ pub fn AppSidebar(collapsed: Signal<bool>, mobile_open: Signal<bool>) -> Element
                     }
                 }
             }
-
-            // Footer
-            div { class: "border-t border-sidebar-border px-2 py-2",
-                button {
-                    class: "sidebar-nav-button flex w-full items-center gap-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors {nav_item_layout_class}",
-                    onclick: move |_| {
-                        mobile_open.set(false);
-                        spawn(async move {
-                            let _ = crate::api::auth::logout().await;
-                            nav.push(Route::LoginPage {});
-                        });
-                    },
-                    Icon { name: "log-out".to_string(), class: "h-4 w-4 shrink-0".to_string() }
-                    if !is_collapsed {
-                        span { {t("nav.logout")} }
-                    }
-                }
-            }
         }
     }
 }

@@ -665,12 +665,22 @@ svg { display: block; }
    justify-content: flex-end;
    gap: 0.75rem;
 }
+.app-header-session {
+   display: flex;
+   align-items: center;
+   gap: 0.5rem;
+   min-width: 0;
+}
 .app-header-user {
    max-width: 16rem;
    min-width: 0;
    overflow: hidden;
    text-overflow: ellipsis;
    white-space: nowrap;
+}
+.app-header-logout {
+   white-space: nowrap;
+   flex-shrink: 0;
 }
 
 .page-header {
@@ -762,6 +772,7 @@ svg { display: block; }
 @media (max-width: 639px) {
    .app-header-controls { gap: 0.5rem; }
    .app-header-user { display: none; }
+   .app-header-session { gap: 0; }
    .app-header-language { max-width: 6.75rem; }
 }
 

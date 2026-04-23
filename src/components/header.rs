@@ -3,6 +3,7 @@ use dioxus::prelude::*;
 use crate::components::theme::{get_resolved_theme, set_theme};
 use crate::components::ui::icons::Icon;
 use crate::components::ui::notifications::{self, NOTIFICATIONS, NotificationSeverity};
+use crate::router::Route;
 use crate::utils::i18n::{Language, current_language, set_language, t};
 
 #[component]
@@ -11,6 +12,7 @@ pub fn AppHeader(collapsed: Signal<bool>, mobile_sidebar_open: Signal<bool>) -> 
     let mut is_mobile_sidebar_open = mobile_sidebar_open;
     let mut dark_mode = use_signal(|| get_resolved_theme() == "dark");
     let mut show_notifications = use_signal(|| false);
+    let nav = use_navigator();
 
     let unread = notifications::unread_count();
 
@@ -144,19 +146,32 @@ pub fn AppHeader(collapsed: Signal<bool>, mobile_sidebar_open: Signal<bool>) -> 
                         .map(|c| c.to_uppercase().to_string())
                         .unwrap_or_default();
                     rsx! {
-                        div { class: "app-header-user flex items-center gap-2", title: "{full}",
-                            div { class: "flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary overflow-hidden",
-                                if let Some(url) = avatar_url.as_deref() {
-                                    if !url.is_empty() {
-                                        img { src: "{url}", alt: "{full}", class: "h-full w-full object-cover" }
+                        div { class: "app-header-session",
+                            div { class: "app-header-user flex items-center gap-2", title: "{full}",
+                                div { class: "flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary overflow-hidden",
+                                    if let Some(url) = avatar_url.as_deref() {
+                                        if !url.is_empty() {
+                                            img { src: "{url}", alt: "{full}", class: "h-full w-full object-cover" }
+                                        } else {
+                                            span { "{initial}" }
+                                        }
                                     } else {
                                         span { "{initial}" }
                                     }
-                                } else {
-                                    span { "{initial}" }
                                 }
+                                div { class: "min-w-0 truncate text-xs font-mono text-muted-foreground", "{label}" }
                             }
-                            div { class: "min-w-0 truncate text-xs font-mono text-muted-foreground", "{label}" }
+                            button {
+                                class: "app-header-logout inline-flex h-9 items-center justify-center rounded-lg border bg-background px-3 text-xs font-medium text-foreground hover:bg-accent hover:text-accent-foreground touch-target",
+                                onclick: move |_| {
+                                    let nav = nav.clone();
+                                    spawn(async move {
+                                        let _ = crate::api::auth::logout().await;
+                                        nav.push(Route::LoginPage {});
+                                    });
+                                },
+                                {t("nav.logout")}
+                            }
                         }
                     }
                 }

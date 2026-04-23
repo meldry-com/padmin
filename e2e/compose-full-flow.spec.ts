@@ -431,7 +431,7 @@ test.describe("Compose Stack Full Flow", () => {
 
     try {
       await loginToPadminWithAccessToken(page, freshAdminToken.accessToken, freshAdminToken.userId);
-      await page.locator("aside").getByRole("button", { name: "Logout" }).click();
+      await page.locator("header").getByRole("button", { name: "Logout" }).click();
       await expect(page.getByRole("heading", { name: "Palpo Admin" })).toBeVisible({
         timeout: 20_000,
       });
