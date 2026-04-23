@@ -13,6 +13,7 @@ use crate::utils::storage;
 const OAUTH_CLIENT_ID: &str = "01KMQPADM1N000000000000000";
 const MATRIX_API_SCOPE: &str = "urn:matrix:org.matrix.msc2967.client:api:*";
 const MATRIX_DEVICE_SCOPE_PREFIX: &str = "urn:matrix:org.matrix.msc2967.client:device:";
+const PALPO_ADMIN_SCOPE: &str = "urn:palpo:admin:*";
 const PASION_ADMIN_SCOPE: &str = "urn:pasion:admin";
 const OAUTH_DEVICE_ID_STORAGE_KEY: &str = "oauth_device_id";
 
@@ -23,14 +24,13 @@ struct TextResponse {
     sentry_event_id: Option<String>,
 }
 
-// - openid: userinfo access
-// - urn:matrix:...:api:* + :device:{device_id}: delegated Matrix/Palpo access
-// - urn:pasion:admin: pasion's /api/admin/v1/* endpoints (upstream providers,
-//   personal sessions, audit feed, ...). Without it every pasion admin call
-//   returns 401 "Missing admin scope".
+// - urn:matrix:...:api:* + :device:{device_id}: delegated Matrix client access
+//   with a concrete device identifier for compatibility
+// - urn:palpo:admin:*: Palpo admin endpoints under /_palpo/admin/*
+// - urn:pasion:admin: Pasion admin endpoints under /api/admin/v1/*
 fn build_oauth_scope(device_id: &str) -> String {
     format!(
-        "openid {MATRIX_API_SCOPE} {MATRIX_DEVICE_SCOPE_PREFIX}{device_id} {PASION_ADMIN_SCOPE}"
+        "{MATRIX_API_SCOPE} {MATRIX_DEVICE_SCOPE_PREFIX}{device_id} {PALPO_ADMIN_SCOPE} {PASION_ADMIN_SCOPE}"
     )
 }
 
@@ -124,10 +124,7 @@ async fn send_bearer_get(url: &str, access_token: &str) -> Result<TextResponse, 
         builder = builder.mode(RequestMode::Cors);
     }
 
-    let response = builder
-        .send()
-        .await
-        .map_err(|e| make_err(e.to_string()))?;
+    let response = builder.send().await.map_err(|e| make_err(e.to_string()))?;
 
     read_text_response(response).await
 }
@@ -164,45 +161,6 @@ async fn send_oauth_form_request(path: &str, body: &str) -> Result<TextResponse,
             );
 
             match send_form_post(&public_url, body).await {
-                Ok(public_response) => Ok(public_response),
-                Err(_) => Err(proxy_err),
-            }
-        }
-    }
-}
-
-async fn send_oauth_bearer_get(path: &str, access_token: &str) -> Result<TextResponse, HttpError> {
-    match send_bearer_get(path, access_token).await {
-        Ok(response) if response.status < 500 => Ok(response),
-        Ok(proxy_response) => {
-            let Some(public_url) = oauth_public_url(path) else {
-                return Ok(proxy_response);
-            };
-
-            log::warn!(
-                "OAuth proxy request to {path} failed with {}, retrying {public_url}",
-                proxy_response.status
-            );
-
-            match send_bearer_get(&public_url, access_token).await {
-                Ok(public_response) => Ok(public_response),
-                Err(err) => {
-                    log::warn!("OAuth direct retry to {public_url} failed: {}", err.message);
-                    Ok(proxy_response)
-                }
-            }
-        }
-        Err(proxy_err) => {
-            let Some(public_url) = oauth_public_url(path) else {
-                return Err(proxy_err);
-            };
-
-            log::warn!(
-                "OAuth proxy request to {path} failed before a response, retrying {public_url}: {}",
-                proxy_err.message
-            );
-
-            match send_bearer_get(&public_url, access_token).await {
                 Ok(public_response) => Ok(public_response),
                 Err(_) => Err(proxy_err),
             }
@@ -349,44 +307,33 @@ pub async fn handle_oauth_callback(code: &str) -> Result<(), HttpError> {
         storage::set_item("refresh_token", rt);
     }
 
-    // Fetch user identity from userinfo endpoint
-    let userinfo = send_oauth_bearer_get("/oauth2/userinfo", &token_resp.access_token).await?;
-
-    if userinfo.status < 400 {
-        let info: serde_json::Value =
-            serde_json::from_str(&userinfo.text).map_err(|e| make_err(e.to_string()))?;
-        if let Some(sub) = info.get("sub").and_then(|v| v.as_str()) {
-            storage::set_item("user_id", sub);
-        }
-        // Store human-readable display name for the header
-        let display = info
-            .get("username")
-            .or_else(|| info.get("preferred_username"))
-            .or_else(|| info.get("name"))
-            .or_else(|| info.get("email"))
-            .and_then(|v| v.as_str());
-        if let Some(name) = display {
-            storage::set_item("user_display_name", name);
-        }
-        if let Some(picture) = info.get("picture").and_then(|v| v.as_str()) {
-            storage::set_item("user_avatar_url", picture);
-        }
+    // Resolve the Matrix identity directly from the delegated access token.
+    // This keeps the admin dashboard login flow aligned with the tested
+    // device-code helper and avoids depending on OIDC userinfo / id_token.
+    let whoami = send_bearer_get(
+        "/_matrix/client/v3/account/whoami",
+        &token_resp.access_token,
+    )
+    .await?;
+    if whoami.status >= 400 {
+        return Err(make_http_error("Matrix whoami failed", &whoami));
     }
 
-    // Fallback: if userinfo didn't provide a human-readable name, try the
-    // Matrix profile endpoint for the just-logged-in user. This covers
-    // upstream OIDC providers whose claims_imports don't map `name` /
-    // `preferred_username` into Pasion's userinfo response.
-    if storage::get_item("user_display_name").is_none()
-        || storage::get_item("user_avatar_url").is_none()
+    let whoami: WhoamiResponse =
+        serde_json::from_str(&whoami.text).map_err(|e| make_err(e.to_string()))?;
+    storage::set_item("user_id", &whoami.user_id);
+    if let Some(device_id) = whoami.device_id.as_deref()
+        && is_valid_device_id(device_id)
     {
-        if let Some((_, displayname, avatar)) = get_identity().await {
-            if let Some(name) = displayname {
-                storage::set_item("user_display_name", &name);
-            }
-            if let Some(url) = avatar {
-                storage::set_item("user_avatar_url", &url);
-            }
+        storage::set_item(OAUTH_DEVICE_ID_STORAGE_KEY, device_id);
+    }
+
+    if let Some((_, displayname, avatar)) = get_identity().await {
+        if let Some(name) = displayname {
+            storage::set_item("user_display_name", &name);
+        }
+        if let Some(url) = avatar {
+            storage::set_item("user_avatar_url", &url);
         }
     }
 
@@ -592,6 +539,9 @@ mod tests {
 
         assert!(scope.contains("urn:matrix:org.matrix.msc2967.client:device:ABCdef123456"));
         assert!(!scope.contains("urn:matrix:org.matrix.msc2967.client:device:*"));
+        assert!(scope.contains("urn:palpo:admin:*"));
+        assert!(scope.contains("urn:pasion:admin"));
+        assert!(!scope.contains("openid"));
     }
 }
 
