@@ -121,19 +121,28 @@ pub fn AppHeader(collapsed: Signal<bool>, mobile_sidebar_open: Signal<bool>) -> 
                     let display_name_opt = crate::utils::storage::get_item("user_display_name");
                     let user_id_opt = crate::utils::storage::get_item("user_id");
                     let avatar_url = crate::utils::storage::get_item("user_avatar_url");
-                    let (label, full) = match (display_name_opt.as_deref(), user_id_opt.as_deref()) {
-                        (Some(name), _) if !name.is_empty() => (name.to_string(), name.to_string()),
-                        (_, Some(id)) if !id.is_empty() => {
-                            let short = if id.len() > 10 {
-                                format!("{}…", &id[..8])
-                            } else {
-                                id.to_string()
-                            };
-                            (short, id.to_string())
-                        }
-                        _ => (String::new(), String::new()),
+                    let display_name = display_name_opt.filter(|name| !name.is_empty());
+                    let user_id = user_id_opt.filter(|id| !id.is_empty());
+                    let label = user_id
+                        .clone()
+                        .or_else(|| display_name.clone())
+                        .unwrap_or_default();
+                    let full = match (display_name.as_deref(), user_id.as_deref()) {
+                        (Some(name), Some(id)) => format!("{name} ({id})"),
+                        (Some(name), None) => name.to_string(),
+                        (None, Some(id)) => id.to_string(),
+                        _ => String::new(),
                     };
-                    let initial = full.chars().next().map(|c| c.to_uppercase().to_string()).unwrap_or_default();
+                    let initial_source = display_name
+                        .as_deref()
+                        .or(user_id.as_deref())
+                        .unwrap_or("")
+                        .trim_start_matches('@');
+                    let initial = initial_source
+                        .chars()
+                        .next()
+                        .map(|c| c.to_uppercase().to_string())
+                        .unwrap_or_default();
                     rsx! {
                         div { class: "app-header-user flex items-center gap-2", title: "{full}",
                             div { class: "flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary overflow-hidden",
@@ -147,7 +156,7 @@ pub fn AppHeader(collapsed: Signal<bool>, mobile_sidebar_open: Signal<bool>) -> 
                                     span { "{initial}" }
                                 }
                             }
-                            span { class: "text-sm text-muted-foreground hidden sm:inline", "{label}" }
+                            div { class: "min-w-0 truncate text-xs font-mono text-muted-foreground", "{label}" }
                         }
                     }
                 }
