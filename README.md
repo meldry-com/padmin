@@ -46,18 +46,45 @@ The dev server runs at `http://localhost:8080` by default.
 # Build the Docker image
 docker build -t palpo-admin .
 
-# Run on port 9090
-docker run -p 9090:80 palpo-admin
+# Run on port 9090 — the container listens on 8080 by default because
+# the image uses the unprivileged nginx variant (nginxinc/nginx-unprivileged).
+docker run -p 9090:8080 palpo-admin
+
+# To override the listen port inside the container (e.g. to bind 80 if you
+# pair this with a sidecar that needs the lower port), set PADMIN_PORT and
+# remember to expose that port:
+docker run -p 9090:80 -e PADMIN_PORT=80 palpo-admin
 ```
 
-The image uses a multi-stage build: Rust/Dioxus compiles the WASM app, then nginx serves the static files.
-The nginx entrypoint also exposes `/healthz` for container and platform liveness checks.
+The image uses a multi-stage build: Rust/Dioxus compiles the WASM app, then
+the unprivileged nginx image serves the static files as a non-root user.
+The nginx entrypoint also exposes `/healthz` for container and platform
+liveness checks.
 
 GitHub Actions publishes multi-architecture images for `linux/amd64` and `linux/arm64` to GHCR:
 
 ```bash
 docker pull ghcr.io/meldry-com/padmin:latest
 ```
+
+## Credential rotation policy
+
+Every secret-bearing field in `examples/pasion.yaml`, `examples/palpo.toml`,
+and any compose file shipped here is a **placeholder**. Replace each value
+before deploying:
+
+- GitHub / Google / other upstream OAuth apps → register your own and paste
+  the `client_id` / `client_secret` (the example file uses
+  `REPLACE_WITH_YOUR_GITHUB_CLIENT_SECRET` etc.).
+- SMTP credentials → use your own provider; for Gmail generate an App
+  Password at <https://myaccount.google.com/apppasswords>.
+- Pasion encryption / signing keys → generate fresh material with
+  `openssl rand -hex 32` and `openssl genpkey -algorithm RSA …` rather than
+  reusing what ships in any sample config.
+- Matrix shared secret (`matrix.secret`) → `openssl rand -base64 24`.
+
+If a real secret was ever committed (this repo's history previously
+contained one), treat it as compromised and rotate it.
 
 ## Full Stack Example
 

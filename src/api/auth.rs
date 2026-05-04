@@ -9,8 +9,10 @@ use crate::utils::error::HttpError;
 use crate::utils::storage;
 
 // ── OAuth2 client configuration ──────────────────────────────────────────────
-// Must match the client_id registered in pasion.yaml
-const OAUTH_CLIENT_ID: &str = "01KMQPADM1N000000000000000";
+// The `client_id` is loaded at runtime from `/config.json` (see
+// `crate::utils::config::get_oauth_client_id`). A bundle-level default is
+// kept so a fresh container without a custom config still works against the
+// canonical pasion deployment shipped in `examples/pasion.yaml`.
 const MATRIX_API_SCOPE: &str = "urn:matrix:org.matrix.msc2967.client:api:*";
 const MATRIX_DEVICE_SCOPE_PREFIX: &str = "urn:matrix:org.matrix.msc2967.client:device:";
 const PALPO_ADMIN_SCOPE: &str = "urn:palpo:admin:*";
@@ -177,119 +179,209 @@ fn is_valid_device_id(device_id: &str) -> bool {
 
 // ── PKCE helpers ─────────────────────────────────────────────────────────────
 
-/// Generate a cryptographically random code verifier (RFC 7636).
-fn generate_code_verifier() -> String {
-    let crypto = web_sys::window().unwrap().crypto().unwrap();
-    let mut buf = [0u8; 32];
-    crypto
+const PKCE_VERIFIER_KEY: &str = "pkce_code_verifier";
+const OAUTH_STATE_KEY: &str = "oauth_state";
+
+fn js_err(prefix: &str, value: wasm_bindgen::JsValue) -> HttpError {
+    let detail = value
+        .as_string()
+        .or_else(|| {
+            js_sys::Reflect::get(&value, &wasm_bindgen::JsValue::from_str("message"))
+                .ok()
+                .and_then(|v| v.as_string())
+        })
+        .unwrap_or_else(|| format!("{value:?}"));
+    make_err(format!("{prefix}: {detail}"))
+}
+
+fn window() -> Result<web_sys::Window, HttpError> {
+    web_sys::window().ok_or_else(|| make_err("browser window unavailable".into()))
+}
+
+fn session_storage() -> Result<web_sys::Storage, HttpError> {
+    let storage = window()?
+        .session_storage()
+        .map_err(|e| js_err("sessionStorage access denied", e))?
+        .ok_or_else(|| make_err("sessionStorage unavailable in this context".into()))?;
+    Ok(storage)
+}
+
+fn crypto() -> Result<web_sys::Crypto, HttpError> {
+    window()?
+        .crypto()
+        .map_err(|e| js_err("window.crypto unavailable", e))
+}
+
+/// Generate `len` random bytes via the Web Crypto API.
+fn random_bytes<const N: usize>() -> Result<[u8; N], HttpError> {
+    let mut buf = [0u8; N];
+    crypto()?
         .get_random_values_with_u8_array(&mut buf)
-        .expect("get_random_values failed");
+        .map_err(|e| js_err("getRandomValues failed", e))?;
+    Ok(buf)
+}
+
+/// Generate a cryptographically random code verifier (RFC 7636).
+fn generate_code_verifier() -> Result<String, HttpError> {
+    let buf = random_bytes::<32>()?;
+    base64url_encode(&buf)
+}
+
+/// Generate the OAuth `state` value used for CSRF protection on the
+/// authorization callback.
+fn generate_oauth_state() -> Result<String, HttpError> {
+    let buf = random_bytes::<32>()?;
     base64url_encode(&buf)
 }
 
 /// Compute SHA-256 of the verifier and return the base64url-encoded challenge.
-async fn compute_code_challenge(verifier: &str) -> String {
-    let crypto = web_sys::window().unwrap().crypto().unwrap();
-    let subtle = crypto.subtle();
+async fn compute_code_challenge(verifier: &str) -> Result<String, HttpError> {
+    let subtle = crypto()?.subtle();
     let data = js_sys::Uint8Array::from(verifier.as_bytes());
     let promise = subtle
         .digest_with_str_and_buffer_source("SHA-256", &data)
-        .expect("digest failed");
-    let result = JsFuture::from(promise).await.expect("digest await failed");
-    let buffer = result.dyn_into::<js_sys::ArrayBuffer>().unwrap();
+        .map_err(|e| js_err("subtle.digest failed", e))?;
+    let result = JsFuture::from(promise)
+        .await
+        .map_err(|e| js_err("subtle.digest await failed", e))?;
+    let buffer = result
+        .dyn_into::<js_sys::ArrayBuffer>()
+        .map_err(|e| js_err("digest result was not an ArrayBuffer", e))?;
     let bytes = js_sys::Uint8Array::new(&buffer).to_vec();
     base64url_encode(&bytes)
 }
 
-fn base64url_encode(data: &[u8]) -> String {
+fn base64url_encode(data: &[u8]) -> Result<String, HttpError> {
     // Use window.btoa for base64 encoding
     let binary: String = data.iter().map(|&b| b as char).collect();
-    let b64 = web_sys::window()
-        .unwrap()
+    let b64 = window()?
         .btoa(&binary)
-        .expect("btoa failed");
-    b64.replace('+', "-")
+        .map_err(|e| js_err("btoa failed", e))?;
+    Ok(b64.replace('+', "-")
         .replace('/', "_")
         .trim_end_matches('=')
-        .to_string()
+        .to_string())
 }
 
 // ── OAuth2 Authorization Code + PKCE flow ────────────────────────────────────
 
 /// Start the OAuth2 login flow: redirect the browser to Pasion's /authorize.
-pub async fn start_oauth_login() {
-    let verifier = generate_code_verifier();
-    let challenge = compute_code_challenge(&verifier).await;
+///
+/// Returns `Err` if any browser primitive (crypto, sessionStorage, …) is
+/// unavailable, so the caller can render a useful error instead of having
+/// the WASM panic and crash the page.
+pub async fn start_oauth_login() -> Result<(), HttpError> {
+    let verifier = generate_code_verifier()?;
+    let challenge = compute_code_challenge(&verifier).await?;
+    let state = generate_oauth_state()?;
     let device_id = get_or_create_device_id();
     let scope = build_oauth_scope(&device_id);
 
-    // Store verifier in sessionStorage for the callback
-    let session = web_sys::window()
-        .unwrap()
-        .session_storage()
-        .unwrap()
-        .unwrap();
+    // Store verifier + state in sessionStorage so the callback can match them.
+    let session = session_storage()?;
     session
-        .set_item("pkce_code_verifier", &verifier)
-        .expect("sessionStorage set failed");
+        .set_item(PKCE_VERIFIER_KEY, &verifier)
+        .map_err(|e| js_err("sessionStorage set failed", e))?;
+    session
+        .set_item(OAUTH_STATE_KEY, &state)
+        .map_err(|e| js_err("sessionStorage set failed", e))?;
 
     let redirect_uri = {
-        let location = web_sys::window().unwrap().location();
-        let origin = location.origin().unwrap();
+        let location = window()?.location();
+        let origin = location
+            .origin()
+            .map_err(|e| js_err("window.location.origin unavailable", e))?;
         format!("{origin}/oauth/callback")
     };
 
     // Use Pasion's public URL for the browser redirect.
     // The /authorize endpoint is on Pasion's domain (not proxied through padmin).
-    let pasion_base = pasion_public_base().unwrap_or_default();
+    let pasion_base = pasion_public_base()
+        .ok_or_else(|| make_err("pasion_public_url is not configured".into()))?;
+    let client_id = crate::utils::config::get_oauth_client_id();
 
     let auth_url = format!(
         "{pasion_base}/authorize?response_type=code\
-         &client_id={OAUTH_CLIENT_ID}\
+         &client_id={}\
          &redirect_uri={}\
+         &state={}\
          &code_challenge={challenge}\
          &code_challenge_method=S256\
          &scope={}",
+        urlencoding::encode(&client_id),
         urlencoding::encode(&redirect_uri),
+        urlencoding::encode(&state),
         urlencoding::encode(&scope),
     );
 
     // Full page redirect to Pasion login
-    web_sys::window()
-        .unwrap()
+    window()?
         .location()
         .set_href(&auth_url)
-        .expect("redirect failed");
+        .map_err(|e| js_err("location.href assignment failed", e))?;
+    Ok(())
 }
 
 /// Exchange the authorization code for tokens (called from /oauth/callback).
-pub async fn handle_oauth_callback(code: &str) -> Result<(), HttpError> {
-    let session = web_sys::window()
-        .unwrap()
-        .session_storage()
-        .unwrap()
-        .unwrap();
+///
+/// `received_state` must be the `state` query parameter the callback page
+/// observed. Pass `None` to skip the check (legacy paths only — callers in
+/// the browser SHOULD always pass it).
+pub async fn handle_oauth_callback(
+    code: &str,
+    received_state: Option<&str>,
+) -> Result<(), HttpError> {
+    let session = session_storage()?;
     let verifier = session
-        .get_item("pkce_code_verifier")
+        .get_item(PKCE_VERIFIER_KEY)
         .ok()
         .flatten()
         .ok_or_else(|| make_err("Missing PKCE verifier — please restart login".into()))?;
-    session.remove_item("pkce_code_verifier").ok();
+    let stored_state = session.get_item(OAUTH_STATE_KEY).ok().flatten();
+    // Always clear the one-shot values so a replay can't reuse them.
+    session.remove_item(PKCE_VERIFIER_KEY).ok();
+    session.remove_item(OAUTH_STATE_KEY).ok();
+
+    match (stored_state.as_deref(), received_state) {
+        (Some(stored), Some(received)) if stored == received => {}
+        (Some(_), Some(_)) => {
+            return Err(make_err(
+                "OAuth state mismatch — refusing token exchange. Please restart login.".into(),
+            ));
+        }
+        (Some(_), None) => {
+            return Err(make_err(
+                "OAuth callback missing `state` parameter — refusing token exchange.".into(),
+            ));
+        }
+        (None, _) => {
+            // No stored state means start_oauth_login wasn't run in this tab,
+            // or the user navigated back. Treat as a restart-required error.
+            return Err(make_err(
+                "Missing OAuth state — please restart login.".into(),
+            ));
+        }
+    }
 
     let redirect_uri = {
-        let origin = web_sys::window().unwrap().location().origin().unwrap();
+        let origin = window()?
+            .location()
+            .origin()
+            .map_err(|e| js_err("window.location.origin unavailable", e))?;
         format!("{origin}/oauth/callback")
     };
 
     // Token exchange
+    let client_id = crate::utils::config::get_oauth_client_id();
     let form_body = format!(
         "grant_type=authorization_code\
          &code={}\
          &redirect_uri={}\
-         &client_id={OAUTH_CLIENT_ID}\
+         &client_id={}\
          &code_verifier={}",
         urlencoding::encode(code),
         urlencoding::encode(&redirect_uri),
+        urlencoding::encode(&client_id),
         urlencoding::encode(&verifier),
     );
 
@@ -379,11 +471,13 @@ pub async fn refresh_oauth_token() -> bool {
         None => return false,
     };
 
+    let client_id = crate::utils::config::get_oauth_client_id();
     let form_body = format!(
         "grant_type=refresh_token\
          &refresh_token={}\
-         &client_id={OAUTH_CLIENT_ID}",
+         &client_id={}",
         urlencoding::encode(&refresh_token),
+        urlencoding::encode(&client_id),
     );
 
     let response = match send_oauth_form_request("/oauth2/token", &form_body).await {
@@ -463,9 +557,11 @@ pub async fn logout() -> Result<(), HttpError> {
     // Step 1: revoke the OAuth access token so it can no longer be used
     // against palpo's admin API.
     if let Some(token) = storage::get_item("access_token") {
+        let client_id = crate::utils::config::get_oauth_client_id();
         let body = format!(
-            "token={}&client_id={OAUTH_CLIENT_ID}",
-            urlencoding::encode(&token)
+            "token={}&client_id={}",
+            urlencoding::encode(&token),
+            urlencoding::encode(&client_id),
         );
         let _ = send_oauth_form_request("/oauth2/revoke", &body).await;
     }

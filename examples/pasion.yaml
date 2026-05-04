@@ -83,8 +83,11 @@ upstream_oauth2:
       authorization_endpoint: https://github.com/login/oauth/authorize
       token_endpoint: https://github.com/login/oauth/access_token
       userinfo_endpoint: https://api.github.com/user
-      client_id: Ov23liLxWajlmnu6XhrQ
-      client_secret: ed1a0321da2657533106776d492316ae4a2ac30c
+      # Register your own GitHub OAuth App at
+      # https://github.com/settings/developers and paste the credentials here.
+      # Never commit real client_secret values.
+      client_id: REPLACE_WITH_YOUR_GITHUB_CLIENT_ID
+      client_secret: REPLACE_WITH_YOUR_GITHUB_CLIENT_SECRET
       token_endpoint_auth_method: client_secret_post
       scope: read:user user:email
       fetch_userinfo: true
@@ -108,14 +111,18 @@ upstream_oauth2:
           template: "{{ user.avatar_url }}"
 
 email:
-  from: '"Pasion" <chris@acroidea.com>'
-  reply_to: '"Pasion" <chris@acroidea.com>'
+  # Replace these placeholders with your own SMTP credentials before deploying.
+  # If you use Gmail, generate an app password at
+  # https://myaccount.google.com/apppasswords and paste it here. Never commit
+  # real credentials.
+  from: '"Pasion" <noreply@example.com>'
+  reply_to: '"Pasion" <noreply@example.com>'
   transport: smtp
   mode: tls
   hostname: smtp.gmail.com
   port: 465
-  username: chris@acroidea.com
-  password: "mxmpeswvvqpliupb"
+  username: REPLACE_WITH_YOUR_SMTP_USERNAME
+  password: REPLACE_WITH_YOUR_SMTP_PASSWORD
 
 storage:
   backend: fs

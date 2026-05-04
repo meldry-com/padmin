@@ -11,6 +11,7 @@ use crate::utils::i18n::t;
 #[component]
 pub fn OAuthCallback(
     code: Option<String>,
+    state: Option<String>,
     error: Option<String>,
     error_description: Option<String>,
 ) -> Element {
@@ -21,6 +22,7 @@ pub fn OAuthCallback(
     // Process the OAuth callback parameters
     use_effect(move || {
         let code = code.clone();
+        let state = state.clone();
         let error = error.clone();
         let error_description = error_description.clone();
 
@@ -38,8 +40,9 @@ pub fn OAuthCallback(
                 return;
             };
 
-            // Step 1: Exchange code for tokens
-            if let Err(e) = auth::handle_oauth_callback(&code).await {
+            // Step 1: Exchange code for tokens (validates `state` against the
+            // value stashed in sessionStorage by start_oauth_login).
+            if let Err(e) = auth::handle_oauth_callback(&code, state.as_deref()).await {
                 processing.set(false);
                 error_msg.set(Some(e.message));
                 return;

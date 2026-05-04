@@ -78,7 +78,10 @@ cat >> /etc/nginx/conf.d/default.conf <<EOF
 EOF
 }
 
-printf '{"pasion_public_url":"%s"}' "$PASION_PUBLIC_URL" > /usr/share/nginx/html/config.json
+PADMIN_OAUTH_CLIENT_ID="${PADMIN_OAUTH_CLIENT_ID:-}"
+printf '{"pasion_public_url":"%s","oauth_client_id":"%s"}' \
+    "$PASION_PUBLIC_URL" "$PADMIN_OAUTH_CLIENT_ID" \
+    > /usr/share/nginx/html/config.json
 
 cat > /etc/nginx/conf.d/default.conf <<EOF
 server {
@@ -86,6 +89,16 @@ server {
     server_name _;
     root /usr/share/nginx/html;
     index index.html;
+
+    # Baseline security response headers. \`always\` makes nginx emit them on
+    # error pages too, not just 2xx/3xx. CSP allows \`wasm-unsafe-eval\`
+    # because Dioxus runs as WebAssembly.
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "accelerometer=(), camera=(), geolocation=(), microphone=(), payment=(), usb=()" always;
+    add_header Cross-Origin-Opener-Policy "same-origin" always;
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' ${PASION_PUBLIC_URL}; frame-ancestors 'none'; base-uri 'self'; form-action 'self'" always;
 
     location = /healthz {
         access_log off;

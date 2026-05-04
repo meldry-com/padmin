@@ -10,13 +10,18 @@ use crate::utils::i18n::t;
 pub fn LoginPage() -> Element {
     let mut loading = use_signal(|| false);
     let mut ready = use_signal(|| false);
+    let mut error_msg = use_signal(|| Option::<String>::None);
 
-    // Load runtime config on mount (need Pasion public URL for OAuth redirect)
+    // Load runtime config on mount (need Pasion public URL + OAuth client_id
+    // for the redirect URL and token exchange).
     use_effect(move || {
         spawn(async move {
             let cfg = crate::utils::config::load_runtime_config().await;
             if !cfg.pasion_public_url.is_empty() {
                 crate::utils::storage::set_item("pasion_public_url", &cfg.pasion_public_url);
+            }
+            if !cfg.oauth_client_id.trim().is_empty() {
+                crate::utils::storage::set_item("oauth_client_id", &cfg.oauth_client_id);
             }
             ready.set(true);
         });
@@ -24,8 +29,11 @@ pub fn LoginPage() -> Element {
 
     let handle_login = move |_evt: MouseEvent| {
         loading.set(true);
+        error_msg.set(None);
         spawn(async move {
-            auth::start_oauth_login().await;
+            if let Err(e) = auth::start_oauth_login().await {
+                error_msg.set(Some(e.message));
+            }
             loading.set(false);
         });
     };
@@ -52,6 +60,12 @@ pub fn LoginPage() -> Element {
                 div { class: "rounded-lg border glass-panel p-6 shadow-sm space-y-4",
                     p { class: "text-sm text-center text-muted-foreground",
                         {t("auth.oauth_hint")}
+                    }
+
+                    if let Some(ref err) = *error_msg.read() {
+                        div { class: "rounded-md bg-destructive/10 p-3 text-sm text-destructive",
+                            "{err}"
+                        }
                     }
 
                     Button {

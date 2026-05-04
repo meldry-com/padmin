@@ -11,9 +11,10 @@ pub enum Route {
     #[route("/login")]
     LoginPage {},
 
-    #[route("/oauth/callback?:code&:error&:error_description")]
+    #[route("/oauth/callback?:code&:state&:error&:error_description")]
     OAuthCallback {
         code: Option<String>,
+        state: Option<String>,
         error: Option<String>,
         error_description: Option<String>,
     },
@@ -168,12 +169,14 @@ fn LoginPage() -> Element {
 #[component]
 fn OAuthCallback(
     code: Option<String>,
+    state: Option<String>,
     error: Option<String>,
     error_description: Option<String>,
 ) -> Element {
     rsx! {
         pages::oauth_callback::OAuthCallback {
             code: code,
+            state: state,
             error: error,
             error_description: error_description,
         }
