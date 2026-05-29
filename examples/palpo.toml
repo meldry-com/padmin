@@ -22,8 +22,11 @@ enable = false
 url = "postgres://palpo:changeme@postgres:5432/palpo"
 pool_size = 10
 
+# The `server` delegation MUST include a port. Without one, peer homeservers
+# fall back to the Matrix default federation port (8448) per the server-resolution
+# spec. This all-in-one example serves everything on 8008, so advertise that port.
 [well_known]
-server = "localhost"
+server = "localhost:8008"
 client = "http://localhost:8008"
 
 [admin]
