@@ -17,6 +17,7 @@ use crate::components::ui::pagination::Pagination;
 use crate::components::ui::table::*;
 use crate::components::ui::toast::{ToastVariant, show_toast};
 use crate::router::Route;
+use crate::utils::date::format_timestamp_short;
 use crate::utils::i18n::t;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -126,7 +127,7 @@ pub fn ReportList() -> Element {
                                             let user_id = report.user_id.clone();
                                             let room_id = report.room_id.clone();
                                             let reason = report.reason.clone().unwrap_or_else(|| "-".to_string());
-                                            let received = format_timestamp(report.received_ts);
+                                            let received = format_timestamp_short(report.received_ts);
                                             let status = ReportStatus::from_api_value(&report.status);
                                             let status_label = status.display();
                                             let status_variant = status.badge_variant();
@@ -221,7 +222,7 @@ pub fn ReportShow(report_id: String) -> Element {
                     let reason = report.reason.clone().unwrap_or_else(|| "-".to_string());
                     let score = report.score.map(|s| s.to_string()).unwrap_or_else(|| "-".to_string());
                     let sender = report.sender.clone().unwrap_or_else(|| "-".to_string());
-                    let received = format_timestamp(report.received_ts);
+                    let received = format_timestamp_short(report.received_ts);
                     let event_json = report.event_json.clone();
 
                     let room_id_for_redact = room_id.clone();
@@ -470,14 +471,4 @@ fn InfoRow(label: String, value: String) -> Element {
             span { class: "text-sm max-w-[60%] text-right break-all", "{value}" }
         }
     }
-}
-
-fn format_timestamp(ts: u64) -> String {
-    if ts == 0 {
-        return "-".to_string();
-    }
-    let secs = (ts / 1000) as i64;
-    chrono::DateTime::from_timestamp(secs, 0)
-        .map(|dt| dt.format("%Y-%m-%d %H:%M").to_string())
-        .unwrap_or_else(|| "-".to_string())
 }

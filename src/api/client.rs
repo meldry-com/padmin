@@ -155,12 +155,8 @@ pub fn get_base_url() -> Result<String, HttpError> {
 }
 
 pub fn get_home_server() -> Result<String, HttpError> {
-    storage::get_item("home_server").ok_or_else(|| HttpError {
-        message: "Home server not set. Please log in first.".to_string(),
-        status: 0,
-        body: None,
-        request_id: None,
-    })
+    storage::get_item("home_server")
+        .ok_or_else(|| HttpError::message("Home server not set. Please log in first."))
 }
 
 pub fn build_url(path: &str, params: &[(&str, &str)]) -> Result<String, HttpError> {

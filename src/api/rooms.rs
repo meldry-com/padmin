@@ -1,6 +1,6 @@
 use crate::api::client::*;
 use crate::types::*;
-use crate::utils::cache::{get_cached, invalidate_cached_prefix, remove_cached, set_cached};
+use crate::utils::cache::{cached, invalidate_cached_prefix, remove_cached};
 use crate::utils::error::HttpError;
 
 const ROOM_LIST_CACHE_TTL_MS: f64 = 30_000.0;
@@ -85,20 +85,12 @@ pub async fn get_rooms_cached(
     search_term: &str,
 ) -> Result<ListResponse<RoomRecord>, HttpError> {
     let cache_key = room_list_cache_key(page, per_page, order_by, order, search_term);
-
-    if let Some(cached) = get_cached(&cache_key, ROOM_LIST_CACHE_TTL_MS) {
-        if let Ok(response) = serde_json::from_str::<ListResponse<RoomRecord>>(&cached) {
-            return Ok(response);
-        }
-    }
-
-    let response = get_rooms(page, per_page, order_by, order, search_term).await?;
-
-    if let Ok(serialized) = serde_json::to_string(&response) {
-        set_cached(&cache_key, &serialized);
-    }
-
-    Ok(response)
+    cached(
+        &cache_key,
+        ROOM_LIST_CACHE_TTL_MS,
+        get_rooms(page, per_page, order_by, order, search_term),
+    )
+    .await
 }
 
 pub async fn get_room(id: &str) -> Result<RoomRecord, HttpError> {

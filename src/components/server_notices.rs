@@ -2,6 +2,7 @@ use dioxus::prelude::*;
 
 use crate::api::users;
 use crate::components::ui::button::Button;
+use crate::components::ui::dialog::Modal;
 use crate::components::ui::loading::Spinner;
 use crate::components::ui::toast::{ToastVariant, show_toast};
 
@@ -9,10 +10,6 @@ use crate::components::ui::toast::{ToastVariant, show_toast};
 pub fn ServerNoticeDialog(open: bool, user_id: String, on_close: EventHandler<()>) -> Element {
     let mut message = use_signal(|| String::new());
     let mut sending = use_signal(|| false);
-
-    if !open {
-        return rsx! {};
-    }
 
     let uid = user_id.clone();
     let handle_send = move |_: MouseEvent| {
@@ -45,12 +42,7 @@ pub fn ServerNoticeDialog(open: bool, user_id: String, on_close: EventHandler<()
     let is_sending = *sending.read();
 
     rsx! {
-        div { class: "fixed inset-0 z-50 flex items-center justify-center",
-            div {
-                class: "fixed inset-0 bg-black/80",
-                onclick: move |_| on_close.call(()),
-            }
-            div { class: "relative z-50 w-full max-w-lg rounded-lg border bg-background p-6 shadow-lg",
+        Modal { open, on_close: move |_| on_close.call(()),
                 h2 { class: "text-lg font-semibold mb-2", "Send Server Notice" }
                 p { class: "text-sm text-muted-foreground mb-4", "Send a notice to {user_id}" }
                 textarea {
@@ -74,7 +66,6 @@ pub fn ServerNoticeDialog(open: bool, user_id: String, on_close: EventHandler<()
                         "Send"
                     }
                 }
-            }
         }
     }
 }

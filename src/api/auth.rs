@@ -460,6 +460,9 @@ pub async fn handle_unauthorized() -> bool {
     storage::remove_item("access_token");
     storage::remove_item("refresh_token");
     storage::remove_item("is_admin");
+    // Drop the session-scoped admin verdict so the next authenticated mount
+    // re-probes instead of trusting a now-stale cache.
+    crate::router::reset_admin_cache();
     false
 }
 
@@ -617,12 +620,7 @@ pub async fn get_identity() -> Option<(String, Option<String>, Option<String>)> 
 // ── Utility endpoints (used by auth_status page) ─────────────────────────────
 
 fn make_err(msg: String) -> HttpError {
-    HttpError {
-        message: msg,
-        status: 0,
-        body: None,
-        request_id: None,
-    }
+    HttpError::message(msg)
 }
 
 #[cfg(test)]

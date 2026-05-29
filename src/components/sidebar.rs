@@ -282,10 +282,7 @@ pub fn AppSidebar(collapsed: Signal<bool>, mobile_open: Signal<bool>) -> Element
 }
 
 fn is_route_active(current: &Route, target: &Route) -> bool {
-    let current_str = format!("{:?}", current);
-    let target_str = format!("{:?}", target);
-
-    if current_str == target_str {
+    if current == target {
         return true;
     }
 

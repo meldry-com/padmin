@@ -3,7 +3,7 @@ use dioxus::prelude::*;
 use crate::api::registration_tokens;
 use crate::components::ui::badge::{Badge, BadgeVariant};
 use crate::components::ui::button::{Button, ButtonSize, ButtonVariant};
-use crate::components::ui::dialog::ConfirmDialog;
+use crate::components::ui::dialog::{ConfirmDialog, Modal};
 use crate::components::ui::empty_state::EmptyState;
 use crate::components::ui::error_banner::ErrorBanner;
 use crate::components::ui::icons::Icon;
@@ -312,15 +312,11 @@ pub fn RegistrationTokenList() -> Element {
         }
 
         // Create Token Dialog
-        if *show_create_dialog.read() {
-            div { class: "fixed inset-0 z-50 flex items-center justify-center",
-                div {
-                    class: "fixed inset-0 bg-black/80",
-                    onclick: move |_| {
-                        if !is_creating { show_create_dialog.set(false); }
-                    },
-                }
-                div { class: "relative z-50 w-full max-w-lg rounded-lg border bg-background p-6 shadow-lg",
+        Modal {
+            open: *show_create_dialog.read(),
+            on_close: move |_| {
+                if !is_creating { show_create_dialog.set(false); }
+            },
                     div { class: "flex flex-col space-y-2 text-center sm:text-left",
                         h2 { class: "text-lg font-semibold", {t("registration_tokens.create")} }
                         p { class: "text-sm text-muted-foreground", {t("registration_tokens.create_description")} }
@@ -373,8 +369,6 @@ pub fn RegistrationTokenList() -> Element {
                             {t("registration_tokens.create")}
                         }
                     }
-                }
-            }
         }
 
         ConfirmDialog {

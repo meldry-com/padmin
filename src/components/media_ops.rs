@@ -2,6 +2,7 @@ use dioxus::prelude::*;
 
 use crate::api::media;
 use crate::components::ui::button::{Button, ButtonVariant};
+use crate::components::ui::dialog::Modal;
 use crate::components::ui::input::{Input, Label};
 use crate::components::ui::loading::Spinner;
 use crate::components::ui::toast::{ToastVariant, show_toast};
@@ -16,10 +17,6 @@ pub fn DeleteMediaDialog(
     let mut size_gt = use_signal(|| String::new());
     let mut keep_profiles = use_signal(|| true);
     let mut loading = use_signal(|| false);
-
-    if !open {
-        return rsx! {};
-    }
 
     let handle_delete = move |_: MouseEvent| {
         let ts_str = before_ts.read().clone();
@@ -54,9 +51,7 @@ pub fn DeleteMediaDialog(
     let is_loading = *loading.read();
 
     rsx! {
-        div { class: "fixed inset-0 z-50 flex items-center justify-center",
-            div { class: "fixed inset-0 bg-black/80", onclick: move |_| on_close.call(()) }
-            div { class: "relative z-50 w-full max-w-lg rounded-lg border bg-background p-6 shadow-lg",
+        Modal { open, on_close: move |_| on_close.call(()),
                 h2 { class: "text-lg font-semibold mb-4", "Delete Local Media" }
                 div { class: "space-y-4",
                     div { class: "space-y-2",
@@ -101,7 +96,6 @@ pub fn DeleteMediaDialog(
                         "Delete Media"
                     }
                 }
-            }
         }
     }
 }
@@ -114,10 +108,6 @@ pub fn PurgeRemoteMediaDialog(
 ) -> Element {
     let mut before_ts = use_signal(|| String::new());
     let mut loading = use_signal(|| false);
-
-    if !open {
-        return rsx! {};
-    }
 
     let handle_purge = move |_: MouseEvent| {
         let ts_str = before_ts.read().clone();
@@ -148,9 +138,7 @@ pub fn PurgeRemoteMediaDialog(
     let is_loading = *loading.read();
 
     rsx! {
-        div { class: "fixed inset-0 z-50 flex items-center justify-center",
-            div { class: "fixed inset-0 bg-black/80", onclick: move |_| on_close.call(()) }
-            div { class: "relative z-50 w-full max-w-lg rounded-lg border bg-background p-6 shadow-lg",
+        Modal { open, on_close: move |_| on_close.call(()),
                 h2 { class: "text-lg font-semibold mb-4", "Purge Remote Media" }
                 div { class: "space-y-4",
                     div { class: "space-y-2",
@@ -173,7 +161,6 @@ pub fn PurgeRemoteMediaDialog(
                         "Purge Remote Media"
                     }
                 }
-            }
         }
     }
 }

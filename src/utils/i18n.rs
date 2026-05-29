@@ -983,6 +983,62 @@ impl I18n {
         m.insert("server_notices.timestamp".into(), "Timestamp".into());
         m.insert("server_notices.event_id".into(), "Event ID".into());
 
+        // Scheduled / recurring commands
+        m.insert("commands.scheduled_title".into(), "Scheduled Commands".into());
+        m.insert("commands.recurring_title".into(), "Recurring Commands".into());
+        m.insert("commands.create".into(), "Create".into());
+        m.insert("commands.edit".into(), "Edit".into());
+        m.insert("commands.delete".into(), "Delete".into());
+        m.insert("commands.cancel".into(), "Cancel".into());
+        m.insert("commands.save".into(), "Save".into());
+        m.insert("commands.retry".into(), "Retry".into());
+        m.insert("commands.none_scheduled".into(), "No scheduled commands.".into());
+        m.insert("commands.none_recurring".into(), "No recurring commands.".into());
+        m.insert("commands.load_failed".into(), "Failed to load commands.".into());
+        m.insert("commands.col_command".into(), "Command".into());
+        m.insert("commands.col_arguments".into(), "Arguments".into());
+        m.insert("commands.col_scheduled_at".into(), "Scheduled At".into());
+        m.insert("commands.col_time".into(), "Time (UTC)".into());
+        m.insert("commands.col_actions".into(), "Actions".into());
+        m.insert("commands.field_command".into(), "Command".into());
+        m.insert("commands.field_command_placeholder".into(), "Command name".into());
+        m.insert("commands.field_arguments".into(), "Arguments (optional)".into());
+        m.insert("commands.field_arguments_placeholder".into(), "Arguments".into());
+        m.insert("commands.scheduled_at_label".into(), "Scheduled At (ISO 8601)".into());
+        m.insert("commands.scheduled_at_placeholder".into(), "2025-01-15T10:00:00Z".into());
+        m.insert("commands.time_label".into(), "Time (UTC, e.g. 03:00)".into());
+        m.insert("commands.time_placeholder".into(), "HH:MM".into());
+        m.insert("commands.dialog_edit_scheduled".into(), "Edit Scheduled Command".into());
+        m.insert("commands.dialog_schedule".into(), "Schedule Command".into());
+        m.insert("commands.dialog_edit_recurring".into(), "Edit Recurring Command".into());
+        m.insert("commands.dialog_create_recurring".into(), "Create Recurring Command".into());
+        m.insert("commands.submit_schedule".into(), "Schedule".into());
+        m.insert("commands.submit_create".into(), "Create".into());
+        m.insert("commands.submit_save".into(), "Save".into());
+        m.insert("commands.delete_scheduled_title".into(), "Delete Scheduled Command".into());
+        m.insert("commands.delete_recurring_title".into(), "Delete Recurring Command".into());
+        m.insert(
+            "commands.delete_scheduled_desc".into(),
+            "Are you sure you want to delete this scheduled command?".into(),
+        );
+        m.insert(
+            "commands.delete_recurring_desc".into(),
+            "Are you sure you want to delete this recurring command?".into(),
+        );
+        m.insert(
+            "commands.validation_scheduled".into(),
+            "Command and schedule time are required".into(),
+        );
+        m.insert(
+            "commands.validation_recurring".into(),
+            "Command and time are required".into(),
+        );
+        m.insert("commands.toast_deleted".into(), "Deleted".into());
+        m.insert("commands.toast_scheduled".into(), "Command scheduled".into());
+        m.insert("commands.toast_updated".into(), "Command updated".into());
+        m.insert("commands.toast_recurring_created".into(), "Recurring command created".into());
+        m.insert("commands.toast_recurring_updated".into(), "Recurring command updated".into());
+
         // Not Found
         m.insert("not_found.title".into(), "404".into());
         m.insert("not_found.message".into(), "Page not found".into());
@@ -2391,6 +2447,110 @@ impl I18n {
         m.insert(
             "server_notices.event_id".into(),
             "\u{4e8b}\u{4ef6} ID".into(),
+        );
+
+        // Scheduled / recurring commands
+        m.insert("commands.scheduled_title".into(), "\u{8ba1}\u{5212}\u{547d}\u{4ee4}".into());
+        m.insert("commands.recurring_title".into(), "\u{5468}\u{671f}\u{547d}\u{4ee4}".into());
+        m.insert("commands.create".into(), "\u{521b}\u{5efa}".into());
+        m.insert("commands.edit".into(), "\u{7f16}\u{8f91}".into());
+        m.insert("commands.delete".into(), "\u{5220}\u{9664}".into());
+        m.insert("commands.cancel".into(), "\u{53d6}\u{6d88}".into());
+        m.insert("commands.save".into(), "\u{4fdd}\u{5b58}".into());
+        m.insert("commands.retry".into(), "\u{91cd}\u{8bd5}".into());
+        m.insert(
+            "commands.none_scheduled".into(),
+            "\u{6ca1}\u{6709}\u{8ba1}\u{5212}\u{547d}\u{4ee4}\u{3002}".into(),
+        );
+        m.insert(
+            "commands.none_recurring".into(),
+            "\u{6ca1}\u{6709}\u{5468}\u{671f}\u{547d}\u{4ee4}\u{3002}".into(),
+        );
+        m.insert(
+            "commands.load_failed".into(),
+            "\u{52a0}\u{8f7d}\u{547d}\u{4ee4}\u{5931}\u{8d25}\u{3002}".into(),
+        );
+        m.insert("commands.col_command".into(), "\u{547d}\u{4ee4}".into());
+        m.insert("commands.col_arguments".into(), "\u{53c2}\u{6570}".into());
+        m.insert("commands.col_scheduled_at".into(), "\u{8ba1}\u{5212}\u{65f6}\u{95f4}".into());
+        m.insert("commands.col_time".into(), "\u{65f6}\u{95f4}（UTC）".into());
+        m.insert("commands.col_actions".into(), "\u{64cd}\u{4f5c}".into());
+        m.insert("commands.field_command".into(), "\u{547d}\u{4ee4}".into());
+        m.insert(
+            "commands.field_command_placeholder".into(),
+            "\u{547d}\u{4ee4}\u{540d}\u{79f0}".into(),
+        );
+        m.insert(
+            "commands.field_arguments".into(),
+            "\u{53c2}\u{6570}（\u{53ef}\u{9009}）".into(),
+        );
+        m.insert("commands.field_arguments_placeholder".into(), "\u{53c2}\u{6570}".into());
+        m.insert(
+            "commands.scheduled_at_label".into(),
+            "\u{8ba1}\u{5212}\u{65f6}\u{95f4}（ISO 8601）".into(),
+        );
+        m.insert("commands.scheduled_at_placeholder".into(), "2025-01-15T10:00:00Z".into());
+        m.insert(
+            "commands.time_label".into(),
+            "\u{65f6}\u{95f4}（UTC，\u{4f8b}\u{5982} 03:00）".into(),
+        );
+        m.insert("commands.time_placeholder".into(), "HH:MM".into());
+        m.insert(
+            "commands.dialog_edit_scheduled".into(),
+            "\u{7f16}\u{8f91}\u{8ba1}\u{5212}\u{547d}\u{4ee4}".into(),
+        );
+        m.insert("commands.dialog_schedule".into(), "\u{8ba1}\u{5212}\u{547d}\u{4ee4}".into());
+        m.insert(
+            "commands.dialog_edit_recurring".into(),
+            "\u{7f16}\u{8f91}\u{5468}\u{671f}\u{547d}\u{4ee4}".into(),
+        );
+        m.insert(
+            "commands.dialog_create_recurring".into(),
+            "\u{521b}\u{5efa}\u{5468}\u{671f}\u{547d}\u{4ee4}".into(),
+        );
+        m.insert("commands.submit_schedule".into(), "\u{8ba1}\u{5212}".into());
+        m.insert("commands.submit_create".into(), "\u{521b}\u{5efa}".into());
+        m.insert("commands.submit_save".into(), "\u{4fdd}\u{5b58}".into());
+        m.insert(
+            "commands.delete_scheduled_title".into(),
+            "\u{5220}\u{9664}\u{8ba1}\u{5212}\u{547d}\u{4ee4}".into(),
+        );
+        m.insert(
+            "commands.delete_recurring_title".into(),
+            "\u{5220}\u{9664}\u{5468}\u{671f}\u{547d}\u{4ee4}".into(),
+        );
+        m.insert(
+            "commands.delete_scheduled_desc".into(),
+            "\u{786e}\u{5b9a}\u{8981}\u{5220}\u{9664}\u{8fd9}\u{4e2a}\u{8ba1}\u{5212}\u{547d}\u{4ee4}\u{5417}？".into(),
+        );
+        m.insert(
+            "commands.delete_recurring_desc".into(),
+            "\u{786e}\u{5b9a}\u{8981}\u{5220}\u{9664}\u{8fd9}\u{4e2a}\u{5468}\u{671f}\u{547d}\u{4ee4}\u{5417}？".into(),
+        );
+        m.insert(
+            "commands.validation_scheduled".into(),
+            "\u{547d}\u{4ee4}\u{548c}\u{8ba1}\u{5212}\u{65f6}\u{95f4}\u{4e3a}\u{5fc5}\u{586b}\u{9879}".into(),
+        );
+        m.insert(
+            "commands.validation_recurring".into(),
+            "\u{547d}\u{4ee4}\u{548c}\u{65f6}\u{95f4}\u{4e3a}\u{5fc5}\u{586b}\u{9879}".into(),
+        );
+        m.insert("commands.toast_deleted".into(), "\u{5df2}\u{5220}\u{9664}".into());
+        m.insert(
+            "commands.toast_scheduled".into(),
+            "\u{547d}\u{4ee4}\u{5df2}\u{8ba1}\u{5212}".into(),
+        );
+        m.insert(
+            "commands.toast_updated".into(),
+            "\u{547d}\u{4ee4}\u{5df2}\u{66f4}\u{65b0}".into(),
+        );
+        m.insert(
+            "commands.toast_recurring_created".into(),
+            "\u{5468}\u{671f}\u{547d}\u{4ee4}\u{5df2}\u{521b}\u{5efa}".into(),
+        );
+        m.insert(
+            "commands.toast_recurring_updated".into(),
+            "\u{5468}\u{671f}\u{547d}\u{4ee4}\u{5df2}\u{66f4}\u{65b0}".into(),
         );
 
         // Not Found

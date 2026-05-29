@@ -25,12 +25,7 @@ async fn pasion_fetch<T: DeserializeOwned>(
     method: &str,
     body: Option<String>,
 ) -> Result<T, HttpError> {
-    let base = get_pasion_url().ok_or_else(|| HttpError {
-        message: "Pasion URL is not configured".to_string(),
-        status: 0,
-        body: None,
-        request_id: None,
-    })?;
+    let base = get_pasion_url().ok_or_else(|| HttpError::message("Pasion URL is not configured"))?;
     let url = format!("{base}/api/admin/v1{path}");
 
     let result = raw_fetch::<T, _>(&url, method, body.clone(), format_pasion_error).await;
@@ -70,12 +65,7 @@ fn flatten_resource<T: DeserializeOwned>(item: &serde_json::Value) -> Result<T, 
             obj.insert("id".to_string(), id);
         }
     }
-    serde_json::from_value(attrs).map_err(|e| HttpError {
-        message: format!("JSON parse error: {e}"),
-        status: 0,
-        body: None,
-        request_id: None,
-    })
+    serde_json::from_value(attrs).map_err(|e| HttpError::message(format!("JSON parse error: {e}")))
 }
 
 async fn pasion_fetch_list<T: DeserializeOwned>(
@@ -441,12 +431,8 @@ pub async fn pasion_get_notification_channels() -> Result<Vec<PasionNotification
         .get("channels")
         .cloned()
         .unwrap_or_else(|| serde_json::Value::Array(Vec::new()));
-    serde_json::from_value(channels).map_err(|e| HttpError {
-        message: format!("JSON parse error: {e}"),
-        status: 0,
-        body: None,
-        request_id: None,
-    })
+    serde_json::from_value(channels)
+        .map_err(|e| HttpError::message(format!("JSON parse error: {e}")))
 }
 
 // ── Notification Templates ─────────────────────────────────────────────────
@@ -459,12 +445,8 @@ pub async fn pasion_get_notification_templates()
         .get("templates")
         .cloned()
         .unwrap_or_else(|| serde_json::Value::Array(Vec::new()));
-    serde_json::from_value(templates).map_err(|e| HttpError {
-        message: format!("JSON parse error: {e}"),
-        status: 0,
-        body: None,
-        request_id: None,
-    })
+    serde_json::from_value(templates)
+        .map_err(|e| HttpError::message(format!("JSON parse error: {e}")))
 }
 
 pub async fn pasion_publish_template(data: serde_json::Value) -> Result<(), HttpError> {
@@ -494,12 +476,8 @@ pub async fn pasion_get_connector_health() -> Result<Vec<PasionConnectorHealth>,
         .get("providers")
         .cloned()
         .unwrap_or_else(|| serde_json::Value::Array(Vec::new()));
-    serde_json::from_value(providers).map_err(|e| HttpError {
-        message: format!("JSON parse error: {e}"),
-        status: 0,
-        body: None,
-        request_id: None,
-    })
+    serde_json::from_value(providers)
+        .map_err(|e| HttpError::message(format!("JSON parse error: {e}")))
 }
 
 // ── Version ────────────────────────────────────────────────────────────────

@@ -29,10 +29,6 @@ pub struct Notification {
 static NOTIFICATION_COUNTER: GlobalSignal<u64> = GlobalSignal::new(|| 0);
 pub static NOTIFICATIONS: GlobalSignal<Vec<Notification>> = GlobalSignal::new(|| Vec::new());
 
-pub fn add_notification(message: &str, severity: NotificationSeverity) {
-    add_typed_notification(message, severity, None);
-}
-
 pub fn add_typed_notification(
     message: &str,
     severity: NotificationSeverity,

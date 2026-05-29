@@ -5,7 +5,7 @@ use crate::components::experimental_features::ExperimentalFeatures;
 use crate::components::ui::badge::{Badge, BadgeVariant};
 use crate::components::ui::button::{Button, ButtonVariant};
 use crate::components::ui::card::*;
-use crate::components::ui::dialog::ConfirmDialog;
+use crate::components::ui::dialog::{ConfirmDialog, Modal};
 use crate::components::ui::icons::Icon;
 use crate::components::ui::input::{Input, Label};
 use crate::components::ui::loading::{LoadingSkeleton, PageSkeleton};
@@ -532,17 +532,8 @@ fn ResetPasswordDialog(
     on_confirm: EventHandler<()>,
     on_cancel: EventHandler<()>,
 ) -> Element {
-    if !open {
-        return rsx! {};
-    }
-
     rsx! {
-        div { class: "fixed inset-0 z-50 flex items-center justify-center",
-            div {
-                class: "fixed inset-0 bg-black/80",
-                onclick: move |_| on_cancel.call(()),
-            }
-            div { class: "relative z-50 w-full max-w-lg rounded-lg border bg-background p-6 shadow-lg",
+        Modal { open, on_close: move |_| on_cancel.call(()),
                 div { class: "flex flex-col space-y-2 text-center sm:text-left",
                     h2 { class: "text-lg font-semibold", {t("users.reset_password")} }
                     p { class: "text-sm text-muted-foreground",
@@ -569,7 +560,6 @@ fn ResetPasswordDialog(
                         {t("users.reset_password")}
                     }
                 }
-            }
         }
     }
 }

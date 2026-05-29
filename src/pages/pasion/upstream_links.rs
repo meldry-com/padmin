@@ -2,7 +2,7 @@ use dioxus::prelude::*;
 
 use crate::api::pasion;
 use crate::components::ui::button::{Button, ButtonSize, ButtonVariant};
-use crate::components::ui::dialog::ConfirmDialog;
+use crate::components::ui::dialog::{ConfirmDialog, Modal};
 use crate::components::ui::error_banner::ErrorBanner;
 use crate::components::ui::icons::Icon;
 use crate::components::ui::input::{Input, Label};
@@ -243,17 +243,13 @@ pub fn UpstreamLinksPage() -> Element {
             },
         }
 
-        if *create_open.read() {
-            div { class: "fixed inset-0 z-50 flex items-center justify-center",
-                div {
-                    class: "fixed inset-0 bg-black/80",
-                    onclick: move |_| {
-                        if !is_creating {
-                            create_open.set(false);
-                        }
-                    },
+        Modal {
+            open: *create_open.read(),
+            on_close: move |_| {
+                if !is_creating {
+                    create_open.set(false);
                 }
-                div { class: "relative z-50 w-full max-w-lg rounded-lg border bg-background p-6 shadow-lg",
+            },
                     h2 { class: "text-lg font-semibold mb-2", "Create Upstream Link" }
                     p { class: "text-sm text-muted-foreground mb-4",
                         "Create a user-to-provider binding for an existing federated account."
@@ -312,8 +308,6 @@ pub fn UpstreamLinksPage() -> Element {
                             "Create"
                         }
                     }
-                }
-            }
         }
     }
 }

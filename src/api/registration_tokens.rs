@@ -1,6 +1,6 @@
 use crate::api::client::*;
 use crate::types::*;
-use crate::utils::cache::{get_cached, remove_cached, set_cached};
+use crate::utils::cache::{cached, remove_cached};
 use crate::utils::error::HttpError;
 
 const TOKEN_LIST_CACHE_TTL_MS: f64 = 30_000.0;
@@ -26,19 +26,12 @@ pub async fn get_registration_tokens() -> Result<Vec<RegistrationTokenRecord>, H
 }
 
 pub async fn get_registration_tokens_cached() -> Result<Vec<RegistrationTokenRecord>, HttpError> {
-    if let Some(cached) = get_cached(TOKEN_LIST_CACHE_KEY, TOKEN_LIST_CACHE_TTL_MS) {
-        if let Ok(response) = serde_json::from_str::<Vec<RegistrationTokenRecord>>(&cached) {
-            return Ok(response);
-        }
-    }
-
-    let response = get_registration_tokens().await?;
-
-    if let Ok(serialized) = serde_json::to_string(&response) {
-        set_cached(TOKEN_LIST_CACHE_KEY, &serialized);
-    }
-
-    Ok(response)
+    cached(
+        TOKEN_LIST_CACHE_KEY,
+        TOKEN_LIST_CACHE_TTL_MS,
+        get_registration_tokens(),
+    )
+    .await
 }
 
 pub async fn get_registration_token(token: &str) -> Result<RegistrationTokenRecord, HttpError> {

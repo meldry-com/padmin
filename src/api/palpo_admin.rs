@@ -1,9 +1,19 @@
-use gloo_net::http::Request;
 use serde::de::DeserializeOwned;
 
+use crate::api::client::raw_fetch;
 use crate::types::*;
-use crate::utils::error::HttpError;
-use crate::utils::storage;
+use crate::utils::error::{HttpError, MatrixError};
+
+/// Format a palpo_admin sidecar error. The sidecar returns plain text rather
+/// than a Matrix errcode, so we surface the raw body keyed off the HTTP
+/// status. 503 is treated specially as "server in maintenance mode" (mirrors
+/// `pasion::format_pasion_error`).
+fn format_palpo_error(status: u16, text: &str) -> (String, Option<MatrixError>) {
+    if status == 503 {
+        return ("Server is in maintenance mode".to_string(), None);
+    }
+    (format!("Palpo admin error ({status}): {text}"), None)
+}
 
 async fn palpo_admin_fetch<T: DeserializeOwned>(
     palpo_admin_url: &str,
@@ -12,87 +22,7 @@ async fn palpo_admin_fetch<T: DeserializeOwned>(
     body: Option<String>,
 ) -> Result<T, HttpError> {
     let url = format!("{palpo_admin_url}{path}");
-    let token = storage::get_item("access_token");
-
-    let mut builder = match method {
-        "POST" => Request::post(&url),
-        "PUT" => Request::put(&url),
-        "DELETE" => Request::delete(&url),
-        _ => Request::get(&url),
-    }
-    .header("Accept", "application/json");
-
-    if let Some(ref token) = token {
-        builder = builder.header("Authorization", &format!("Bearer {token}"));
-    }
-
-    if body.is_some() {
-        builder = builder.header("Content-Type", "application/json");
-    }
-
-    let request = if let Some(body) = body {
-        builder.body(body)
-    } else {
-        builder.build()
-    }
-    .map_err(|e| HttpError {
-        message: e.to_string(),
-        status: 0,
-        body: None,
-        request_id: None,
-    })?;
-
-    let response = request.send().await.map_err(|e| HttpError {
-        message: e.to_string(),
-        status: 0,
-        body: None,
-        request_id: None,
-    })?;
-
-    let status = response.status();
-
-    if status == 503 {
-        return Err(HttpError {
-            message: "Server is in maintenance mode".to_string(),
-            status: 503,
-            body: None,
-            request_id: None,
-        });
-    }
-
-    if status == 204 {
-        return serde_json::from_str::<T>("{}")
-            .or_else(|_| serde_json::from_str::<T>("null"))
-            .map_err(|e| HttpError {
-                message: e.to_string(),
-                status,
-                body: None,
-                request_id: None,
-            });
-    }
-
-    let text = response.text().await.map_err(|e| HttpError {
-        message: e.to_string(),
-        status,
-        body: None,
-        request_id: None,
-    })?;
-
-    if status >= 400 {
-        return Err(HttpError {
-            message: format!("Palpo admin error ({status}): {text}"),
-            status,
-            body: None,
-            request_id: None,
-        });
-    }
-
-    serde_json::from_str(&text).map_err(|e| HttpError {
-        message: format!("JSON parse error: {e}"),
-        status,
-        body: None,
-        request_id: None,
-    })
+    raw_fetch::<T, _>(&url, method, body, format_palpo_error).await
 }
 
 pub async fn get_server_status(palpo_admin_url: &str) -> Result<ServerStatusResponse, HttpError> {

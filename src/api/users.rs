@@ -1,6 +1,6 @@
 use crate::api::client::*;
 use crate::types::*;
-use crate::utils::cache::{get_cached, invalidate_cached_prefix, remove_cached, set_cached};
+use crate::utils::cache::{cached, invalidate_cached_prefix, remove_cached};
 use crate::utils::error::HttpError;
 use crate::utils::mxid::return_mxid;
 
@@ -8,6 +8,16 @@ const USER_LIST_CACHE_TTL_MS: f64 = 30_000.0;
 const USER_LIST_CACHE_PREFIX: &str = "users:list:";
 const DASHBOARD_USER_COUNT_CACHE_KEY: &str = "dashboard_user_count";
 const DASHBOARD_ACTIVE_USER_COUNT_CACHE_KEY: &str = "dashboard_active_user_count";
+
+/// Page size used when fetching every user for the CSV export. The export
+/// loops over pages until the backend's reported `total` is exhausted rather
+/// than relying on one oversized request.
+pub const EXPORT_PAGE_SIZE: u64 = 500;
+
+/// Upper bound on the number of devices we fetch in one request when wiping a
+/// user's devices. A single user is never expected to have anywhere near this
+/// many sessions, so one page suffices.
+const ALL_DEVICES_LIMIT: u64 = 10_000;
 
 fn user_list_cache_key(
     page: u64,
@@ -90,6 +100,32 @@ pub async fn get_users(
     })
 }
 
+/// Fetch every user by paging through the admin API until the reported
+/// `total` is exhausted. Used by the CSV export so we never depend on a single
+/// oversized request returning all rows.
+pub async fn get_all_users_for_export(
+    order_by: &str,
+    order: &str,
+) -> Result<Vec<UserRecord>, HttpError> {
+    let mut all = Vec::new();
+    let mut page = 1u64;
+
+    loop {
+        let response = get_users(page, EXPORT_PAGE_SIZE, order_by, order, "").await?;
+        let fetched = response.data.len() as u64;
+        all.extend(response.data);
+
+        // Stop once we've collected the reported total, or the backend
+        // returned a short/empty page (defensive against a missing total).
+        if fetched == 0 || all.len() as u64 >= response.total {
+            break;
+        }
+        page += 1;
+    }
+
+    Ok(all)
+}
+
 pub async fn get_users_cached(
     page: u64,
     per_page: u64,
@@ -98,20 +134,12 @@ pub async fn get_users_cached(
     search_term: &str,
 ) -> Result<ListResponse<UserRecord>, HttpError> {
     let cache_key = user_list_cache_key(page, per_page, order_by, order, search_term);
-
-    if let Some(cached) = get_cached(&cache_key, USER_LIST_CACHE_TTL_MS) {
-        if let Ok(response) = serde_json::from_str::<ListResponse<UserRecord>>(&cached) {
-            return Ok(response);
-        }
-    }
-
-    let response = get_users(page, per_page, order_by, order, search_term).await?;
-
-    if let Ok(serialized) = serde_json::to_string(&response) {
-        set_cached(&cache_key, &serialized);
-    }
-
-    Ok(response)
+    cached(
+        &cache_key,
+        USER_LIST_CACHE_TTL_MS,
+        get_users(page, per_page, order_by, order, search_term),
+    )
+    .await
 }
 
 pub async fn get_user(id: &str) -> Result<UserRecord, HttpError> {
@@ -125,12 +153,7 @@ pub async fn create_user(id: &str, data: CreateUserRequest) -> Result<UserRecord
     let user_id = return_mxid(id);
     let encoded = urlencoding::encode(&user_id);
     let url = build_url(&format!("/_palpo/admin/v2/users/{encoded}"), &[])?;
-    let body = serde_json::to_string(&data).map_err(|e| HttpError {
-        message: e.to_string(),
-        status: 0,
-        body: None,
-        request_id: None,
-    })?;
+    let body = serde_json::to_string(&data).map_err(|e| HttpError::message(e.to_string()))?;
     let user: User = api_client(&url, "PUT", Some(body)).await?;
     invalidate_user_related_caches();
     Ok(map_user(user))
@@ -139,12 +162,7 @@ pub async fn create_user(id: &str, data: CreateUserRequest) -> Result<UserRecord
 pub async fn update_user(id: &str, data: serde_json::Value) -> Result<UserRecord, HttpError> {
     let encoded = urlencoding::encode(id);
     let url = build_url(&format!("/_palpo/admin/v2/users/{encoded}"), &[])?;
-    let body = serde_json::to_string(&data).map_err(|e| HttpError {
-        message: e.to_string(),
-        status: 0,
-        body: None,
-        request_id: None,
-    })?;
+    let body = serde_json::to_string(&data).map_err(|e| HttpError::message(e.to_string()))?;
     let user: User = api_client(&url, "PUT", Some(body)).await?;
     invalidate_user_related_caches();
     Ok(map_user(user))
@@ -220,7 +238,7 @@ pub async fn delete_user_device(user_id: &str, device_id: &str) -> Result<(), Ht
 }
 
 pub async fn delete_all_user_devices(user_id: &str) -> Result<u64, HttpError> {
-    let devices = get_user_devices(user_id, 1, 10000).await?;
+    let devices = get_user_devices(user_id, 1, ALL_DEVICES_LIMIT).await?;
     let mut deleted = 0u64;
     for device in &devices.data {
         if delete_user_device(user_id, &device.id).await.is_ok() {

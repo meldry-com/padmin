@@ -11,7 +11,6 @@ use crate::components::ui::icons::Icon;
 use crate::components::ui::loading::{PageSkeleton, Spinner};
 use crate::components::ui::page_header::PageHeader;
 use crate::utils::i18n::t;
-use crate::utils::storage;
 
 #[derive(Debug, Clone)]
 struct DiagnosticCheck {
@@ -30,7 +29,13 @@ enum DiagnosticStatus {
 
 #[component]
 pub fn AuthStatusPage() -> Element {
-    let base_url = storage::get_item("base_url").unwrap_or_default();
+    // All API calls go through the same-origin Nginx reverse proxy, so probe
+    // relative paths (empty base) like the rest of the app does. The displayed
+    // value reflects the current window origin for clarity.
+    let base_url = String::new();
+    let display_origin = web_sys::window()
+        .and_then(|w| w.location().origin().ok())
+        .unwrap_or_else(|| "same origin".to_string());
     let base_url_for_flows = base_url.clone();
     let base_url_for_version = base_url.clone();
     let base_url_for_issuer = base_url.clone();
@@ -216,7 +221,7 @@ pub fn AuthStatusPage() -> Element {
                     div { class: "space-y-4",
                         div { class: "flex items-center justify-between py-2",
                             span { class: "text-sm font-medium text-muted-foreground", {t("auth_status.base_url")} }
-                            span { class: "text-sm font-mono", "{base_url}" }
+                            span { class: "text-sm font-mono", "{display_origin}" }
                         }
                         div { class: "flex items-center justify-between py-2",
                             span { class: "text-sm font-medium text-muted-foreground", {t("auth_status.server_version")} }

@@ -2,7 +2,6 @@ pub mod appservices;
 pub mod auth;
 pub mod client;
 pub mod destinations;
-pub mod matrix;
 pub mod media;
 pub mod palpo_admin;
 pub mod pasion;

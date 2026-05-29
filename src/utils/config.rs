@@ -1,41 +1,7 @@
-use std::sync::Mutex;
-use std::sync::OnceLock;
-
 use crate::utils::storage;
 
-#[derive(Debug, Clone, Default)]
-pub struct Config {
-    pub restrict_base_url: Option<Vec<String>>,
-    pub cors_credentials: String,
-    pub external_auth_provider: bool,
-    pub palpo_admin: Option<String>,
-}
-
-static CONFIG: OnceLock<Mutex<Config>> = OnceLock::new();
-
-fn config_mutex() -> &'static Mutex<Config> {
-    CONFIG.get_or_init(|| Mutex::new(Config::default()))
-}
-
-pub fn get_config() -> Config {
-    config_mutex().lock().unwrap().clone()
-}
-
-pub fn set_config(config: Config) {
-    *config_mutex().lock().unwrap() = config;
-}
-
 pub fn clear_config() {
-    *config_mutex().lock().unwrap() = Config::default();
     storage::clear();
-}
-
-pub fn set_external_auth_provider(value: bool) {
-    config_mutex().lock().unwrap().external_auth_provider = value;
-}
-
-pub fn get_base_url() -> Option<String> {
-    storage::get_item("base_url")
 }
 
 pub fn get_home_server() -> Option<String> {
@@ -57,6 +23,12 @@ pub struct RuntimeConfig {
     /// Defaults to `DEFAULT_OAUTH_CLIENT_ID` when empty.
     #[serde(default)]
     pub oauth_client_id: String,
+    /// Base URL of the palpo_admin sidecar (e.g. http://localhost:7090 or a
+    /// same-origin proxy path like `/_palpo_admin`). When set, the Server Ops
+    /// sidebar group and instance_config fetch become reachable. Leave empty to
+    /// fall back to the same-origin default derived in `main.rs`.
+    #[serde(default)]
+    pub palpo_admin_url: String,
 }
 
 pub async fn load_runtime_config() -> RuntimeConfig {

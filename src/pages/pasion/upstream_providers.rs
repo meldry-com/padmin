@@ -10,7 +10,7 @@ use dioxus::prelude::*;
 use crate::api::pasion;
 use crate::components::ui::badge::{Badge, BadgeVariant};
 use crate::components::ui::button::{Button, ButtonSize, ButtonVariant};
-use crate::components::ui::dialog::ConfirmDialog;
+use crate::components::ui::dialog::{ConfirmDialog, Modal, ModalSize};
 use crate::components::ui::error_banner::ErrorBanner;
 use crate::components::ui::icons::Icon;
 use crate::components::ui::input::{Input, Label};
@@ -497,19 +497,17 @@ pub fn UpstreamProvidersPage() -> Element {
             }
         }
 
-        if *form_open.read() {
-            div { class: "fixed inset-0 z-50 flex items-center justify-center",
-                div {
-                    class: "fixed inset-0 bg-black/80",
-                    onclick: move |_| {
-                        if !is_saving {
-                            form_open.set(false);
-                            editing_provider_id.set(None);
-                            loaded_provider.set(None);
-                        }
-                    },
+        Modal {
+            open: *form_open.read(),
+            on_close: move |_| {
+                if !is_saving {
+                    form_open.set(false);
+                    editing_provider_id.set(None);
+                    loaded_provider.set(None);
                 }
-                div { class: "relative z-50 w-full max-w-2xl rounded-lg border bg-background p-6 shadow-lg max-h-[90vh] overflow-y-auto",
+            },
+            size: ModalSize::Xl2,
+            panel_class: "max-h-[90vh] overflow-y-auto".to_string(),
                     h2 { class: "text-lg font-semibold",
                         if is_editing { "Edit Upstream Provider" } else { "Add Upstream Provider" }
                     }
@@ -651,8 +649,6 @@ pub fn UpstreamProvidersPage() -> Element {
                             if is_editing { "Save" } else { "Create" }
                         }
                     }
-                }
-            }
         }
 
         ConfirmDialog {
