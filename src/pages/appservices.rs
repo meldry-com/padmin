@@ -10,11 +10,12 @@
 //! Backed by the palpo admin endpoints under `/_palpo/admin/v1/appservices`.
 
 use dioxus::prelude::*;
+use wasm_bindgen::JsCast;
 
 use crate::api::appservices;
 use crate::components::ui::badge::{Badge, BadgeVariant};
 use crate::components::ui::button::{Button, ButtonSize, ButtonVariant};
-use crate::components::ui::dialog::ConfirmDialog;
+use crate::components::ui::dialog::{ConfirmDialog, Modal, ModalSize};
 use crate::components::ui::empty_state::EmptyState;
 use crate::components::ui::icons::Icon;
 use crate::components::ui::input::{Input, Label, SearchInput};
@@ -276,6 +277,118 @@ fn unique_id(base: &str, existing: &[String]) -> String {
     base.to_string()
 }
 
+/// Parse a registration the user pasted or uploaded. Bridges emit YAML, but
+/// JSON is a valid subset and some tools emit it, so we try JSON first (cheap,
+/// strict) and fall back to YAML.
+fn parse_registration(text: &str) -> Result<AppserviceRegistration, String> {
+    let text = text.trim();
+    if text.is_empty() {
+        return Err("Nothing to import — paste a registration first.".into());
+    }
+    if let Ok(reg) = serde_json::from_str::<AppserviceRegistration>(text) {
+        return Ok(reg);
+    }
+    serde_saphyr::from_str::<AppserviceRegistration>(text)
+        .map_err(|e| format!("Could not parse as JSON or YAML: {e}"))
+}
+
+/// Parse the registration sitting in `import_text` and, on success, overwrite
+/// the structured form with it. Signals are `Copy`, so this takes them by
+/// value and can be invoked from sync handlers and async tasks alike.
+fn apply_import(mut form: Signal<ConfigForm>, mut import_text: Signal<String>) {
+    let text = import_text.read().clone();
+    match parse_registration(&text) {
+        Ok(reg) => {
+            form.set(registration_to_form(&reg, "custom"));
+            import_text.set(String::new());
+            show_toast("Imported — review the fields below", ToastVariant::Success);
+        }
+        Err(msg) => show_toast(&msg, ToastVariant::Error),
+    }
+}
+
+/// Serialize a registration to the `registration.yaml` format a bridge expects.
+fn registration_to_yaml(reg: &AppserviceRegistration) -> String {
+    serde_saphyr::to_string(reg)
+        .unwrap_or_else(|e| format!("# failed to serialize registration: {e}\n"))
+}
+
+/// Trigger a client-side download of `content` as `filename` via a detached
+/// anchor carrying a data URI — no Blob/Node plumbing required.
+fn download_text(filename: &str, content: &str) {
+    let Some(document) = web_sys::window().and_then(|w| w.document()) else {
+        return;
+    };
+    let href = format!(
+        "data:application/yaml;charset=utf-8,{}",
+        urlencoding::encode(content)
+    );
+    if let Ok(el) = document.create_element("a") {
+        let _ = el.set_attribute("href", &href);
+        let _ = el.set_attribute("download", filename);
+        if let Some(anchor) = el.dyn_ref::<web_sys::HtmlElement>() {
+            anchor.click();
+        }
+    }
+}
+
+/// Copy `text` to the clipboard, then flash a confirmation toast.
+fn copy_to_clipboard(text: &str, label: &str) {
+    if let Some(clipboard) = web_sys::window().map(|w| w.navigator().clipboard()) {
+        let _ = clipboard.write_text(text);
+        show_toast(&format!("{label} copied"), ToastVariant::Success);
+    }
+}
+
+/// Build a wire registration from the form, validating required fields and the
+/// namespaces JSON. Shared by both the create and the edit paths.
+fn form_to_registration(f: &ConfigForm) -> Result<AppserviceRegistration, String> {
+    if f.id.trim().is_empty()
+        || f.sender_localpart.trim().is_empty()
+        || f.as_token.trim().is_empty()
+        || f.hs_token.trim().is_empty()
+    {
+        return Err("id, sender_localpart, as_token and hs_token are required".into());
+    }
+    let namespaces: serde_json::Value = serde_json::from_str(&f.namespaces)
+        .map_err(|e| format!("namespaces must be valid JSON: {e}"))?;
+    Ok(AppserviceRegistration {
+        id: f.id.trim().to_string(),
+        url: {
+            let u = f.url.trim();
+            if u.is_empty() { None } else { Some(u.to_string()) }
+        },
+        as_token: f.as_token.trim().to_string(),
+        hs_token: f.hs_token.trim().to_string(),
+        sender_localpart: f.sender_localpart.trim().to_string(),
+        namespaces,
+        rate_limited: f.rate_limited,
+        protocols: f.protocols.clone(),
+        receive_ephemeral: f.receive_ephemeral,
+        device_management: f.device_management,
+        disabled: false,
+    })
+}
+
+/// Seed the form from an existing registration — used for both editing an
+/// installed appservice and importing a pasted/uploaded one.
+fn registration_to_form(reg: &AppserviceRegistration, template_key: &str) -> ConfigForm {
+    ConfigForm {
+        template_key: template_key.to_string(),
+        id: reg.id.clone(),
+        url: reg.url.clone().unwrap_or_default(),
+        sender_localpart: reg.sender_localpart.clone(),
+        as_token: reg.as_token.clone(),
+        hs_token: reg.hs_token.clone(),
+        namespaces: serde_json::to_string_pretty(&reg.namespaces)
+            .unwrap_or_else(|_| "{}".to_string()),
+        rate_limited: reg.rate_limited,
+        protocols: reg.protocols.clone(),
+        receive_ephemeral: reg.receive_ephemeral,
+        device_management: reg.device_management,
+    }
+}
+
 /// Default namespaces JSON for a bridge template. Uses exclusive regexes so
 /// the bridge owns `@<prefix>.*` / `#<prefix>.*`.
 fn default_namespaces(template: &Template) -> String {
@@ -313,6 +426,11 @@ struct ConfigForm {
     as_token: String,
     hs_token: String,
     namespaces: String,
+    rate_limited: Option<bool>,
+    receive_ephemeral: bool,
+    device_management: bool,
+    /// Carried through edit/import untouched — no dedicated UI control.
+    protocols: Option<Vec<String>>,
 }
 
 impl ConfigForm {
@@ -326,6 +444,10 @@ impl ConfigForm {
             as_token: String::new(),
             hs_token: String::new(),
             namespaces: default_namespaces(template),
+            rate_limited: None,
+            receive_ephemeral: false,
+            device_management: false,
+            protocols: None,
         }
     }
 }
@@ -341,6 +463,10 @@ pub fn AppserviceList() -> Element {
     let mut form = use_signal(ConfigForm::default);
     let mut search = use_signal(String::new);
     let mut creating = use_signal(|| false);
+    // `Some(id)` while the modal is editing an installed appservice; `None`
+    // when installing a fresh one. Drives the submit verb (PUT vs POST) and
+    // whether the id field is locked.
+    let mut edit_id = use_signal(|| Option::<String>::None);
 
     // Delete confirmation
     let mut delete_open = use_signal(|| false);
@@ -348,6 +474,9 @@ pub fn AppserviceList() -> Element {
 
     // Enable/disable in-flight tracking
     let mut toggling = use_signal(|| Option::<String>::None);
+
+    // Inline detail: the id of the row whose full registration is expanded.
+    let mut expanded = use_signal(|| Option::<String>::None);
 
     let existing_ids = move || -> Vec<String> {
         match &*data.read() {
@@ -357,67 +486,58 @@ pub fn AppserviceList() -> Element {
     };
 
     // Pick a template — seed the form with its defaults and open the
-    // configure modal.
+    // configure modal in *install* mode.
     let mut pick_template = move |key: &'static str| {
         if let Some(t) = find_template(key) {
+            edit_id.set(None);
             form.set(ConfigForm::from_template(t, &existing_ids()));
             configure_open.set(true);
         }
     };
 
+    // Open the modal in *edit* mode, prefilled from an installed appservice.
+    let mut open_edit = move |reg: AppserviceRegistration| {
+        edit_id.set(Some(reg.id.clone()));
+        form.set(registration_to_form(&reg, "custom"));
+        configure_open.set(true);
+    };
+
     let close_dialog = move |_| {
         if !*creating.read() {
             configure_open.set(false);
+            edit_id.set(None);
             form.set(ConfigForm::default());
         }
     };
 
-    let handle_create = move |_| {
+    let handle_submit = move |_| {
         let f = form.read().clone();
-        if f.id.trim().is_empty()
-            || f.sender_localpart.trim().is_empty()
-            || f.as_token.trim().is_empty()
-            || f.hs_token.trim().is_empty()
-        {
-            show_toast(
-                "id, sender_localpart, as_token and hs_token are required",
-                ToastVariant::Error,
-            );
-            return;
-        }
-        let namespaces: serde_json::Value = match serde_json::from_str(&f.namespaces) {
-            Ok(v) => v,
-            Err(e) => {
-                show_toast(
-                    &format!("namespaces must be valid JSON: {e}"),
-                    ToastVariant::Error,
-                );
+        let reg = match form_to_registration(&f) {
+            Ok(r) => r,
+            Err(msg) => {
+                show_toast(&msg, ToastVariant::Error);
                 return;
             }
         };
-        let reg = AppserviceRegistration {
-            id: f.id.trim().to_string(),
-            url: if f.url.trim().is_empty() {
-                None
-            } else {
-                Some(f.url.trim().to_string())
-            },
-            as_token: f.as_token.trim().to_string(),
-            hs_token: f.hs_token.trim().to_string(),
-            sender_localpart: f.sender_localpart.trim().to_string(),
-            namespaces,
-            rate_limited: None,
-            protocols: None,
-            receive_ephemeral: false,
-            device_management: false,
-            disabled: false,
-        };
+        let editing = edit_id.read().clone();
         creating.set(true);
         spawn(async move {
-            match appservices::register_appservice(&reg).await {
+            let result = match &editing {
+                Some(id) => appservices::update_appservice(id, &reg).await,
+                None => appservices::register_appservice(&reg).await,
+            };
+            match result {
                 Ok(_) => {
-                    show_toast("Appservice registered", ToastVariant::Success);
+                    show_toast(
+                        if editing.is_some() {
+                            "Appservice updated"
+                        } else {
+                            "Appservice registered"
+                        },
+                        ToastVariant::Success,
+                    );
                     configure_open.set(false);
+                    edit_id.set(None);
                     form.set(ConfigForm::default());
                     data.restart();
                 }
@@ -480,6 +600,16 @@ pub fn AppserviceList() -> Element {
                         AppserviceTable {
                             items: items.clone(),
                             toggling: toggling,
+                            expanded: expanded,
+                            on_expand: move |id: String| {
+                                let cur = expanded.read().clone();
+                                if cur.as_deref() == Some(id.as_str()) {
+                                    expanded.set(None);
+                                } else {
+                                    expanded.set(Some(id));
+                                }
+                            },
+                            on_edit: move |reg: AppserviceRegistration| open_edit(reg),
                             on_toggle: move |(id, currently_disabled): (String, bool)| {
                                 toggling.set(Some(id.clone()));
                                 spawn(async move {
@@ -532,11 +662,19 @@ pub fn AppserviceList() -> Element {
                             "Pick a ready-made bridge or bot — the form pre-fills sensible defaults."
                         }
                     }
-                    div { class: "sm:w-72",
-                        SearchInput {
-                            placeholder: "Filter: Slack, Telegram, WeChat …".to_string(),
-                            value: search.read().clone(),
-                            oninput: move |e: FormEvent| search.set(e.value()),
+                    div { class: "flex items-end gap-2",
+                        Button {
+                            variant: ButtonVariant::Outline,
+                            onclick: move |_| pick_template("custom"),
+                            Icon { name: "upload".to_string(), class: "mr-2 h-4 w-4".to_string() }
+                            "Import registration.yaml"
+                        }
+                        div { class: "sm:w-72",
+                            SearchInput {
+                                placeholder: "Filter: Slack, Telegram, WeChat …".to_string(),
+                                value: search.read().clone(),
+                                oninput: move |e: FormEvent| search.set(e.value()),
+                            }
                         }
                     }
                 }
@@ -570,13 +708,15 @@ pub fn AppserviceList() -> Element {
         }
 
         // Configure view — template-specific form (kept as a modal because
-        // it's a multi-field form with token generators).
+        // it's a multi-field form with token generators). Doubles as the edit
+        // form when `edit_id` is set.
         if is_configure_open {
             ConfigureDialog {
                 form: form,
                 creating: is_creating,
+                editing: edit_id.read().is_some(),
                 on_close: close_dialog,
-                on_submit: handle_create,
+                on_submit: handle_submit,
             }
         }
 
@@ -601,6 +741,9 @@ pub fn AppserviceList() -> Element {
 fn AppserviceTable(
     items: Vec<AppserviceSummary>,
     toggling: Signal<Option<String>>,
+    expanded: Signal<Option<String>>,
+    on_expand: EventHandler<String>,
+    on_edit: EventHandler<AppserviceRegistration>,
     on_toggle: EventHandler<(String, bool)>,
     on_delete: EventHandler<String>,
 ) -> Element {
@@ -609,6 +752,7 @@ fn AppserviceTable(
             Table {
                 TableHeader {
                     TableRow {
+                        TableHead { class: "w-8".to_string(), "" }
                         TableHead { "ID" }
                         TableHead { "Sender" }
                         TableHead { "URL" }
@@ -633,12 +777,24 @@ fn AppserviceTable(
                                 let id = item.id.clone();
                                 let id_toggle = id.clone();
                                 let id_delete = id.clone();
+                                let id_expand = id.clone();
                                 let sender = item.sender_localpart.clone();
                                 let url = item.url.clone().unwrap_or_else(|| "-".to_string());
                                 let disabled = item.disabled;
                                 let busy = toggling.read().as_deref() == Some(id.as_str());
+                                let is_open = expanded.read().as_deref() == Some(id.as_str());
                                 rsx! {
                                     TableRow { key: "{id}",
+                                        TableCell {
+                                            button {
+                                                class: "rounded p-1 hover:bg-accent text-muted-foreground",
+                                                onclick: move |_| on_expand.call(id_expand.clone()),
+                                                Icon {
+                                                    name: if is_open { "chevron-down".to_string() } else { "chevron-right".to_string() },
+                                                    class: "h-4 w-4".to_string(),
+                                                }
+                                            }
+                                        }
                                         TableCell {
                                             code { class: "text-sm font-mono", "{id}" }
                                         }
@@ -670,11 +826,122 @@ fn AppserviceTable(
                                             }
                                         }
                                     }
+                                    if is_open {
+                                        TableRow { key: "{id}-detail",
+                                            TableCell { class: "p-0 bg-muted/20".to_string(), colspan: 99,
+                                                AppserviceDetail {
+                                                    id: id.clone(),
+                                                    on_edit: move |reg: AppserviceRegistration| on_edit.call(reg),
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+/// Inline panel shown under an expanded row: fetches the full registration
+/// (including the secret tokens, which the list summary omits) and offers
+/// copy-to-clipboard, a `registration.yaml` download and an Edit shortcut.
+#[component]
+fn AppserviceDetail(id: String, on_edit: EventHandler<AppserviceRegistration>) -> Element {
+    let fetch_id = id.clone();
+    let detail = use_resource(move || {
+        let id = fetch_id.clone();
+        async move { appservices::get_appservice(&id).await }
+    });
+
+    rsx! {
+        div { class: "p-5",
+            match &*detail.read() {
+                Some(Ok(reg)) => {
+                    let reg = reg.clone();
+                    let reg_edit = reg.clone();
+                    let as_token = reg.as_token.clone();
+                    let hs_token = reg.hs_token.clone();
+                    let yaml = registration_to_yaml(&reg);
+                    let yaml_dl = yaml.clone();
+                    let yaml_copy = yaml.clone();
+                    let dl_name = format!("{}-registration.yaml", reg.id);
+                    let ns_pretty = serde_json::to_string_pretty(&reg.namespaces)
+                        .unwrap_or_else(|_| "{}".to_string());
+                    rsx! {
+                        div { class: "space-y-4",
+                            div { class: "flex flex-wrap items-center justify-between gap-2",
+                                h4 { class: "text-sm font-semibold", "Registration" }
+                                div { class: "flex gap-2",
+                                    Button {
+                                        variant: ButtonVariant::Outline,
+                                        size: ButtonSize::Sm,
+                                        onclick: move |_| on_edit.call(reg_edit.clone()),
+                                        Icon { name: "edit".to_string(), class: "mr-2 h-3.5 w-3.5".to_string() }
+                                        "Edit"
+                                    }
+                                    Button {
+                                        variant: ButtonVariant::Outline,
+                                        size: ButtonSize::Sm,
+                                        onclick: move |_| copy_to_clipboard(&yaml_copy, "registration.yaml"),
+                                        Icon { name: "copy".to_string(), class: "mr-2 h-3.5 w-3.5".to_string() }
+                                        "Copy YAML"
+                                    }
+                                    Button {
+                                        size: ButtonSize::Sm,
+                                        onclick: move |_| download_text(&dl_name, &yaml_dl),
+                                        Icon { name: "download".to_string(), class: "mr-2 h-3.5 w-3.5".to_string() }
+                                        "Download"
+                                    }
+                                }
+                            }
+                            div { class: "grid gap-3 sm:grid-cols-2",
+                                SecretField { label: "as_token", value: as_token }
+                                SecretField { label: "hs_token", value: hs_token }
+                            }
+                            div { class: "space-y-1",
+                                span { class: "text-xs font-medium text-muted-foreground", "Namespaces" }
+                                pre { class: "rounded-md border bg-background p-3 text-xs font-mono overflow-x-auto",
+                                    "{ns_pretty}"
+                                }
+                            }
+                        }
+                    }
+                }
+                Some(Err(e)) => rsx! {
+                    p { class: "text-sm text-destructive", "Failed to load registration: {e.message}" }
+                },
+                None => rsx! {
+                    div { class: "flex items-center gap-2 text-sm text-muted-foreground",
+                        Spinner {} "Loading registration…"
+                    }
+                },
+            }
+        }
+    }
+}
+
+/// A read-only token field with a copy button. Shown in full (admins need the
+/// real value to paste into a bridge config); the row is already gated behind
+/// an explicit expand click.
+#[component]
+fn SecretField(label: &'static str, value: String) -> Element {
+    let to_copy = value.clone();
+    rsx! {
+        div { class: "space-y-1",
+            div { class: "flex items-center justify-between",
+                span { class: "text-xs font-medium text-muted-foreground", "{label}" }
+                button {
+                    class: "text-xs font-medium text-primary hover:underline",
+                    onclick: move |_| copy_to_clipboard(&to_copy, label),
+                    "Copy"
+                }
+            }
+            code { class: "block rounded-md border bg-background px-2 py-1.5 text-xs font-mono break-all",
+                "{value}"
             }
         }
     }
@@ -717,51 +984,125 @@ fn TemplateCard(
 
 #[component]
 fn ConfigureDialog(
-    form: Signal<ConfigForm>,
+    mut form: Signal<ConfigForm>,
     creating: bool,
-    on_close: EventHandler<MouseEvent>,
+    editing: bool,
+    on_close: EventHandler<()>,
     on_submit: EventHandler<MouseEvent>,
 ) -> Element {
     let template_key = form.read().template_key.clone();
     let template = find_template(&template_key);
     let name = template.map(|t| t.name).unwrap_or("Custom Appservice");
     let description = template.map(|t| t.description).unwrap_or("");
-    let icon = template.map(|t| t.icon).unwrap_or("wrench");
+    let icon = if editing {
+        "edit"
+    } else {
+        template.map(|t| t.icon).unwrap_or("wrench")
+    };
     let accent = template
         .map(|t| t.accent)
         .unwrap_or("bg-muted text-muted-foreground");
     let notes = template.map(|t| t.notes).unwrap_or("");
 
-    rsx! {
-        div { class: "fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 sm:items-center",
-            div {
-                class: "fixed inset-0 bg-black/80",
-                onclick: move |e| on_close.call(e),
-            }
-            div { class: "relative z-50 my-4 flex min-h-0 w-full max-w-2xl flex-col overflow-hidden rounded-lg border bg-background shadow-lg max-h-[calc(100vh-2rem)]",
-                // Header with template brand
-                div { class: "flex items-start gap-4 border-b p-6",
-                    div { class: "flex h-10 w-10 items-center justify-center rounded-lg {accent} shrink-0",
-                        Icon { name: icon.to_string(), class: "h-5 w-5".to_string() }
-                    }
-                    div { class: "flex-1 min-w-0 space-y-1",
-                        h2 { class: "text-lg font-semibold leading-tight", "Install {name}" }
-                        p { class: "text-sm text-muted-foreground", "{description}" }
-                    }
-                    button {
-                        class: "rounded-md p-2 hover:bg-accent shrink-0",
-                        disabled: creating,
-                        onclick: move |e| on_close.call(e),
-                        Icon { name: "x".to_string(), class: "h-4 w-4".to_string() }
-                    }
-                }
+    let title = if editing {
+        format!("Edit {}", form.read().id)
+    } else {
+        format!("Install {name}")
+    };
+    let submit_label = if editing { "Save changes" } else { "Install" };
 
-                // Body — form fields
-                div { class: "min-h-0 flex-1 overflow-y-auto p-6 space-y-4",
+    // Import scratch state — pasting/uploading a registration overwrites the
+    // structured fields below. Only offered when installing fresh, since the id
+    // of an edit is fixed and importing would just confuse it. `apply_import`
+    // is a free fn (not a closure) so it can be called from both the button
+    // handler and the async file-upload path without FnMut borrow headaches —
+    // the signals it takes are `Copy`.
+    let mut import_text = use_signal(String::new);
+
+    rsx! {
+        Modal {
+            open: true,
+            on_close: move |_| on_close.call(()),
+            size: ModalSize::Xl2,
+            default_padding: false,
+            // Preserve the scrollable header/body/footer layout: the panel is a
+            // flex column capped at the viewport height; the body scrolls.
+            panel_class: "my-4 flex min-h-0 max-h-[calc(100vh-2rem)] flex-col overflow-hidden".to_string(),
+            // Let the whole dialog scroll on short viewports (mirrors the prior
+            // `items-start ... overflow-y-auto p-4` container behavior).
+            container_class: "items-start overflow-y-auto p-4 sm:items-center".to_string(),
+            // Header with template brand
+            div { class: "flex items-start gap-4 border-b p-6",
+                div { class: "flex h-10 w-10 items-center justify-center rounded-lg {accent} shrink-0",
+                    Icon { name: icon.to_string(), class: "h-5 w-5".to_string() }
+                }
+                div { class: "flex-1 min-w-0 space-y-1",
+                    h2 { class: "text-lg font-semibold leading-tight", "{title}" }
+                    p { class: "text-sm text-muted-foreground", "{description}" }
+                }
+                button {
+                    class: "rounded-md p-2 hover:bg-accent shrink-0",
+                    disabled: creating,
+                    onclick: move |_| on_close.call(()),
+                    Icon { name: "x".to_string(), class: "h-4 w-4".to_string() }
+                }
+            }
+
+            // Body — form fields
+            div { class: "min-h-0 flex-1 overflow-y-auto p-6 space-y-4",
                     if !notes.is_empty() {
                         div { class: "rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground flex gap-2",
                             Icon { name: "info".to_string(), class: "h-4 w-4 shrink-0 mt-0.5".to_string() }
                             span { "{notes}" }
+                        }
+                    }
+
+                    // Import from a bridge-generated registration (paste or upload).
+                    if !editing {
+                        details { class: "rounded-md border bg-muted/20",
+                            summary { class: "cursor-pointer select-none px-3 py-2 text-sm font-medium",
+                                "Import from registration.yaml (paste or upload)"
+                            }
+                            div { class: "space-y-2 border-t p-3",
+                                textarea {
+                                    class: "flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-xs font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                                    placeholder: "Paste the registration.yaml (or JSON) your bridge generated…".to_string(),
+                                    value: import_text.read().clone(),
+                                    oninput: move |e: FormEvent| import_text.set(e.value()),
+                                    disabled: creating,
+                                }
+                                div { class: "flex flex-wrap items-center gap-2",
+                                    Button {
+                                        variant: ButtonVariant::Secondary,
+                                        size: ButtonSize::Sm,
+                                        disabled: creating,
+                                        onclick: move |_| apply_import(form, import_text),
+                                        "Apply paste"
+                                    }
+                                    label { class: "text-xs font-medium text-primary hover:underline cursor-pointer",
+                                        "Upload file…"
+                                        input {
+                                            r#type: "file",
+                                            accept: ".yaml,.yml,.json,text/yaml,application/json",
+                                            class: "hidden",
+                                            disabled: creating,
+                                            onchange: move |evt: FormEvent| {
+                                                if let Some(file) = evt.files().into_iter().next() {
+                                                    spawn(async move {
+                                                        if let Ok(contents) = file.read_string().await {
+                                                            import_text.set(contents);
+                                                            apply_import(form, import_text);
+                                                        }
+                                                    });
+                                                }
+                                            },
+                                        }
+                                    }
+                                    span { class: "text-xs text-muted-foreground",
+                                        "Fills the fields below — review, then Install."
+                                    }
+                                }
+                            }
                         }
                     }
 
@@ -772,10 +1113,14 @@ fn ConfigureDialog(
                                 placeholder: "wechat-bridge".to_string(),
                                 value: form.read().id.clone(),
                                 oninput: move |e: FormEvent| form.write().id = e.value(),
-                                disabled: creating,
+                                disabled: creating || editing,
                             }
                             p { class: "text-xs text-muted-foreground",
-                                "Same template can be added multiple times — the ID must be unique."
+                                if editing {
+                                    "The ID is immutable — delete and re-create to change it."
+                                } else {
+                                    "Same template can be added multiple times — the ID must be unique."
+                                }
                             }
                         }
                         div { class: "space-y-1",
@@ -829,22 +1174,48 @@ fn ConfigureDialog(
                             "Each namespace entry is {{ exclusive: bool, regex: string }}. The template pre-fills a sensible default."
                         }
                     }
+
+                    div { class: "flex flex-col gap-2 sm:flex-row sm:gap-6",
+                        label { class: "flex items-center gap-2 text-sm",
+                            input {
+                                r#type: "checkbox",
+                                class: "h-4 w-4 rounded border-input",
+                                checked: form.read().rate_limited.unwrap_or(false),
+                                disabled: creating,
+                                onchange: move |e: FormEvent| {
+                                    form.write().rate_limited = Some(e.value() == "true");
+                                },
+                            }
+                            span { "Rate limited" }
+                        }
+                        label { class: "flex items-center gap-2 text-sm",
+                            input {
+                                r#type: "checkbox",
+                                class: "h-4 w-4 rounded border-input",
+                                checked: form.read().receive_ephemeral,
+                                disabled: creating,
+                                onchange: move |e: FormEvent| {
+                                    form.write().receive_ephemeral = e.value() == "true";
+                                },
+                            }
+                            span { "Receive ephemeral (typing, receipts, presence)" }
+                        }
+                    }
                 }
 
-                // Footer
-                div { class: "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 border-t p-6",
-                    Button {
-                        variant: ButtonVariant::Outline,
-                        disabled: creating,
-                        onclick: move |e| on_close.call(e),
-                        "Cancel"
-                    }
-                    Button {
-                        disabled: creating,
-                        onclick: move |e| on_submit.call(e),
-                        if creating { Spinner { class: "mr-2".to_string() } }
-                        "Install"
-                    }
+            // Footer
+            div { class: "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 border-t p-6",
+                Button {
+                    variant: ButtonVariant::Outline,
+                    disabled: creating,
+                    onclick: move |_| on_close.call(()),
+                    "Cancel"
+                }
+                Button {
+                    disabled: creating,
+                    onclick: move |e| on_submit.call(e),
+                    if creating { Spinner { class: "mr-2".to_string() } }
+                    "{submit_label}"
                 }
             }
         }

@@ -2,14 +2,16 @@ use dioxus::prelude::*;
 
 use crate::components::ui::icons::Icon;
 use crate::router::Route;
-use crate::utils::i18n::t;
+use crate::utils::i18n::{current_language, t};
 
+#[derive(Clone, PartialEq)]
 struct NavItem {
     title: String,
     route: Route,
     icon: &'static str,
 }
 
+#[derive(Clone, PartialEq)]
 struct NavSection {
     label: String,
     items: Vec<NavItem>,
@@ -21,10 +23,103 @@ pub fn AppSidebar(collapsed: Signal<bool>, mobile_open: Signal<bool>) -> Element
     let nav = use_navigator();
     let current_path = use_route::<Route>();
 
-    let has_palpo_admin = crate::utils::instance_config::is_palpo_admin_enabled();
-    let icfg = crate::utils::instance_config::get_instance_config();
+    // The section skeleton depends only on the active language and instance
+    // config — it is independent of the current route. Memoizing it on
+    // `current_language()` avoids rebuilding ~25 translated strings and cloning
+    // the instance config on every route change. Route highlighting is still
+    // computed per-render in the RSX below via `is_route_active`.
+    let sections_memo = use_memo(move || {
+        let _lang = current_language();
+        let has_palpo_admin = crate::utils::instance_config::is_palpo_admin_enabled();
+        let icfg = crate::utils::instance_config::get_instance_config();
 
-    // Build grouped navigation sections
+        build_sections(has_palpo_admin, &icfg)
+    });
+    let sections = sections_memo.read();
+
+    let is_mobile_open = *mobile_open.read();
+    let is_collapsed = *collapsed.read() && !is_mobile_open;
+    let width_class = if is_collapsed { "w-16" } else { "w-64" };
+    let mobile_state_class = if is_mobile_open { "sidebar-open" } else { "" };
+    let nav_item_layout_class = if is_collapsed {
+        "justify-center px-0"
+    } else {
+        "px-3"
+    };
+
+    rsx! {
+        aside {
+            class: "sidebar-shell sidebar-transition flex h-screen flex-col bg-sidebar border-r border-sidebar-border {width_class} {mobile_state_class}",
+
+            // Header
+            div { class: "flex h-14 items-center gap-2 border-b border-sidebar-border px-4",
+                if !is_collapsed {
+                    div { class: "flex items-center gap-2",
+                        Icon { name: "shield".to_string(), class: "h-6 w-6 text-sidebar-primary".to_string() }
+                        span { class: "truncate font-semibold text-sidebar-foreground", {t("nav.palpo_admin")} }
+                    }
+                } else {
+                    div { class: "flex justify-center w-full",
+                        Icon { name: "shield".to_string(), class: "h-6 w-6 text-sidebar-primary".to_string() }
+                    }
+                }
+                button {
+                    class: "sidebar-mobile-close inline-flex h-9 w-9 items-center justify-center rounded-lg text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground touch-target",
+                    title: t("header.close"),
+                    onclick: move |_| mobile_open.set(false),
+                    Icon { name: "x".to_string(), class: "h-4 w-4".to_string() }
+                }
+            }
+
+            // Navigation
+            nav { class: "sidebar-nav flex-1 overflow-y-auto py-2",
+                for section in sections.iter() {
+                    div { class: "sidebar-section px-2 mb-1",
+                        if !is_collapsed && !section.label.is_empty() {
+                            p { class: "sidebar-section-label text-xs font-semibold text-sidebar-foreground/50 px-3 pt-3 pb-1 uppercase tracking-wider",
+                                {section.label.clone()}
+                            }
+                        }
+                        for item in section.items.iter() {
+                            {
+                                let is_active = is_route_active(&current_path, &item.route);
+                                let active_class = if is_active {
+                                    "sidebar-nav-active"
+                                } else {
+                                    ""
+                                };
+                                let route = item.route.clone();
+                                let title = item.title.clone();
+                                rsx! {
+                                    button {
+                                        class: "sidebar-nav-button flex w-full items-center gap-3 py-2 text-sm font-medium transition-colors {nav_item_layout_class} {active_class}",
+                                        onclick: move |_| {
+                                            mobile_open.set(false);
+                                            let _ = nav.push(route.clone());
+                                        },
+                                        Icon { name: item.icon.to_string(), class: "h-4 w-4 shrink-0".to_string() }
+                                        if !is_collapsed {
+                                            span { "{title}" }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// Builds the grouped navigation sections. Pure with respect to its inputs
+/// (language is captured by the caller via `current_language()`), so it can be
+/// memoized on the active language + instance config without touching the
+/// current route.
+fn build_sections(
+    has_palpo_admin: bool,
+    icfg: &crate::utils::instance_config::InstanceConfig,
+) -> Vec<NavSection> {
     let mut sections: Vec<NavSection> = Vec::new();
 
     // Dashboard (standalone)
@@ -206,79 +301,7 @@ pub fn AppSidebar(collapsed: Signal<bool>, mobile_open: Signal<bool>) -> Element
         }],
     });
 
-    let is_mobile_open = *mobile_open.read();
-    let is_collapsed = *collapsed.read() && !is_mobile_open;
-    let width_class = if is_collapsed { "w-16" } else { "w-64" };
-    let mobile_state_class = if is_mobile_open { "sidebar-open" } else { "" };
-    let nav_item_layout_class = if is_collapsed {
-        "justify-center px-0"
-    } else {
-        "px-3"
-    };
-
-    rsx! {
-        aside {
-            class: "sidebar-shell sidebar-transition flex h-screen flex-col bg-sidebar border-r border-sidebar-border {width_class} {mobile_state_class}",
-
-            // Header
-            div { class: "flex h-14 items-center gap-2 border-b border-sidebar-border px-4",
-                if !is_collapsed {
-                    div { class: "flex items-center gap-2",
-                        Icon { name: "shield".to_string(), class: "h-6 w-6 text-sidebar-primary".to_string() }
-                        span { class: "truncate font-semibold text-sidebar-foreground", {t("nav.palpo_admin")} }
-                    }
-                } else {
-                    div { class: "flex justify-center w-full",
-                        Icon { name: "shield".to_string(), class: "h-6 w-6 text-sidebar-primary".to_string() }
-                    }
-                }
-                button {
-                    class: "sidebar-mobile-close inline-flex h-9 w-9 items-center justify-center rounded-lg text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground touch-target",
-                    title: t("header.close"),
-                    onclick: move |_| mobile_open.set(false),
-                    Icon { name: "x".to_string(), class: "h-4 w-4".to_string() }
-                }
-            }
-
-            // Navigation
-            nav { class: "sidebar-nav flex-1 overflow-y-auto py-2",
-                for section in sections.iter() {
-                    div { class: "sidebar-section px-2 mb-1",
-                        if !is_collapsed && !section.label.is_empty() {
-                            p { class: "sidebar-section-label text-xs font-semibold text-sidebar-foreground/50 px-3 pt-3 pb-1 uppercase tracking-wider",
-                                {section.label.clone()}
-                            }
-                        }
-                        for item in section.items.iter() {
-                            {
-                                let is_active = is_route_active(&current_path, &item.route);
-                                let active_class = if is_active {
-                                    "sidebar-nav-active"
-                                } else {
-                                    ""
-                                };
-                                let route = item.route.clone();
-                                let title = item.title.clone();
-                                rsx! {
-                                    button {
-                                        class: "sidebar-nav-button flex w-full items-center gap-3 py-2 text-sm font-medium transition-colors {nav_item_layout_class} {active_class}",
-                                        onclick: move |_| {
-                                            mobile_open.set(false);
-                                            let _ = nav.push(route.clone());
-                                        },
-                                        Icon { name: item.icon.to_string(), class: "h-4 w-4 shrink-0".to_string() }
-                                        if !is_collapsed {
-                                            span { "{title}" }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+    sections
 }
 
 fn is_route_active(current: &Route, target: &Route) -> bool {

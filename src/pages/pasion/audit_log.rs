@@ -37,15 +37,17 @@ pub fn AuditLogPage() -> Element {
     });
 
     let is_loading = *loading.read();
-    let filter_val = op_filter.read().clone();
-    let all_entries = entries.read().clone();
-    let filtered: Vec<_> = all_entries
-        .iter()
-        .filter(|e| filter_val.is_empty() || e.operation.contains(&filter_val))
-        .collect::<Vec<_>>()
-        .into_iter()
-        .cloned()
-        .collect();
+
+    let filtered_memo = use_memo(move || {
+        let filter_val = op_filter.read();
+        entries
+            .read()
+            .iter()
+            .filter(|e| filter_val.is_empty() || e.operation.contains(filter_val.as_str()))
+            .cloned()
+            .collect::<Vec<_>>()
+    });
+    let filtered = filtered_memo.read();
 
     rsx! {
         div { class: "space-y-6",

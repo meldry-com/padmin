@@ -134,6 +134,7 @@ pub fn ReportList() -> Element {
 
                                             rsx! {
                                                 TableRow {
+                                                    key: "{id}",
                                                     TableCell {
                                                         Link {
                                                             to: Route::ReportShow { report_id: id.to_string() },

@@ -459,6 +459,7 @@ pub fn RoomList() -> Element {
 
                                             rsx! {
                                                 TableRow {
+                                                    key: "{room_id}",
                                                     TableCell { class: "w-10".to_string(),
                                                         input {
                                                             r#type: "checkbox",

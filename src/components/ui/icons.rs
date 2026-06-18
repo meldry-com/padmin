@@ -640,6 +640,40 @@ pub fn Icon(name: String, #[props(default = "h-4 w-4".to_string())] class: Strin
                 path { d: "m15 18-6-6 6-6" }
             }
         },
+        "chevron-right" => rsx! {
+            svg {
+                class: "{class}",
+                xmlns: "http://www.w3.org/2000/svg",
+                width: "24", height: "24",
+                view_box: "0 0 24 24",
+                fill: "none", stroke: "currentColor",
+                stroke_width: "2", stroke_linecap: "round", stroke_linejoin: "round",
+                path { d: "m9 18 6-6-6-6" }
+            }
+        },
+        "chevron-down" => rsx! {
+            svg {
+                class: "{class}",
+                xmlns: "http://www.w3.org/2000/svg",
+                width: "24", height: "24",
+                view_box: "0 0 24 24",
+                fill: "none", stroke: "currentColor",
+                stroke_width: "2", stroke_linecap: "round", stroke_linejoin: "round",
+                path { d: "m6 9 6 6 6-6" }
+            }
+        },
+        "copy" => rsx! {
+            svg {
+                class: "{class}",
+                xmlns: "http://www.w3.org/2000/svg",
+                width: "24", height: "24",
+                view_box: "0 0 24 24",
+                fill: "none", stroke: "currentColor",
+                stroke_width: "2", stroke_linecap: "round", stroke_linejoin: "round",
+                rect { width: "14", height: "14", x: "8", y: "8", rx: "2", ry: "2" }
+                path { d: "M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" }
+            }
+        },
         "webhook" => rsx! {
             svg {
                 class: "{class}",

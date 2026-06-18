@@ -33,7 +33,15 @@ impl ModalSize {
 /// - `bg` overrides the panel background class (default `"bg-background"`; pass
 ///   `"glass-panel"` for the frosted variant).
 /// - `panel_class` appends extra classes to the panel (e.g.
-///   `"max-h-[80vh] overflow-y-auto"`).
+///   `"max-h-[80vh] overflow-y-auto"`). Pass `"p-0 ..."` to drop the default
+///   `p-6` padding when the children manage their own header/body/footer
+///   padding.
+/// - `default_padding` controls whether the panel gets the default `p-6`
+///   padding (default `true`). Set `false` for panels that render their own
+///   padded sections (e.g. a scrollable header/body/footer layout).
+/// - `container_class` appends extra classes to the full-screen container
+///   (e.g. `"items-start overflow-y-auto p-4 sm:items-center"` to let the whole
+///   dialog scroll on short viewports).
 /// - `children` is the panel's content (header, body, footer).
 #[component]
 pub fn Modal(
@@ -42,22 +50,32 @@ pub fn Modal(
     #[props(default = ModalSize::Lg)] size: ModalSize,
     #[props(default = "bg-background".to_string())] bg: String,
     #[props(default = String::new())] panel_class: String,
+    #[props(default = true)] default_padding: bool,
+    #[props(default = String::new())] container_class: String,
     children: Element,
 ) -> Element {
     if !open {
         return rsx! {};
     }
 
+    let padding = if default_padding { "p-6" } else { "" };
     let panel_class = format!(
-        "relative z-50 w-full {} rounded-lg border {} p-6 shadow-lg {}",
+        "relative z-50 w-full {} rounded-lg border {} {} shadow-lg {}",
         size.max_width_class(),
         bg,
+        padding,
         panel_class
     );
-    let panel_class = panel_class.trim_end().to_string();
+    let panel_class = panel_class.split_whitespace().collect::<Vec<_>>().join(" ");
+
+    let container_class = format!(
+        "fixed inset-0 z-50 flex items-center justify-center {}",
+        container_class
+    );
+    let container_class = container_class.trim_end().to_string();
 
     rsx! {
-        div { class: "fixed inset-0 z-50 flex items-center justify-center",
+        div { class: "{container_class}",
             // Backdrop
             div {
                 class: "fixed inset-0 bg-black/80",

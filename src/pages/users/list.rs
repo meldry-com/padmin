@@ -562,6 +562,7 @@ pub fn UserList() -> Element {
 
                                             rsx! {
                                                 TableRow {
+                                                    key: "{user_id}",
                                                     TableCell { class: "w-10".to_string(),
                                                         input {
                                                             r#type: "checkbox",

@@ -313,13 +313,13 @@ pub fn ServerNotices() -> Element {
                             }
                             for entry in history.iter() {
                                 {
-                                    let truncated_msg = if entry.message.len() > 80 {
-                                        format!("{}...", &entry.message[..80])
+                                    let truncated_msg = if entry.message.chars().count() > 80 {
+                                        format!("{}...", entry.message.chars().take(80).collect::<String>())
                                     } else {
                                         entry.message.clone()
                                     };
-                                    let truncated_event_id = if entry.event_id.len() > 20 {
-                                        format!("{}...", &entry.event_id[..20])
+                                    let truncated_event_id = if entry.event_id.chars().count() > 20 {
+                                        format!("{}...", entry.event_id.chars().take(20).collect::<String>())
                                     } else {
                                         entry.event_id.clone()
                                     };
