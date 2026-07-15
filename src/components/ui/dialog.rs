@@ -25,14 +25,26 @@ pub fn ConfirmDialog(
                 onclick: move |_| on_cancel.call(()),
             }
             // Dialog
-            div { class: "relative z-50 w-full max-w-lg rounded-lg border glass-panel p-6 shadow-lg",
+            div {
+                class: "relative z-50 w-full max-w-lg rounded-lg border glass-panel p-6 shadow-lg",
+                role: "dialog",
+                aria_modal: "true",
+                aria_labelledby: "confirm-dialog-title",
+                aria_describedby: "confirm-dialog-description",
+                onkeydown: move |event: KeyboardEvent| {
+                    if event.key() == Key::Escape {
+                        event.prevent_default();
+                        on_cancel.call(());
+                    }
+                },
                 div { class: "flex flex-col space-y-2 text-center sm:text-left",
-                    h2 { class: "text-lg font-semibold", "{title}" }
-                    p { class: "text-sm text-muted-foreground", "{description}" }
+                    h2 { id: "confirm-dialog-title", class: "text-lg font-semibold", "{title}" }
+                    p { id: "confirm-dialog-description", class: "text-sm text-muted-foreground", "{description}" }
                 }
                 div { class: "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 mt-4",
                     Button {
                         variant: ButtonVariant::Outline,
+                        autofocus: true,
                         onclick: move |_| on_cancel.call(()),
                         "{cancel_text}"
                     }

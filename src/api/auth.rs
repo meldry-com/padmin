@@ -257,7 +257,8 @@ fn base64url_encode(data: &[u8]) -> Result<String, HttpError> {
     let b64 = window()?
         .btoa(&binary)
         .map_err(|e| js_err("btoa failed", e))?;
-    Ok(b64.replace('+', "-")
+    Ok(b64
+        .replace('+', "-")
         .replace('/', "_")
         .trim_end_matches('=')
         .to_string())

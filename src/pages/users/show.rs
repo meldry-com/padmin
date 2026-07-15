@@ -553,6 +553,7 @@ fn ResetPasswordDialog(
                     Label { {t("users.new_password")} }
                     Input {
                         r#type: "password".to_string(),
+                        autocomplete: "new-password".to_string(),
                         placeholder: "Enter new password",
                         value: password_value,
                         oninput: move |evt: FormEvent| on_password_input.call(evt),

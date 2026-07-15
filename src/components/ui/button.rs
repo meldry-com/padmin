@@ -26,6 +26,7 @@ pub fn Button(
     #[props(default)] size: ButtonSize,
     #[props(default)] class: String,
     #[props(default)] disabled: bool,
+    #[props(default)] autofocus: bool,
     #[props(default = "button".to_string())] r#type: String,
     #[props(default)] onclick: EventHandler<MouseEvent>,
     children: Element,
@@ -59,6 +60,7 @@ pub fn Button(
             r#type,
             class: "inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 touch-target {variant_class} {size_class} {disabled_class} {class}",
             disabled,
+            autofocus,
             onclick: move |evt| onclick.call(evt),
             {children}
         }
