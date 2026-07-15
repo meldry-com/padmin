@@ -560,6 +560,7 @@ pub fn UpstreamProvidersPage() -> Element {
                             Label { "Client secret" }
                             Input {
                                 r#type: "password".to_string(),
+                                autocomplete: "off".to_string(),
                                 placeholder: client_secret_placeholder,
                                 value: form.read().client_secret.clone(),
                                 oninput: move |e: FormEvent| form.write().client_secret = e.value(),
