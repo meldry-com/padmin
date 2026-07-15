@@ -257,6 +257,7 @@ pub fn UserCreate() -> Element {
                                 Label { {t("users.password")} }
                                 Input {
                                     r#type: "password".to_string(),
+                                    autocomplete: "new-password".to_string(),
                                     placeholder: t("users.password"),
                                     value: password.read().clone(),
                                     disabled: is_loading,

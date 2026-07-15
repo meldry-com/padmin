@@ -88,7 +88,10 @@ pub fn Toaster() -> Element {
     }
 
     rsx! {
-        div { class: "fixed bottom-4 right-4 z-50 flex flex-col gap-2",
+        div {
+            class: "fixed bottom-4 right-4 z-50 flex flex-col gap-2",
+            aria_live: "polite",
+            aria_atomic: "false",
             for toast in toasts.iter() {
                 {
                     let toast_id = toast.id;
@@ -102,6 +105,7 @@ pub fn Toaster() -> Element {
                     rsx! {
                         div {
                             key: "{toast_id}",
+                            role: if matches!(toast.variant, ToastVariant::Error) { "alert" } else { "status" },
                             class: "flex items-center gap-2 rounded-lg px-4 py-3 shadow-lg toast-enter {bg_class}",
                             p { class: "text-sm font-medium flex-1", "{toast.message}" }
                             if let Some(action) = action {
@@ -112,6 +116,8 @@ pub fn Toaster() -> Element {
                                 }
                             }
                             button {
+                                r#type: "button",
+                                aria_label: "Dismiss notification",
                                 class: "ml-2 text-sm opacity-70 hover:opacity-100 font-bold leading-none",
                                 onclick: move |_| dismiss_toast(toast_id),
                                 "\u{00D7}"
