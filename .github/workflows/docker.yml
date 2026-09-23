@@ -18,9 +18,10 @@ concurrency:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  DOCKERHUB_IMAGE: docker.io/meldry/padmin
 
 jobs:
-  quality:
+  smoke-test:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -29,41 +30,54 @@ jobs:
       - name: Check out source
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
-      - name: Set up Rust
-        uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30 # stable
-        with:
-          components: rustfmt
-          targets: wasm32-unknown-unknown
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
 
-      - name: Cache Rust
-        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+      - name: Smoke test runtime configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker buildx build --load --tag padmin-smoke .
 
-      - name: Check formatting
-        run: cargo fmt --all -- --check
+          run_case() {
+            local name="$1"
+            shift
 
-      - name: Check Rust build
-        run: cargo check --target wasm32-unknown-unknown
+            local cid
+            cid="$(docker run -d --name "$name" "$@" padmin-smoke)"
 
-      - name: Install cargo-audit
-        run: cargo install cargo-audit --locked
+            sleep 2
 
-      - name: Audit Rust dependencies
-        run: cargo audit --deny warnings
+            if [ "$(docker inspect -f '{{.State.Running}}' "$cid")" != "true" ]; then
+              docker logs "$cid"
+              exit 1
+            fi
 
-      - name: Set up Node
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: 24
-          cache: npm
+            docker exec "$cid" nginx -t
 
-      - name: Install Node dependencies
-        run: npm ci
+            case "$name" in
+              padmin-no-pasion)
+                docker exec "$cid" sh -c "! grep -q 'location /auth/' /etc/nginx/conf.d/default.conf"
+                ;;
+              padmin-with-pasion)
+                docker exec "$cid" grep -q 'https://auth.example.com' /usr/share/nginx/html/config.json
+                docker exec "$cid" grep -q 'location /auth/' /etc/nginx/conf.d/default.conf
+                ;;
+            esac
 
-      - name: Audit Node dependencies
-        run: npm audit --audit-level=moderate
+            docker rm -f "$cid" >/dev/null
+          }
+
+          run_case padmin-no-pasion \
+            -e PALPO_URL=http://palpo:8008
+
+          run_case padmin-with-pasion \
+            -e PALPO_URL=http://palpo:8008 \
+            -e PASION_URL=http://pasion:7080 \
+            -e PASION_PUBLIC_URL=https://auth.example.com
 
   docker:
-    needs: quality
+    needs: smoke-test
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -89,11 +103,36 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Check Docker Hub credentials
+        id: dockerhub
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          if [ -n "$DOCKERHUB_USERNAME" ] && [ -n "$DOCKERHUB_TOKEN" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          elif [ -n "$DOCKERHUB_USERNAME" ] || [ -n "$DOCKERHUB_TOKEN" ]; then
+            echo "Both DOCKERHUB_USERNAME and DOCKERHUB_TOKEN must be configured" >&2
+            exit 1
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Log in to Docker Hub
+        if: github.event_name != 'pull_request' && steps.dockerhub.outputs.enabled == 'true'
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: docker.io
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
       - name: Extract Docker metadata
         id: meta
         uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+            ${{ steps.dockerhub.outputs.enabled == 'true' && env.DOCKERHUB_IMAGE || '' }}
           tags: |
             type=ref,event=branch
             type=ref,event=pr

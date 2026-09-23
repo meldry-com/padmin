@@ -11,6 +11,7 @@ use crate::components::ui::page_header::PageHeader;
 use crate::components::ui::pagination::Pagination;
 use crate::components::ui::table::*;
 use crate::router::Route;
+use crate::utils::date::format_bytes;
 use crate::utils::i18n::t;
 
 const PAGE_SIZE: u64 = 25;
@@ -160,21 +161,5 @@ pub fn MediaList() -> Element {
             on_close: move |_| show_purge_dialog.set(false),
             on_success: move |_| media_data.restart(),
         }
-    }
-}
-
-fn format_bytes(bytes: u64) -> String {
-    const KB: u64 = 1024;
-    const MB: u64 = 1024 * KB;
-    const GB: u64 = 1024 * MB;
-
-    if bytes >= GB {
-        format!("{:.1} GB", bytes as f64 / GB as f64)
-    } else if bytes >= MB {
-        format!("{:.1} MB", bytes as f64 / MB as f64)
-    } else if bytes >= KB {
-        format!("{:.1} KB", bytes as f64 / KB as f64)
-    } else {
-        format!("{bytes} B")
     }
 }

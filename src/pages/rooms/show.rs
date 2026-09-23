@@ -4,7 +4,7 @@ use crate::api::rooms;
 use crate::components::ui::badge::{Badge, BadgeVariant};
 use crate::components::ui::button::{Button, ButtonVariant};
 use crate::components::ui::card::*;
-use crate::components::ui::dialog::ConfirmDialog;
+use crate::components::ui::dialog::{ConfirmDialog, Modal, ModalSize};
 use crate::components::ui::icons::Icon;
 use crate::components::ui::input::{Input, Label};
 use crate::components::ui::loading::{LoadingSkeleton, PageSkeleton, Spinner};
@@ -522,13 +522,10 @@ pub fn RoomShow(room_id: String) -> Element {
                         }
 
                         // Purge History dialog
-                        if *show_purge_dialog.read() {
-                            div { class: "fixed inset-0 z-50 flex items-center justify-center",
-                                div {
-                                    class: "fixed inset-0 bg-black/80",
-                                    onclick: move |_| show_purge_dialog.set(false),
-                                }
-                                div { class: "relative z-50 w-full max-w-md rounded-lg border bg-background p-6 shadow-lg",
+                        Modal {
+                            open: *show_purge_dialog.read(),
+                            on_close: move |_| show_purge_dialog.set(false),
+                            size: ModalSize::Md,
                                     h2 { class: "text-lg font-semibold mb-2", {t("rooms.purge_title")} }
                                     p { class: "text-sm text-muted-foreground mb-4",
                                         {t("rooms.purge_description")}
@@ -595,8 +592,6 @@ pub fn RoomShow(room_id: String) -> Element {
                                             }
                                         }
                                     }
-                                }
-                            }
                         }
 
                         // Delete dialog

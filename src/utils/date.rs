@@ -8,13 +8,14 @@ pub fn format_timestamp(ts_ms: u64) -> String {
         .unwrap_or_else(|| "-".to_string())
 }
 
-pub fn format_date(ts_ms: u64) -> String {
+/// Like [`format_timestamp`] but without seconds (`YYYY-MM-DD HH:MM`).
+pub fn format_timestamp_short(ts_ms: u64) -> String {
     if ts_ms == 0 {
         return "-".to_string();
     }
     let secs = (ts_ms / 1000) as i64;
     chrono::DateTime::from_timestamp(secs, 0)
-        .map(|dt| dt.format("%Y-%m-%d").to_string())
+        .map(|dt| dt.format("%Y-%m-%d %H:%M").to_string())
         .unwrap_or_else(|| "-".to_string())
 }
 

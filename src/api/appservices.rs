@@ -24,13 +24,22 @@ pub async fn get_appservice(id: &str) -> Result<AppserviceRegistration, HttpErro
 pub async fn register_appservice(
     reg: &AppserviceRegistration,
 ) -> Result<serde_json::Value, HttpError> {
-    let body = serde_json::to_string(reg).map_err(|e| HttpError {
-        message: format!("Failed to serialize registration: {e}"),
-        status: 0,
-        body: None,
-        request_id: None,
-    })?;
+    let body = serde_json::to_string(reg)
+        .map_err(|e| HttpError::message(format!("Failed to serialize registration: {e}")))?;
     api_client(BASE, "POST", Some(body)).await
+}
+
+/// Replace an existing registration in place. The `id` in `reg` selects the
+/// target; the homeserver treats the path id as authoritative and preserves
+/// the administrative `disabled` flag.
+pub async fn update_appservice(
+    id: &str,
+    reg: &AppserviceRegistration,
+) -> Result<serde_json::Value, HttpError> {
+    let path = format!("{BASE}/{}", urlencoding::encode(id));
+    let body = serde_json::to_string(reg)
+        .map_err(|e| HttpError::message(format!("Failed to serialize registration: {e}")))?;
+    api_client(&path, "PUT", Some(body)).await
 }
 
 pub async fn delete_appservice(id: &str) -> Result<(), HttpError> {

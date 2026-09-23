@@ -34,15 +34,6 @@ pub fn record_api_call(url: &str, method: &str, duration_ms: f64, status: u16) {
     });
 }
 
-/// Return the most recent `count` metrics (newest last).
-pub fn get_recent_metrics(count: usize) -> Vec<ApiMetric> {
-    API_METRICS.with(|m| {
-        let metrics = m.borrow();
-        let start = metrics.len().saturating_sub(count);
-        metrics[start..].to_vec()
-    })
-}
-
 /// Return the average latency (in ms) across all recorded metrics, or 0.0 if none.
 pub fn average_latency() -> f64 {
     API_METRICS.with(|m| {

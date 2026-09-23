@@ -1,12 +1,13 @@
 use dioxus::dioxus_core::Task;
 use dioxus::prelude::*;
+use futures::stream::{self, StreamExt};
 use std::collections::HashSet;
 use wasm_bindgen::JsCast;
 
 use crate::api::users;
 use crate::components::ui::badge::{Badge, BadgeVariant};
 use crate::components::ui::button::{Button, ButtonSize, ButtonVariant};
-use crate::components::ui::dialog::ConfirmDialog;
+use crate::components::ui::dialog::{ConfirmDialog, Modal, ModalSize};
 use crate::components::ui::empty_state::EmptyState;
 use crate::components::ui::icons::Icon;
 use crate::components::ui::input::SearchInput;
@@ -23,6 +24,10 @@ use crate::utils::i18n::t;
 
 const PAGE_SIZE_OPTIONS: &[u64] = &[10, 25, 50, 100];
 const DEFAULT_PAGE_SIZE: u64 = 25;
+
+/// Max in-flight requests for bulk user actions. Bounds concurrency so a large
+/// selection doesn't open hundreds of simultaneous connections.
+const BULK_CONCURRENCY: usize = 8;
 
 fn download_csv(filename: &str, content: &str) {
     if let Some(window) = web_sys::window() {
@@ -138,11 +143,11 @@ pub fn UserList() -> Element {
         }
         exporting.set(true);
         spawn(async move {
-            match users::get_users(1, 10000, "name", "asc", "").await {
-                Ok(data) => {
+            match users::get_all_users_for_export("name", "asc").await {
+                Ok(users_list) => {
                     let mut csv =
                         String::from("user_id,displayname,admin,deactivated,creation_ts\n");
-                    for user in &data.data {
+                    for user in &users_list {
                         let displayname = user.user.displayname.clone().unwrap_or_default();
                         let line = format!(
                             "{},{},{},{},{}\n",
@@ -156,7 +161,7 @@ pub fn UserList() -> Element {
                     }
                     download_csv("users_export.csv", &csv);
                     show_toast(
-                        &format!("Exported {} users", data.data.len()),
+                        &format!("Exported {} users", users_list.len()),
                         ToastVariant::Success,
                     );
                 }
@@ -206,14 +211,13 @@ pub fn UserList() -> Element {
         bulk_running.set(true);
         spawn(async move {
             let total = ids.len();
-            let mut success_count = 0usize;
-            let mut fail_count = 0usize;
-            for uid in &ids {
-                match users::deactivate_user(uid, false).await {
-                    Ok(_) => success_count += 1,
-                    Err(_) => fail_count += 1,
-                }
-            }
+            let results = stream::iter(ids.iter())
+                .map(|uid| async move { users::deactivate_user(uid, false).await.is_ok() })
+                .buffer_unordered(BULK_CONCURRENCY)
+                .collect::<Vec<bool>>()
+                .await;
+            let success_count = results.iter().filter(|ok| **ok).count();
+            let fail_count = total - success_count;
             if fail_count == 0 {
                 show_toast(
                     &format!("Deactivated {} users", success_count),
@@ -242,14 +246,17 @@ pub fn UserList() -> Element {
         bulk_running.set(true);
         spawn(async move {
             let total = ids.len();
-            let mut success_count = 0usize;
-            let mut fail_count = 0usize;
-            for uid in &ids {
-                match users::update_user(uid, serde_json::json!({"admin": true})).await {
-                    Ok(_) => success_count += 1,
-                    Err(_) => fail_count += 1,
-                }
-            }
+            let results = stream::iter(ids.iter())
+                .map(|uid| async move {
+                    users::update_user(uid, serde_json::json!({"admin": true}))
+                        .await
+                        .is_ok()
+                })
+                .buffer_unordered(BULK_CONCURRENCY)
+                .collect::<Vec<bool>>()
+                .await;
+            let success_count = results.iter().filter(|ok| **ok).count();
+            let fail_count = total - success_count;
             if fail_count == 0 {
                 show_toast(
                     &format!("Set admin on {} users", success_count),
@@ -555,6 +562,7 @@ pub fn UserList() -> Element {
 
                                             rsx! {
                                                 TableRow {
+                                                    key: "{user_id}",
                                                     TableCell { class: "w-10".to_string(),
                                                         input {
                                                             r#type: "checkbox",
@@ -684,25 +692,21 @@ pub fn UserList() -> Element {
         }
 
         // Import CSV dialog
-        if *show_import_dialog.read() {
-            div { class: "fixed inset-0 z-50 flex items-center justify-center",
-                div {
-                    class: "fixed inset-0 bg-black/80",
+        Modal {
+            open: *show_import_dialog.read(),
+            on_close: move |_| show_import_dialog.set(false),
+            size: ModalSize::Xl3,
+            panel_class: "max-h-[80vh] overflow-y-auto".to_string(),
+            div { class: "flex items-center justify-between mb-4",
+                h2 { class: "text-lg font-semibold", {t("users.import_users")} }
+                Button {
+                    variant: ButtonVariant::Ghost,
                     onclick: move |_| show_import_dialog.set(false),
+                    "X"
                 }
-                div { class: "relative z-50 w-full max-w-3xl max-h-[80vh] overflow-y-auto rounded-lg border bg-background p-6 shadow-lg",
-                    div { class: "flex items-center justify-between mb-4",
-                        h2 { class: "text-lg font-semibold", {t("users.import_users")} }
-                        Button {
-                            variant: ButtonVariant::Ghost,
-                            onclick: move |_| show_import_dialog.set(false),
-                            "X"
-                        }
-                    }
-                    UserImport {
-                        on_import_complete: move |_| users_data.restart(),
-                    }
-                }
+            }
+            UserImport {
+                on_import_complete: move |_| users_data.restart(),
             }
         }
 

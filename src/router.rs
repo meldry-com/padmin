@@ -104,6 +104,25 @@ pub fn AppRouter() -> Element {
     }
 }
 
+/// Session-scoped cache of the admin verdict, shared across the whole router.
+///
+///   Some(true)  = verified admin
+///   Some(false) = verified non-admin (forbidden)
+///   None        = not yet probed this session
+///
+/// `verify_admin()` is an HTTP round-trip, so we probe at most once per
+/// session and trust this signal for every subsequent in-session navigation.
+/// The probe is only re-run when this is `None`, which happens on the first
+/// authenticated mount and again after `auth::handle_unauthorized()` clears
+/// the session on a 401 (see `reset_admin_cache`).
+static ADMIN_VERDICT: GlobalSignal<Option<bool>> = GlobalSignal::new(|| None);
+
+/// Clear the cached admin verdict so the next navigation re-probes. Call this
+/// when the session is invalidated (e.g. after a 401).
+pub fn reset_admin_cache() {
+    *ADMIN_VERDICT.write() = None;
+}
+
 #[component]
 fn AuthenticatedLayout() -> Element {
     let nav = use_navigator();
@@ -120,29 +139,33 @@ fn AuthenticatedLayout() -> Element {
     //   Some(false) = authenticated but forbidden, render NotAuthorizedPage
     //   None        = probe still in flight or inconclusive, show a spinner
     //
-    // Seed from the cached value written by the previous successful probe
-    // so refreshes don't flash the spinner, then re-verify with
-    // `verify_admin()` each mount to stay in sync if admin status changes
-    // server-side.
-    let cached = auth::cached_is_admin();
-    let admin_probe = use_resource(move || async move {
+    // Trust the session-scoped `ADMIN_VERDICT` for in-session navigation: the
+    // probe only runs when the signal is still `None` (first authenticated
+    // mount this session, or after a 401 reset). Seed the signal from the
+    // `is_admin` value persisted by a previous tab/session so a hard refresh
+    // doesn't flash the spinner.
+    if ADMIN_VERDICT.peek().is_none() {
+        if let Some(persisted) = auth::cached_is_admin() {
+            *ADMIN_VERDICT.write() = Some(persisted);
+        }
+    }
+
+    use_resource(move || async move {
+        // Already decided this session — don't re-probe on navigation.
+        if ADMIN_VERDICT.peek().is_some() {
+            return;
+        }
         match auth::verify_admin().await {
-            Ok(flag) => Some(flag),
-            // Probe errored (401, network, ...). If we have a cached
-            // verdict, stick with it; otherwise fall through to "assume
+            Ok(flag) => *ADMIN_VERDICT.write() = Some(flag),
+            // Probe errored (401, network, ...). Fall through to "assume
             // admin" so we don't dead-end the user on a spinner forever.
-            // Individual admin pages still surface their own errors when
-            // the token turns out to be bad.
-            Err(_) => cached.or(Some(true)),
+            // Individual admin pages still surface their own errors when the
+            // token turns out to be bad, and a 401 there resets this cache.
+            Err(_) => *ADMIN_VERDICT.write() = Some(true),
         }
     });
 
-    let verdict = match admin_probe.read().as_ref() {
-        Some(Some(v)) => Some(*v),
-        Some(None) | None => cached,
-    };
-
-    match verdict {
+    match *ADMIN_VERDICT.read() {
         Some(true) => rsx! {
             AppLayout {
                 Outlet::<Route> {}

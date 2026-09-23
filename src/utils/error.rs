@@ -28,15 +28,29 @@ impl fmt::Display for HttpError {
 
 impl std::error::Error for HttpError {}
 
-pub fn display_error(errcode: &str, status: u16, message: &str) -> String {
-    format!("{errcode} ({status}): {message}")
+impl HttpError {
+    /// Build an `HttpError` from a free-form message with no HTTP status
+    /// (used for client-side / transport / serialization failures).
+    pub fn message(msg: impl Into<String>) -> Self {
+        HttpError {
+            message: msg.into(),
+            status: 0,
+            body: None,
+            request_id: None,
+        }
+    }
+
+    /// Build an `HttpError` carrying an HTTP status code and message.
+    pub fn from_status(status: u16, msg: impl Into<String>) -> Self {
+        HttpError {
+            message: msg.into(),
+            status,
+            body: None,
+            request_id: None,
+        }
+    }
 }
 
-/// Format an error message for display in toasts, including the request ID if available.
-pub fn format_error_with_ref(error: &HttpError) -> String {
-    if let Some(ref rid) = error.request_id {
-        format!("{} (ref: {})", error.message, rid)
-    } else {
-        error.message.clone()
-    }
+pub fn display_error(errcode: &str, status: u16, message: &str) -> String {
+    format!("{errcode} ({status}): {message}")
 }

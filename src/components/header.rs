@@ -6,6 +6,55 @@ use crate::components::ui::notifications::{self, NOTIFICATIONS, NotificationSeve
 use crate::router::Route;
 use crate::utils::i18n::{Language, current_language, set_language, t};
 
+/// Pre-computed header identity, derived once from localStorage.
+#[derive(Clone, PartialEq)]
+struct HeaderIdentity {
+    /// Short label shown next to the avatar (user_id, falling back to name).
+    label: String,
+    /// Full "Name (id)" string used as the hover title / avatar alt.
+    full: String,
+    /// Single uppercase initial used when no avatar image is available.
+    initial: String,
+    /// Avatar image URL, if any.
+    avatar_url: Option<String>,
+}
+
+impl HeaderIdentity {
+    fn from_storage() -> Self {
+        let display_name =
+            crate::utils::storage::get_item("user_display_name").filter(|name| !name.is_empty());
+        let user_id = crate::utils::storage::get_item("user_id").filter(|id| !id.is_empty());
+        let avatar_url = crate::utils::storage::get_item("user_avatar_url");
+
+        let label = user_id
+            .clone()
+            .or_else(|| display_name.clone())
+            .unwrap_or_default();
+        let full = match (display_name.as_deref(), user_id.as_deref()) {
+            (Some(name), Some(id)) => format!("{name} ({id})"),
+            (Some(name), None) => name.to_string(),
+            (None, Some(id)) => id.to_string(),
+            _ => String::new(),
+        };
+        let initial = display_name
+            .as_deref()
+            .or(user_id.as_deref())
+            .unwrap_or("")
+            .trim_start_matches('@')
+            .chars()
+            .next()
+            .map(|c| c.to_uppercase().to_string())
+            .unwrap_or_default();
+
+        HeaderIdentity {
+            label,
+            full,
+            initial,
+            avatar_url,
+        }
+    }
+}
+
 #[component]
 pub fn AppHeader(collapsed: Signal<bool>, mobile_sidebar_open: Signal<bool>) -> Element {
     let mut is_collapsed = collapsed;
@@ -15,6 +64,11 @@ pub fn AppHeader(collapsed: Signal<bool>, mobile_sidebar_open: Signal<bool>) -> 
     let nav = use_navigator();
 
     let unread = notifications::unread_count();
+
+    // Identity comes from localStorage and only changes on login/logout, which
+    // remounts the layout. Read it once into a memo instead of hitting
+    // localStorage (4 reads + string work) on every header render.
+    let identity = use_memo(HeaderIdentity::from_storage);
 
     rsx! {
         header { class: "flex h-14 items-center border-b px-4 lg:px-6",
@@ -120,31 +174,11 @@ pub fn AppHeader(collapsed: Signal<bool>, mobile_sidebar_open: Signal<bool>) -> 
                 }
 
                 {
-                    let display_name_opt = crate::utils::storage::get_item("user_display_name");
-                    let user_id_opt = crate::utils::storage::get_item("user_id");
-                    let avatar_url = crate::utils::storage::get_item("user_avatar_url");
-                    let display_name = display_name_opt.filter(|name| !name.is_empty());
-                    let user_id = user_id_opt.filter(|id| !id.is_empty());
-                    let label = user_id
-                        .clone()
-                        .or_else(|| display_name.clone())
-                        .unwrap_or_default();
-                    let full = match (display_name.as_deref(), user_id.as_deref()) {
-                        (Some(name), Some(id)) => format!("{name} ({id})"),
-                        (Some(name), None) => name.to_string(),
-                        (None, Some(id)) => id.to_string(),
-                        _ => String::new(),
-                    };
-                    let initial_source = display_name
-                        .as_deref()
-                        .or(user_id.as_deref())
-                        .unwrap_or("")
-                        .trim_start_matches('@');
-                    let initial = initial_source
-                        .chars()
-                        .next()
-                        .map(|c| c.to_uppercase().to_string())
-                        .unwrap_or_default();
+                    let id = identity.read();
+                    let full = id.full.clone();
+                    let label = id.label.clone();
+                    let initial = id.initial.clone();
+                    let avatar_url = id.avatar_url.clone();
                     rsx! {
                         div { class: "app-header-session",
                             div { class: "app-header-user flex items-center gap-2", title: "{full}",

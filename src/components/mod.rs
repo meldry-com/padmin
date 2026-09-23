@@ -1,5 +1,4 @@
 pub mod experimental_features;
-pub mod footer;
 pub mod header;
 pub mod keyboard_shortcuts;
 pub mod layout;

@@ -2,6 +2,7 @@ use dioxus::prelude::*;
 
 use crate::api::pasion;
 use crate::components::ui::button::{Button, ButtonSize, ButtonVariant};
+use crate::components::ui::dialog::Modal;
 use crate::components::ui::error_banner::ErrorBanner;
 use crate::components::ui::loading::{PageSkeleton, Spinner};
 use crate::components::ui::page_header::PageHeader;
@@ -146,15 +147,11 @@ pub fn NotificationTemplatesPage() -> Element {
         }
 
         // Publish dialog
-        if *show_publish.read() {
-            div { class: "fixed inset-0 z-50 flex items-center justify-center",
-                div {
-                    class: "fixed inset-0 bg-black/80",
-                    onclick: move |_| {
-                        if !is_publishing { show_publish.set(false); }
-                    },
-                }
-                div { class: "relative z-50 w-full max-w-lg rounded-lg border bg-background p-6 shadow-lg",
+        Modal {
+            open: *show_publish.read(),
+            on_close: move |_| {
+                if !is_publishing { show_publish.set(false); }
+            },
                     h2 { class: "text-lg font-semibold mb-4", "Publish Notification Template" }
                     div { class: "space-y-4",
                         div { class: "space-y-2",
@@ -226,8 +223,6 @@ pub fn NotificationTemplatesPage() -> Element {
                             "Publish"
                         }
                     }
-                }
-            }
         }
     }
 }

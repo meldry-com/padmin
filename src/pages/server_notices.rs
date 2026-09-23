@@ -1,4 +1,5 @@
 use dioxus::prelude::*;
+use futures::stream::{self, StreamExt};
 
 use crate::api::users;
 use crate::components::ui::button::{Button, ButtonVariant};
@@ -13,6 +14,10 @@ use crate::utils::storage;
 
 const NOTICE_HISTORY_KEY: &str = "server_notice_history";
 const MAX_HISTORY_ENTRIES: usize = 50;
+
+/// Max in-flight server-notice sends during a broadcast. Bounds concurrency so
+/// broadcasting to a large user base doesn't flood the homeserver.
+const BROADCAST_CONCURRENCY: usize = 8;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 struct NoticeHistoryEntry {
@@ -111,12 +116,26 @@ pub fn ServerNotices() -> Element {
                 let total = all_users.len();
                 let mut success_count = 0usize;
                 let mut fail_count = 0usize;
+                let mut completed = 0usize;
 
-                for (i, user) in all_users.iter().enumerate() {
-                    broadcast_progress.set(Some((i + 1, total)));
-                    match users::send_server_notice(&user.id, &msg).await {
+                // Send with bounded concurrency instead of one-at-a-time.
+                // Each task returns the user id, the message, and the result
+                // so history is recorded on the main task as completions
+                // stream in (keeps localStorage writes single-threaded).
+                let msg_ref = &msg;
+                let mut stream = stream::iter(all_users.iter())
+                    .map(|user| async move {
+                        let result = users::send_server_notice(&user.id, msg_ref).await;
+                        (user.id.clone(), result)
+                    })
+                    .buffer_unordered(BROADCAST_CONCURRENCY);
+
+                while let Some((user_id, result)) = stream.next().await {
+                    completed += 1;
+                    broadcast_progress.set(Some((completed, total)));
+                    match result {
                         Ok(event_id) => {
-                            add_notice_to_history(&user.id, &msg, &event_id);
+                            add_notice_to_history(&user_id, &msg, &event_id);
                             success_count += 1;
                         }
                         Err(_) => fail_count += 1,
@@ -294,13 +313,13 @@ pub fn ServerNotices() -> Element {
                             }
                             for entry in history.iter() {
                                 {
-                                    let truncated_msg = if entry.message.len() > 80 {
-                                        format!("{}...", &entry.message[..80])
+                                    let truncated_msg = if entry.message.chars().count() > 80 {
+                                        format!("{}...", entry.message.chars().take(80).collect::<String>())
                                     } else {
                                         entry.message.clone()
                                     };
-                                    let truncated_event_id = if entry.event_id.len() > 20 {
-                                        format!("{}...", &entry.event_id[..20])
+                                    let truncated_event_id = if entry.event_id.chars().count() > 20 {
+                                        format!("{}...", entry.event_id.chars().take(20).collect::<String>())
                                     } else {
                                         entry.event_id.clone()
                                     };

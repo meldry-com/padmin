@@ -3,7 +3,7 @@ use dioxus::prelude::*;
 use crate::api::pasion;
 use crate::components::ui::badge::{Badge, BadgeVariant};
 use crate::components::ui::button::{Button, ButtonSize, ButtonVariant};
-use crate::components::ui::dialog::ConfirmDialog;
+use crate::components::ui::dialog::{ConfirmDialog, Modal};
 use crate::components::ui::error_banner::ErrorBanner;
 use crate::components::ui::input::{Input, Label};
 use crate::components::ui::loading::{PageSkeleton, Spinner};
@@ -250,15 +250,11 @@ pub fn PersonalSessionsPage() -> Element {
         }
 
         // Create dialog
-        if *show_create.read() {
-            div { class: "fixed inset-0 z-50 flex items-center justify-center",
-                div {
-                    class: "fixed inset-0 bg-black/80",
-                    onclick: move |_| {
-                        if !is_creating { show_create.set(false); }
-                    },
-                }
-                div { class: "relative z-50 w-full max-w-lg rounded-lg border bg-background p-6 shadow-lg",
+        Modal {
+            open: *show_create.read(),
+            on_close: move |_| {
+                if !is_creating { show_create.set(false); }
+            },
                     h2 { class: "text-lg font-semibold mb-4", {t("pasion.personal_sessions.create_title")} }
                     div { class: "space-y-4",
                         div { class: "space-y-2",
@@ -305,8 +301,6 @@ pub fn PersonalSessionsPage() -> Element {
                             {t("common.create")}
                         }
                     }
-                }
-            }
         }
 
         ConfirmDialog {

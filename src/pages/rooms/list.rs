@@ -5,6 +5,7 @@ use std::collections::HashSet;
 use crate::api::rooms;
 use crate::components::ui::badge::{Badge, BadgeVariant};
 use crate::components::ui::button::{Button, ButtonSize, ButtonVariant};
+use crate::components::ui::dialog::Modal;
 use crate::components::ui::empty_state::EmptyState;
 use crate::components::ui::icons::Icon;
 use crate::components::ui::input::{Input, Label, SearchInput};
@@ -458,6 +459,7 @@ pub fn RoomList() -> Element {
 
                                             rsx! {
                                                 TableRow {
+                                                    key: "{room_id}",
                                                     TableCell { class: "w-10".to_string(),
                                                         input {
                                                             r#type: "checkbox",
@@ -537,17 +539,13 @@ pub fn RoomList() -> Element {
         }
 
         // Create Room Dialog
-        if dialog_open {
-            div { class: "fixed inset-0 z-50 flex items-center justify-center",
-                div {
-                    class: "fixed inset-0 bg-black/80",
-                    onclick: move |_| {
-                        if !is_creating {
-                            show_create_dialog.set(false);
-                        }
-                    },
+        Modal {
+            open: dialog_open,
+            on_close: move |_| {
+                if !is_creating {
+                    show_create_dialog.set(false);
                 }
-                div { class: "relative z-50 w-full max-w-lg rounded-lg border bg-background p-6 shadow-lg",
+            },
                     div { class: "flex flex-col space-y-2 text-center sm:text-left",
                         h2 { class: "text-lg font-semibold", {t("rooms.create")} }
                         p { class: "text-sm text-muted-foreground", {t("rooms.create_description")} }
@@ -615,8 +613,6 @@ pub fn RoomList() -> Element {
                             {t("rooms.create_button")}
                         }
                     }
-                }
-            }
         }
     }
 }

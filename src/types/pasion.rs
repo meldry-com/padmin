@@ -191,7 +191,7 @@ pub struct PasionUpstreamLink {
 }
 
 // Audit Log
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct PasionAuditEntry {
     #[serde(default)]
     pub id: String,
