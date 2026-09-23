@@ -36,6 +36,6 @@
   "homepage": "https://github.com/taidge/padmin#readme",
   "devDependencies": {
     "@playwright/test": "^1.63.0",
-    "pg": "^8.22.0"
+    "pg": "^8.23.0"
   }
 }
