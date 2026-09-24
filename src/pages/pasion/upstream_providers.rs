@@ -182,11 +182,20 @@ fn require<'a>(field: &str, value: &'a str) -> Result<&'a str, String> {
 
 fn create_provider_body(form: &ProviderForm) -> Result<Value, String> {
     let mut body = Map::new();
-    body.insert("client_id".into(), require("client_id", &form.client_id)?.into());
+    body.insert(
+        "client_id".into(),
+        require("client_id", &form.client_id)?.into(),
+    );
     body.insert("scope".into(), require("scope", &form.scope)?.into());
     for (key, value) in [
-        ("token_endpoint_auth_method", &form.token_endpoint_auth_method),
-        ("id_token_signed_response_alg", &form.id_token_signed_response_alg),
+        (
+            "token_endpoint_auth_method",
+            &form.token_endpoint_auth_method,
+        ),
+        (
+            "id_token_signed_response_alg",
+            &form.id_token_signed_response_alg,
+        ),
         ("discovery_mode", &form.discovery_mode),
         ("pkce_mode", &form.pkce_mode),
         ("on_backchannel_logout", &form.on_backchannel_logout),
@@ -197,12 +206,24 @@ fn create_provider_body(form: &ProviderForm) -> Result<Value, String> {
         ("issuer", &form.issuer),
         ("human_name", &form.human_name),
         ("brand_name", &form.brand_name),
-        ("token_endpoint_signing_alg", &form.token_endpoint_signing_alg),
-        ("userinfo_signed_response_alg", &form.userinfo_signed_response_alg),
+        (
+            "token_endpoint_signing_alg",
+            &form.token_endpoint_signing_alg,
+        ),
+        (
+            "userinfo_signed_response_alg",
+            &form.userinfo_signed_response_alg,
+        ),
         ("response_mode", &form.response_mode),
-        ("authorization_endpoint_override", &form.authorization_endpoint_override),
+        (
+            "authorization_endpoint_override",
+            &form.authorization_endpoint_override,
+        ),
         ("token_endpoint_override", &form.token_endpoint_override),
-        ("userinfo_endpoint_override", &form.userinfo_endpoint_override),
+        (
+            "userinfo_endpoint_override",
+            &form.userinfo_endpoint_override,
+        ),
         ("jwks_uri_override", &form.jwks_uri_override),
     ] {
         let value = value.trim();
@@ -249,7 +270,11 @@ fn update_provider_body(
             &form.id_token_signed_response_alg,
             original.id_token_signed_response_alg.as_deref(),
         ),
-        ("discovery_mode", &form.discovery_mode, original.discovery_mode.as_deref()),
+        (
+            "discovery_mode",
+            &form.discovery_mode,
+            original.discovery_mode.as_deref(),
+        ),
         ("pkce_mode", &form.pkce_mode, original.pkce_mode.as_deref()),
         (
             "on_backchannel_logout",
@@ -278,7 +303,11 @@ fn update_provider_body(
             &form.userinfo_signed_response_alg,
             &original.userinfo_signed_response_alg,
         ),
-        ("response_mode", &form.response_mode, &original.response_mode),
+        (
+            "response_mode",
+            &form.response_mode,
+            &original.response_mode,
+        ),
         (
             "authorization_endpoint_override",
             &form.authorization_endpoint_override,
@@ -294,7 +323,11 @@ fn update_provider_body(
             &form.userinfo_endpoint_override,
             &original.userinfo_endpoint_override,
         ),
-        ("jwks_uri_override", &form.jwks_uri_override, &original.jwks_uri_override),
+        (
+            "jwks_uri_override",
+            &form.jwks_uri_override,
+            &original.jwks_uri_override,
+        ),
     ] {
         let value = value.trim();
         if value != current.as_deref().unwrap_or_default() {
@@ -1068,7 +1101,8 @@ mod tests {
         form.client_id = "gh-client".into();
         form.discovery_mode = "disabled".into();
         form.token_endpoint_override = "https://github.com/login/oauth/access_token".into();
-        form.additional_authorization_parameters = "allow_signup=false\n\n prompt = consent ".into();
+        form.additional_authorization_parameters =
+            "allow_signup=false\n\n prompt = consent ".into();
 
         let body = create_provider_body(&form).unwrap();
         assert_eq!(body["client_id"], "gh-client");
