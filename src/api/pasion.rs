@@ -17,7 +17,17 @@ fn format_pasion_error(status: u16, text: &str) -> (String, Option<MatrixError>)
     if status == 503 {
         return ("Server is in maintenance mode".to_string(), None);
     }
-    (format!("Pasion error ({status}): {text}"), None)
+    let title = serde_json::from_str::<serde_json::Value>(text)
+        .ok()
+        .and_then(|body| {
+            body.pointer("/errors/0/title")
+                .and_then(serde_json::Value::as_str)
+                .map(str::to_string)
+        });
+    match title {
+        Some(title) => (format!("{title} ({status})"), None),
+        None => (format!("Pasion error ({status}): {text}"), None),
+    }
 }
 
 async fn pasion_fetch<T: DeserializeOwned>(
@@ -88,6 +98,41 @@ async fn pasion_fetch_list<T: DeserializeOwned>(
     Ok(PasionListResponse { data, meta })
 }
 
+/// Like [`pasion_fetch_list`], but also returns the total count and the
+/// cursor of the last item when Pasion reports a next page.
+async fn pasion_fetch_page<T: DeserializeOwned>(path: &str) -> Result<PasionPage<T>, HttpError> {
+    let raw: serde_json::Value = pasion_fetch(path, "GET", None).await?;
+    let count = raw
+        .pointer("/meta/count")
+        .and_then(serde_json::Value::as_u64);
+    let data_arr = raw
+        .get("data")
+        .and_then(|d| d.as_array())
+        .cloned()
+        .unwrap_or_default();
+    let has_next = raw
+        .pointer("/links/next")
+        .is_some_and(|next| !next.is_null());
+    let next_cursor = if has_next {
+        data_arr
+            .last()
+            .and_then(|item| item.pointer("/meta/page/cursor"))
+            .and_then(serde_json::Value::as_str)
+            .map(str::to_string)
+    } else {
+        None
+    };
+    let mut data = Vec::with_capacity(data_arr.len());
+    for item in &data_arr {
+        data.push(flatten_resource::<T>(item)?);
+    }
+    Ok(PasionPage {
+        data,
+        count,
+        next_cursor,
+    })
+}
+
 async fn pasion_fetch_one<T: DeserializeOwned>(
     path: &str,
     method: &str,
@@ -103,31 +148,75 @@ async fn pasion_fetch_one<T: DeserializeOwned>(
 
 // ── Users ──────────────────────────────────────────────────────────────────
 
+/// Filters for `GET /users`. `None` means "don't filter on this".
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct PasionUserFilter {
+    pub search: Option<String>,
+    /// `active`, `locked` (includes deactivated) or `deactivated`.
+    pub status: Option<String>,
+    pub admin: Option<bool>,
+}
+
+/// List users. Pasion paginates with cursors (`page[first]` /
+/// `page[after]`), not page numbers.
 pub async fn pasion_get_users(
-    page: u64,
-    per_page: u64,
-) -> Result<PasionListResponse<PasionUser>, HttpError> {
-    pasion_fetch_list(&format!("/users?page[number]={page}&page[size]={per_page}")).await
+    filter: &PasionUserFilter,
+    after: Option<&str>,
+    page_size: u64,
+) -> Result<PasionPage<PasionUser>, HttpError> {
+    let mut path = format!("/users?page[first]={page_size}");
+    if let Some(after) = after {
+        path.push_str(&format!("&page[after]={}", urlencoding::encode(after)));
+    }
+    if let Some(search) = filter.search.as_deref().filter(|s| !s.is_empty()) {
+        path.push_str(&format!("&filter[search]={}", urlencoding::encode(search)));
+    }
+    if let Some(status) = filter.status.as_deref().filter(|s| !s.is_empty()) {
+        path.push_str(&format!("&filter[status]={status}"));
+    }
+    if let Some(admin) = filter.admin {
+        path.push_str(&format!("&filter[admin]={admin}"));
+    }
+    pasion_fetch_page(&path).await
 }
 
 pub async fn pasion_get_user(id: &str) -> Result<PasionUser, HttpError> {
     pasion_fetch_one(&format!("/users/{id}"), "GET", None).await
 }
 
-pub async fn pasion_create_user(data: serde_json::Value) -> Result<PasionUser, HttpError> {
-    pasion_fetch_one("/users", "POST", Some(data.to_string())).await
+pub async fn pasion_get_user_by_username(username: &str) -> Result<PasionUser, HttpError> {
+    pasion_fetch_one(
+        &format!("/users/by-username/{}", urlencoding::encode(username)),
+        "GET",
+        None,
+    )
+    .await
 }
 
+pub async fn pasion_create_user(username: &str) -> Result<PasionUser, HttpError> {
+    let body = serde_json::json!({ "username": username });
+    pasion_fetch_one("/users", "POST", Some(body.to_string())).await
+}
+
+/// `PATCH /users/{id}`. Accepted keys: `display_name`, `avatar_url`,
+/// `preferred_locale` (null clears), `admin`, `locked`, `deactivated`,
+/// `hs_erase`.
 pub async fn pasion_update_user(
     id: &str,
     data: serde_json::Value,
 ) -> Result<PasionUser, HttpError> {
-    // pasion's admin API uses PATCH on /users/{id}
     pasion_fetch_one(&format!("/users/{id}"), "PATCH", Some(data.to_string())).await
 }
 
-pub async fn pasion_set_password(id: &str, password: &str) -> Result<(), HttpError> {
-    let body = serde_json::json!({ "password": password });
+pub async fn pasion_set_password(
+    id: &str,
+    password: &str,
+    skip_password_check: bool,
+) -> Result<(), HttpError> {
+    let body = serde_json::json!({
+        "password": password,
+        "skip_password_check": skip_password_check,
+    });
     let _: serde_json::Value = pasion_fetch(
         &format!("/users/{id}/set-password"),
         "POST",
@@ -137,23 +226,29 @@ pub async fn pasion_set_password(id: &str, password: &str) -> Result<(), HttpErr
     Ok(())
 }
 
-pub async fn pasion_risk_action(id: &str, action: &str) -> Result<(), HttpError> {
+/// Result of `POST /users/{id}/risk-action`.
+#[derive(Debug, Clone, Default, serde::Deserialize)]
+pub struct PasionRiskActionResult {
+    #[serde(default)]
+    pub sessions_terminated: Option<u64>,
+}
+
+pub async fn pasion_risk_action(
+    id: &str,
+    action: &str,
+    reason: Option<&str>,
+) -> Result<PasionRiskActionResult, HttpError> {
     // Pasion exposes a single POST /users/{id}/risk-action endpoint that
     // takes `{action, reason}` in the body. Valid actions are `lock`,
-    // `force_password_reset`, and `terminate_sessions`.
-    let body = serde_json::json!({ "action": action });
-    let _: serde_json::Value = pasion_fetch(
+    // `force_password_reset` (currently just a lock), and
+    // `terminate_sessions`.
+    let body = serde_json::json!({ "action": action, "reason": reason });
+    pasion_fetch(
         &format!("/users/{id}/risk-action"),
         "POST",
         Some(body.to_string()),
     )
-    .await?;
-    Ok(())
-}
-
-pub async fn pasion_batch_invite(emails: Vec<String>) -> Result<serde_json::Value, HttpError> {
-    let body = serde_json::json!({ "emails": emails });
-    pasion_fetch("/users/batch-invite", "POST", Some(body.to_string())).await
+    .await
 }
 
 // ── User Emails ────────────────────────────────────────────────────────────
@@ -162,9 +257,9 @@ pub async fn pasion_get_user_emails(
     user_id: Option<&str>,
 ) -> Result<Vec<PasionUserEmail>, HttpError> {
     let path = if let Some(uid) = user_id {
-        format!("/user-emails?filter[user]={uid}")
+        format!("/user-emails?page[first]=100&filter[user]={uid}")
     } else {
-        "/user-emails".to_string()
+        "/user-emails?page[first]=100".to_string()
     };
     Ok(pasion_fetch_list::<PasionUserEmail>(&path).await?.data)
 }
@@ -201,12 +296,15 @@ pub async fn pasion_delete_user_email(id: &str) -> Result<(), HttpError> {
 
 pub async fn pasion_get_browser_sessions(
     user_id: Option<&str>,
+    active_only: bool,
 ) -> Result<Vec<PasionBrowserSession>, HttpError> {
-    let path = if let Some(uid) = user_id {
-        format!("/user-sessions?filter[user]={uid}")
-    } else {
-        "/user-sessions".to_string()
-    };
+    let mut path = "/user-sessions?page[first]=100".to_string();
+    if let Some(uid) = user_id {
+        path.push_str(&format!("&filter[user]={uid}"));
+    }
+    if active_only {
+        path.push_str("&filter[status]=active");
+    }
     Ok(pasion_fetch_list::<PasionBrowserSession>(&path).await?.data)
 }
 
@@ -226,6 +324,15 @@ pub async fn pasion_get_oauth2_sessions(
     } else {
         "/oauth2-sessions".to_string()
     };
+    Ok(pasion_fetch_list::<PasionOAuth2Session>(&path).await?.data)
+}
+
+/// Active OAuth2 (client) sessions of one user, e.g. their Matrix clients.
+pub async fn pasion_get_active_oauth2_sessions_for_user(
+    user_id: &str,
+) -> Result<Vec<PasionOAuth2Session>, HttpError> {
+    let path =
+        format!("/oauth2-sessions?page[first]=100&filter[user]={user_id}&filter[status]=active");
     Ok(pasion_fetch_list::<PasionOAuth2Session>(&path).await?.data)
 }
 

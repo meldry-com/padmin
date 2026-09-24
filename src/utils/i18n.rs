@@ -140,6 +140,7 @@ impl I18n {
         m.insert("nav.section_infrastructure".into(), "Infrastructure".into());
         m.insert("nav.section_server_ops".into(), "Server Ops".into());
         m.insert("nav.section_pasion".into(), "Identity Provider".into());
+        m.insert("nav.pasion_accounts".into(), "Local Accounts".into());
         m.insert("nav.audit_log".into(), "Audit Log".into());
         m.insert("nav.oauth2_sessions".into(), "OAuth2 Sessions".into());
         m.insert("nav.personal_tokens".into(), "Personal Tokens".into());
@@ -757,6 +758,23 @@ impl I18n {
             "No upstream providers configured".into(),
         );
 
+        // Pasion local accounts
+        m.insert("users.pasion_account".into(), "Identity account".into());
+        m.insert("pasion.accounts.title".into(), "Local Accounts".into());
+        m.insert(
+            "pasion.accounts.description".into(),
+            "Accounts managed by Pasion: roles, lock and deactivation, passwords and sessions"
+                .into(),
+        );
+        m.insert("pasion.accounts.empty".into(), "No accounts found".into());
+        m.insert("pasion.accounts.status_active".into(), "Active".into());
+        m.insert("pasion.accounts.status_locked".into(), "Locked".into());
+        m.insert(
+            "pasion.accounts.status_deactivated".into(),
+            "Deactivated".into(),
+        );
+        m.insert("pasion.accounts.admin".into(), "Admin".into());
+
         // Pasion upstream links
         m.insert(
             "pasion.upstream_links.title".into(),
@@ -1154,6 +1172,10 @@ impl I18n {
         m.insert(
             "nav.section_pasion".into(),
             "\u{8eab}\u{4efd}\u{63d0}\u{4f9b}\u{8005}".into(),
+        );
+        m.insert(
+            "nav.pasion_accounts".into(),
+            "\u{672c}\u{5730}\u{8d26}\u{53f7}".into(),
         );
         m.insert(
             "nav.audit_log".into(),
@@ -2132,6 +2154,40 @@ impl I18n {
         m.insert(
             "pasion.upstream_providers.empty".into(),
             "\u{6682}\u{672a}\u{914d}\u{7f6e}\u{4e0a}\u{6e38}\u{63d0}\u{4f9b}\u{8005}".into(),
+        );
+
+        // Pasion 本地账号
+        m.insert(
+            "users.pasion_account".into(),
+            "\u{8eab}\u{4efd}\u{8d26}\u{53f7}".into(),
+        );
+        m.insert(
+            "pasion.accounts.title".into(),
+            "\u{672c}\u{5730}\u{8d26}\u{53f7}".into(),
+        );
+        m.insert(
+            "pasion.accounts.description".into(),
+            "Pasion \u{7ba1}\u{7406}\u{7684}\u{8d26}\u{53f7}\u{ff1a}\u{89d2}\u{8272}\u{3001}\u{9501}\u{5b9a}\u{4e0e}\u{505c}\u{7528}\u{3001}\u{5bc6}\u{7801}\u{548c}\u{4f1a}\u{8bdd}".into(),
+        );
+        m.insert(
+            "pasion.accounts.empty".into(),
+            "\u{6682}\u{65e0}\u{8d26}\u{53f7}".into(),
+        );
+        m.insert(
+            "pasion.accounts.status_active".into(),
+            "\u{6b63}\u{5e38}".into(),
+        );
+        m.insert(
+            "pasion.accounts.status_locked".into(),
+            "\u{5df2}\u{9501}\u{5b9a}".into(),
+        );
+        m.insert(
+            "pasion.accounts.status_deactivated".into(),
+            "\u{5df2}\u{505c}\u{7528}".into(),
+        );
+        m.insert(
+            "pasion.accounts.admin".into(),
+            "\u{7ba1}\u{7406}\u{5458}".into(),
         );
 
         // Pasion 上游绑定

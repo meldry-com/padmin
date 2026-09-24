@@ -1,6 +1,6 @@
 use dioxus::prelude::*;
 
-use crate::api::users;
+use crate::api::{pasion, users};
 use crate::components::experimental_features::ExperimentalFeatures;
 use crate::components::ui::badge::{Badge, BadgeVariant};
 use crate::components::ui::button::{Button, ButtonVariant};
@@ -14,6 +14,7 @@ use crate::components::ui::relative_time::RelativeTime;
 use crate::components::ui::toast::{ToastVariant, show_toast};
 use crate::components::user_account_data::UserAccountData;
 use crate::components::user_rate_limits::UserRateLimits;
+use crate::router::Route;
 use crate::utils::date::format_timestamp;
 use crate::utils::i18n::t;
 
@@ -47,6 +48,8 @@ pub fn UserShow(user_id: String) -> Element {
     let mut edit_display_name = use_signal(|| String::new());
     let mut edit_admin = use_signal(|| false);
     let mut reset_password_value = use_signal(|| String::new());
+    let nav = use_navigator();
+    let has_pasion = crate::utils::storage::get_item("pasion_url").is_some();
 
     rsx! {
         div { class: "space-y-6",
@@ -85,6 +88,35 @@ pub fn UserShow(user_id: String) -> Element {
                                 description: user_id_str.clone(),
                             }
                             div { class: "flex gap-2",
+                                if has_pasion {
+                                    Button {
+                                        variant: ButtonVariant::Outline,
+                                        onclick: {
+                                            let mxid = user_id_str.clone();
+                                            move |_| {
+                                                let localpart = mxid
+                                                    .trim_start_matches('@')
+                                                    .split(':')
+                                                    .next()
+                                                    .unwrap_or_default()
+                                                    .to_string();
+                                                spawn(async move {
+                                                    match pasion::pasion_get_user_by_username(&localpart).await {
+                                                        Ok(account) => {
+                                                            nav.push(Route::PasionAccountShow { user_id: account.id });
+                                                        }
+                                                        Err(e) => show_toast(
+                                                            &format!("No Pasion account for {localpart}: {}", e.message),
+                                                            ToastVariant::Error,
+                                                        ),
+                                                    }
+                                                });
+                                            }
+                                        },
+                                        Icon { name: "user-check".to_string(), class: "h-4 w-4 mr-1".to_string() }
+                                        {t("users.pasion_account")}
+                                    }
+                                }
                                 if !is_deactivated {
                                     Button {
                                         variant: ButtonVariant::Outline,
