@@ -157,18 +157,43 @@ pub struct PasionUpstreamProvider {
     pub source: Option<String>,
     #[serde(default)]
     pub client_id: Option<String>,
+    /// Whether a client secret is stored. The secret itself is write-only.
+    #[serde(default)]
+    pub has_client_secret: bool,
     #[serde(default)]
     pub scope: String,
     #[serde(default)]
     pub token_endpoint_auth_method: Option<String>,
     #[serde(default)]
+    pub token_endpoint_signing_alg: Option<String>,
+    #[serde(default)]
     pub id_token_signed_response_alg: Option<String>,
+    #[serde(default)]
+    pub userinfo_signed_response_alg: Option<String>,
     #[serde(default)]
     pub discovery_mode: Option<String>,
     #[serde(default)]
     pub pkce_mode: Option<String>,
     #[serde(default)]
+    pub response_mode: Option<String>,
+    #[serde(default)]
+    pub authorization_endpoint_override: Option<String>,
+    #[serde(default)]
+    pub token_endpoint_override: Option<String>,
+    #[serde(default)]
+    pub userinfo_endpoint_override: Option<String>,
+    #[serde(default)]
+    pub jwks_uri_override: Option<String>,
+    #[serde(default)]
     pub fetch_userinfo: bool,
+    #[serde(default)]
+    pub forward_login_hint: bool,
+    #[serde(default)]
+    pub additional_authorization_parameters: Vec<(String, String)>,
+    #[serde(default)]
+    pub ui_order: i32,
+    #[serde(default)]
+    pub on_backchannel_logout: Option<String>,
     #[serde(default)]
     pub claims_imports: Option<serde_json::Value>,
 }
