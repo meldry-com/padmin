@@ -16,24 +16,41 @@ pub struct PasionPaginationMeta {
 }
 
 // User
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 pub struct PasionUser {
     #[serde(default)]
     pub id: String,
     #[serde(default)]
     pub username: String,
     #[serde(default)]
-    pub primary_user_email_id: Option<String>,
-    #[serde(default)]
     pub created_at: String,
+    #[serde(default)]
+    pub updated_at: Option<String>,
     #[serde(default)]
     pub locked_at: Option<String>,
     #[serde(default)]
     pub deactivated_at: Option<String>,
-    #[serde(default)]
-    pub can_request_admin: bool,
+    /// Pasion's `can_request_admin` flag: lets the user obtain the
+    /// `urn:pasion:admin` scope (and thus sign in to padmin).
     #[serde(default)]
     pub admin: bool,
+    #[serde(default)]
+    pub legacy_guest: bool,
+    #[serde(default)]
+    pub display_name: Option<String>,
+    #[serde(default)]
+    pub avatar_url: Option<String>,
+    #[serde(default)]
+    pub preferred_locale: Option<String>,
+}
+
+/// One page of a cursor-paginated Pasion list.
+#[derive(Debug, Clone, Default)]
+pub struct PasionPage<T> {
+    pub data: Vec<T>,
+    pub count: Option<u64>,
+    /// Cursor to pass as `page[after]` for the next page, if there is one.
+    pub next_cursor: Option<String>,
 }
 
 // User Email
@@ -47,6 +64,8 @@ pub struct PasionUserEmail {
     pub email: String,
     #[serde(default)]
     pub confirmed_at: Option<String>,
+    #[serde(default)]
+    pub is_primary: bool,
     #[serde(default)]
     pub created_at: String,
 }

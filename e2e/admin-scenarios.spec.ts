@@ -112,6 +112,15 @@ test.describe("Admin Scenarios: Daily Management", () => {
   test("Admin navigates all Pasion identity provider pages", async ({
     page,
   }) => {
+    // Local Accounts page
+    await openPage(page, "/pasion/accounts");
+    await expect(page.locator("text=Local Accounts").first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator('input[placeholder="Search username..."]')).toBeVisible();
+    await expect(page.getByRole("button", { name: "Create Account" })).toBeVisible();
+    const accountsTable = page.locator("table");
+    const accountsRetry = page.getByRole("button", { name: "Retry" });
+    await expect(accountsTable.or(accountsRetry)).toBeVisible({ timeout: 15_000 });
+
     // OAuth2 Sessions page
     await openPage(page, "/pasion/oauth2-sessions");
     await expect(page.locator("text=OAuth2 Sessions").first()).toBeVisible({ timeout: 15_000 });

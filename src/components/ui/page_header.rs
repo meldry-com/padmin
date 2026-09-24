@@ -36,8 +36,10 @@ pub fn Breadcrumbs(items: Vec<BreadcrumbItem>) -> Element {
                     span { class: "mx-1", "/" }
                 }
                 if let Some(ref href) = item.href {
-                    a {
-                        href: "{href}",
+                    // Router navigation, not a full page load: the access
+                    // token only lives in memory and would be lost.
+                    Link {
+                        to: href.clone(),
                         class: "hover:text-foreground transition-colors",
                         "{item.label}"
                     }

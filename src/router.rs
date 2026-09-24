@@ -72,6 +72,10 @@ pub enum Route {
         #[route("/settings/notifications")]
         NotificationPreferences {},
 
+        #[route("/pasion/accounts")]
+        PasionAccounts {},
+        #[route("/pasion/accounts/:user_id")]
+        PasionAccountShow { user_id: String },
         #[route("/pasion/audit-log")]
         PasionAuditLog {},
         #[route("/pasion/oauth2-sessions")]
@@ -334,6 +338,16 @@ fn NotificationPreferences() -> Element {
     rsx! {
         pages::notification_preferences::NotificationPreferencesPage {}
     }
+}
+
+#[component]
+fn PasionAccounts() -> Element {
+    rsx! { pages::pasion::accounts::PasionAccountsPage {} }
+}
+
+#[component]
+fn PasionAccountShow(user_id: String) -> Element {
+    rsx! { pages::pasion::account_show::PasionAccountShowPage { user_id } }
 }
 
 #[component]

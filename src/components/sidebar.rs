@@ -241,6 +241,11 @@ fn build_sections(
             label: t("nav.section_pasion"),
             items: vec![
                 NavItem {
+                    title: t("nav.pasion_accounts"),
+                    route: Route::PasionAccounts {},
+                    icon: "user-check",
+                },
+                NavItem {
                     title: t("nav.audit_log"),
                     route: Route::PasionAuditLog {},
                     icon: "scroll-text",
@@ -306,6 +311,10 @@ fn is_route_active(current: &Route, target: &Route) -> bool {
         Route::UserList {} => matches!(
             current,
             Route::UserList {} | Route::UserShow { .. } | Route::UserCreate {}
+        ),
+        Route::PasionAccounts {} => matches!(
+            current,
+            Route::PasionAccounts {} | Route::PasionAccountShow { .. }
         ),
         Route::RoomList {} => matches!(current, Route::RoomList {} | Route::RoomShow { .. }),
         Route::ReportList {} => matches!(current, Route::ReportList {} | Route::ReportShow { .. }),
