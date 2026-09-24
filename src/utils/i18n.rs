@@ -133,7 +133,6 @@ impl I18n {
         m.insert("nav.server_status".into(), "Server Status".into());
         m.insert("nav.server_actions".into(), "Server Actions".into());
         m.insert("nav.notifications".into(), "Notifications".into());
-        m.insert("nav.billing".into(), "Billing".into());
         m.insert("nav.server_notices".into(), "Server Notices".into());
         m.insert("nav.management".into(), "Management".into());
         m.insert("nav.section_identity".into(), "Identity".into());
@@ -924,14 +923,6 @@ impl I18n {
         );
         m.insert("destinations.status".into(), "Status".into());
 
-        // Billing
-        m.insert("billing.title".into(), "Billing".into());
-        m.insert("billing.subscription".into(), "Subscription".into());
-        m.insert("billing.payment_history".into(), "Payment History".into());
-        m.insert("billing.amount".into(), "Amount".into());
-        m.insert("billing.date".into(), "Date".into());
-        m.insert("billing.invoice".into(), "Invoice".into());
-
         // Server Notices
         m.insert("server_notices.title".into(), "Server Notices".into());
         m.insert(
@@ -1145,7 +1136,6 @@ impl I18n {
             "\u{670d}\u{52a1}\u{5668}\u{64cd}\u{4f5c}".into(),
         );
         m.insert("nav.notifications".into(), "\u{901a}\u{77e5}".into());
-        m.insert("nav.billing".into(), "\u{8d26}\u{5355}".into());
         m.insert(
             "nav.server_notices".into(),
             "\u{670d}\u{52a1}\u{5668}\u{901a}\u{77e5}".into(),
@@ -2373,17 +2363,6 @@ impl I18n {
             "\u{6700}\u{540e}\u{6210}\u{529f}\u{6d41}".into(),
         );
         m.insert("destinations.status".into(), "\u{72b6}\u{6001}".into());
-
-        // Billing
-        m.insert("billing.title".into(), "\u{8d26}\u{5355}".into());
-        m.insert("billing.subscription".into(), "\u{8ba2}\u{9605}".into());
-        m.insert(
-            "billing.payment_history".into(),
-            "\u{652f}\u{4ed8}\u{5386}\u{53f2}".into(),
-        );
-        m.insert("billing.amount".into(), "\u{91d1}\u{989d}".into());
-        m.insert("billing.date".into(), "\u{65e5}\u{671f}".into());
-        m.insert("billing.invoice".into(), "\u{53d1}\u{7968}".into());
 
         // Server Notices
         m.insert(

@@ -20,7 +20,7 @@ fn main() {
     if let Some(origin) = web_sys::window().and_then(|w| w.location().origin().ok()) {
         utils::storage::set_item("pasion_url", &origin);
 
-        // The palpo_admin sidecar (server status, scheduled commands, payments,
+        // The palpo_admin sidecar (server status, scheduled commands,
         // instance config, …) is reachable through the same-origin Nginx proxy
         // under `/_palpo/admin/v1`. Pin `palpo_admin_url` here — the same way
         // `pasion_url` is pinned to the origin — so `is_palpo_admin_enabled()`

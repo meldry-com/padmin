@@ -69,9 +69,6 @@ pub enum Route {
         #[route("/server-notifications")]
         ServerNotifications {},
 
-        #[route("/billing")]
-        Billing {},
-
         #[route("/settings/notifications")]
         NotificationPreferences {},
 
@@ -329,13 +326,6 @@ fn ServerNotices() -> Element {
 fn ServerNotifications() -> Element {
     rsx! {
         pages::server_notifications::ServerNotifications {}
-    }
-}
-
-#[component]
-fn Billing() -> Element {
-    rsx! {
-        pages::billing::Billing {}
     }
 }
 

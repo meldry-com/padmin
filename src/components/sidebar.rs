@@ -221,13 +221,6 @@ fn build_sections(
                 icon: "bell",
             });
         }
-        if !icfg.disabled.payments {
-            server_items.push(NavItem {
-                title: t("nav.billing"),
-                route: Route::Billing {},
-                icon: "credit-card",
-            });
-        }
     }
     server_items.push(NavItem {
         title: t("nav.appservices"),

@@ -125,23 +125,3 @@ pub async fn delete_recurring_command(palpo_admin_url: &str, id: &str) -> Result
     .await?;
     Ok(())
 }
-
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, Default)]
-pub struct PaymentsResponse {
-    #[serde(default)]
-    pub payments: Vec<serde_json::Value>,
-    #[serde(default)]
-    pub total: u64,
-    #[serde(default)]
-    pub maintenance: bool,
-    #[serde(default)]
-    pub subscription: Option<serde_json::Value>,
-    #[serde(default)]
-    pub payment_method: Option<String>,
-    #[serde(default)]
-    pub invoices: Vec<serde_json::Value>,
-}
-
-pub async fn get_payments(palpo_admin_url: &str) -> Result<PaymentsResponse, HttpError> {
-    palpo_admin_fetch(palpo_admin_url, "/payments", "GET", None).await
-}

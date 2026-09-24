@@ -435,18 +435,6 @@ pub fn Icon(name: String, #[props(default = "h-4 w-4".to_string())] class: Strin
                 path { d: "M10.3 21a1.94 1.94 0 0 0 3.4 0" }
             }
         },
-        "credit-card" => rsx! {
-            svg {
-                class: "{class}",
-                xmlns: "http://www.w3.org/2000/svg",
-                width: "24", height: "24",
-                view_box: "0 0 24 24",
-                fill: "none", stroke: "currentColor",
-                stroke_width: "2", stroke_linecap: "round", stroke_linejoin: "round",
-                rect { width: "20", height: "14", x: "2", y: "5", rx: "2" }
-                line { x1: "2", x2: "22", y1: "10", y2: "10" }
-            }
-        },
         "scroll-text" => rsx! {
             svg {
                 class: "{class}",

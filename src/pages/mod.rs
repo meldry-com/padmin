@@ -1,6 +1,5 @@
 pub mod appservices;
 pub mod auth_status;
-pub mod billing;
 pub mod dashboard;
 pub mod destinations;
 pub mod login;
