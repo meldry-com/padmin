@@ -21,8 +21,6 @@ pub struct DisableFeatures {
     #[serde(default)]
     pub notifications: bool,
     #[serde(default)]
-    pub payments: bool,
-    #[serde(default)]
     pub registration_tokens: bool,
 }
 
