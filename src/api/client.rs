@@ -143,6 +143,9 @@ pub async fn api_client<T: DeserializeOwned>(
         if err.status == 401 && crate::api::auth::handle_unauthorized().await {
             return raw_fetch::<T, _>(url, method, body, format_matrix_error).await;
         }
+        if err.status == 403 {
+            crate::api::auth::handle_forbidden();
+        }
     }
 
     result

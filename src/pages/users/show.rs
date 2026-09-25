@@ -211,17 +211,25 @@ pub fn UserShow(user_id: String) -> Element {
                                                         oninput: move |evt: FormEvent| edit_display_name.set(evt.value()),
                                                     }
                                                 }
-                                                div { class: "flex items-center space-x-2",
-                                                    input {
-                                                        r#type: "checkbox",
-                                                        id: "edit-admin",
-                                                        class: "h-4 w-4 rounded border-input",
-                                                        checked: *edit_admin.read(),
-                                                        onchange: move |evt: FormEvent| {
-                                                            edit_admin.set(evt.value() == "true");
-                                                        },
+                                                if has_pasion {
+                                                    // The homeserver admin flag mirrors the Pasion
+                                                    // account's admin role; palpo refuses local changes.
+                                                    p { class: "text-sm text-muted-foreground",
+                                                        "Administrator privileges are managed on the Pasion account (use the Pasion account button above)."
                                                     }
-                                                    Label { r#for: "edit-admin".to_string(), {t("users.admin_privileges")} }
+                                                } else {
+                                                    div { class: "flex items-center space-x-2",
+                                                        input {
+                                                            r#type: "checkbox",
+                                                            id: "edit-admin",
+                                                            class: "h-4 w-4 rounded border-input",
+                                                            checked: *edit_admin.read(),
+                                                            onchange: move |evt: FormEvent| {
+                                                                edit_admin.set(evt.value() == "true");
+                                                            },
+                                                        }
+                                                        Label { r#for: "edit-admin".to_string(), {t("users.admin_privileges")} }
+                                                    }
                                                 }
                                             }
                                         }
@@ -239,10 +247,12 @@ pub fn UserShow(user_id: String) -> Element {
                                                         let dn = edit_display_name.read().clone();
                                                         let admin = *edit_admin.read();
                                                         spawn(async move {
-                                                            let data = serde_json::json!({
+                                                            let mut data = serde_json::json!({
                                                                 "displayname": dn,
-                                                                "admin": admin,
                                                             });
+                                                            if !has_pasion {
+                                                                data["admin"] = serde_json::Value::Bool(admin);
+                                                            }
                                                             match users::update_user(&uid, data).await {
                                                                 Ok(_) => {
                                                                     show_toast("User updated", ToastVariant::Success);

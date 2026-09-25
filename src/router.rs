@@ -105,23 +105,35 @@ pub fn AppRouter() -> Element {
     }
 }
 
-/// Session-scoped cache of the admin verdict, shared across the whole router.
+/// Session-scoped admin verdict, shared across the whole router.
 ///
-///   Some(true)  = verified admin
+///   Some(true)  = the servers accepted this user as an administrator
 ///   Some(false) = verified non-admin (forbidden)
-///   None        = not yet probed this session
+///   None        = not yet probed (or the probe failed)
 ///
-/// `verify_admin()` is an HTTP round-trip, so we probe at most once per
-/// session and trust this signal for every subsequent in-session navigation.
-/// The probe is only re-run when this is `None`, which happens on the first
-/// authenticated mount and again after `auth::handle_unauthorized()` clears
-/// the session on a 401 (see `reset_admin_cache`).
+/// `verify_admin()` is an HTTP round-trip, so in-session navigation reuses
+/// this verdict. It only ever comes from a successful server probe: nothing
+/// persisted client side can grant access, and a failed probe never counts
+/// as admin. It is cleared on logout and after a 401 (see
+/// `reset_admin_cache`), and flipped to `false` when a later 403 turns out
+/// to mean the admin flag was revoked (see `auth::handle_forbidden`).
 static ADMIN_VERDICT: GlobalSignal<Option<bool>> = GlobalSignal::new(|| None);
 
+/// Last admin-probe failure, shown with a retry button instead of letting
+/// the user in.
+static ADMIN_PROBE_ERROR: GlobalSignal<Option<String>> = GlobalSignal::new(|| None);
+
 /// Clear the cached admin verdict so the next navigation re-probes. Call this
-/// when the session is invalidated (e.g. after a 401).
+/// when the session is invalidated (e.g. after a 401 or on logout).
 pub fn reset_admin_cache() {
     *ADMIN_VERDICT.write() = None;
+    *ADMIN_PROBE_ERROR.write() = None;
+}
+
+/// Record a verdict obtained from a server probe.
+pub fn set_admin_verdict(is_admin: bool) {
+    *ADMIN_VERDICT.write() = Some(is_admin);
+    *ADMIN_PROBE_ERROR.write() = None;
 }
 
 #[component]
@@ -135,47 +147,67 @@ fn AuthenticatedLayout() -> Element {
         };
     }
 
-    // Tri-state admin verdict:
-    //   Some(true)  = admin, render the normal dashboard layout
-    //   Some(false) = authenticated but forbidden, render NotAuthorizedPage
-    //   None        = probe still in flight or inconclusive, show a spinner
-    //
-    // Trust the session-scoped `ADMIN_VERDICT` for in-session navigation: the
-    // probe only runs when the signal is still `None` (first authenticated
-    // mount this session, or after a 401 reset). Seed the signal from the
-    // `is_admin` value persisted by a previous tab/session so a hard refresh
-    // doesn't flash the spinner.
-    if ADMIN_VERDICT.peek().is_none() {
-        if let Some(persisted) = auth::cached_is_admin() {
-            *ADMIN_VERDICT.write() = Some(persisted);
+    // Re-check periodically too: a revoked admin who only uses pages that
+    // keep answering (or sits idle) must not keep the dashboard open.
+    use_future(|| async {
+        loop {
+            gloo_timers::future::sleep(std::time::Duration::from_secs(60)).await;
+            if *ADMIN_VERDICT.peek() == Some(true) {
+                auth::handle_forbidden();
+            }
         }
-    }
+    });
 
-    use_resource(move || async move {
+    let mut probe = use_resource(move || async move {
         // Already decided this session — don't re-probe on navigation.
         if ADMIN_VERDICT.peek().is_some() {
             return;
         }
+        *ADMIN_PROBE_ERROR.write() = None;
         match auth::verify_admin().await {
-            Ok(flag) => *ADMIN_VERDICT.write() = Some(flag),
-            // Probe errored (401, network, ...). Fall through to "assume
-            // admin" so we don't dead-end the user on a spinner forever.
-            // Individual admin pages still surface their own errors when the
-            // token turns out to be bad, and a 401 there resets this cache.
-            Err(_) => *ADMIN_VERDICT.write() = Some(true),
+            Ok(flag) => set_admin_verdict(flag),
+            // Never fall back to "admin": without a positive answer from the
+            // servers the dashboard stays closed.
+            Err(err) => *ADMIN_PROBE_ERROR.write() = Some(err.message),
         }
     });
 
-    match *ADMIN_VERDICT.read() {
-        Some(true) => rsx! {
+    let verdict = *ADMIN_VERDICT.read();
+    let probe_error = ADMIN_PROBE_ERROR.read().clone();
+    match (verdict, probe_error) {
+        (Some(true), _) => rsx! {
             AppLayout {
                 Outlet::<Route> {}
             }
         },
-        Some(false) => rsx! {
+        (Some(false), _) => rsx! {
             pages::not_authorized::NotAuthorizedPage {}
         },
-        None => rsx! {
+        (None, Some(message)) => rsx! {
+            div { class: "flex min-h-screen items-center justify-center bg-background p-4",
+                div { class: "w-full max-w-md space-y-4 text-center",
+                    h1 { class: "text-2xl font-bold tracking-tight", "Unable to verify administrator access" }
+                    p { class: "text-muted-foreground text-sm break-all", "{message}" }
+                    crate::components::ui::button::Button {
+                        class: "w-full".to_string(),
+                        onclick: move |_| probe.restart(),
+                        "Retry"
+                    }
+                    crate::components::ui::button::Button {
+                        variant: crate::components::ui::button::ButtonVariant::Outline,
+                        class: "w-full".to_string(),
+                        onclick: move |_| {
+                            spawn(async move {
+                                let _ = auth::logout().await;
+                                nav.replace(Route::LoginPage {});
+                            });
+                        },
+                        {crate::utils::i18n::t("auth.sign_out")}
+                    }
+                }
+            }
+        },
+        (None, None) => rsx! {
             div { class: "flex min-h-screen items-center justify-center",
                 crate::components::ui::loading::Spinner { class: String::new() }
             }

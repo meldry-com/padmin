@@ -59,10 +59,17 @@ fn download_csv(filename: &str, content: &str) {
 }
 
 fn escape_csv_field(field: &str) -> String {
-    if field.contains(',') || field.contains('"') || field.contains('\n') {
-        format!("\"{}\"", field.replace('"', "\"\""))
+    // A leading = + - @ (or tab / CR) makes spreadsheets evaluate the cell as
+    // a formula; display names are user-controlled.
+    let field = if field.starts_with(['=', '+', '-', '@', '\t', '\r']) {
+        format!("'{field}")
     } else {
         field.to_string()
+    };
+    if field.contains(',') || field.contains('"') || field.contains('\n') || field.contains('\r') {
+        format!("\"{}\"", field.replace('"', "\"\""))
+    } else {
+        field
     }
 }
 
@@ -75,6 +82,30 @@ fn session_get(key: &str) -> Option<String> {
 fn session_set(key: &str, value: &str) {
     if let Some(storage) = web_sys::window().and_then(|w| w.session_storage().ok().flatten()) {
         let _ = storage.set_item(key, value);
+    }
+}
+
+/// Grant admin to a Matrix user. With Pasion the flag is owned by the Pasion
+/// account (and mirrored onto palpo, which refuses local changes), so it is
+/// set there.
+async fn grant_admin(user_id: &str, has_pasion: bool) -> bool {
+    if !has_pasion {
+        return users::update_user(user_id, serde_json::json!({"admin": true}))
+            .await
+            .is_ok();
+    }
+    let localpart = user_id
+        .trim_start_matches('@')
+        .split(':')
+        .next()
+        .unwrap_or_default();
+    match crate::api::pasion::pasion_get_user_by_username(localpart).await {
+        Ok(account) => {
+            crate::api::pasion::pasion_update_user(&account.id, serde_json::json!({"admin": true}))
+                .await
+                .is_ok()
+        }
+        Err(_) => false,
     }
 }
 
@@ -235,6 +266,7 @@ pub fn UserList() -> Element {
         });
     };
 
+    let has_pasion = crate::utils::storage::get_item("pasion_url").is_some();
     let handle_bulk_set_admin = move |_: MouseEvent| {
         if *bulk_running.read() {
             return;
@@ -247,11 +279,7 @@ pub fn UserList() -> Element {
         spawn(async move {
             let total = ids.len();
             let results = stream::iter(ids.iter())
-                .map(|uid| async move {
-                    users::update_user(uid, serde_json::json!({"admin": true}))
-                        .await
-                        .is_ok()
-                })
+                .map(|uid| grant_admin(uid, has_pasion))
                 .buffer_unordered(BULK_CONCURRENCY)
                 .collect::<Vec<bool>>()
                 .await;

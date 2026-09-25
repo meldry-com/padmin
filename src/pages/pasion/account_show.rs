@@ -63,7 +63,7 @@ impl PendingAction {
                 "{username} will be able to request the admin scope and manage this deployment through padmin."
             ),
             Self::Demote => format!(
-                "{username} will no longer be able to request the admin scope. Existing admin sessions stay valid until they expire or are ended."
+                "{username} will lose administrator access immediately: existing admin sessions stop working and the homeserver admin flag is revoked too."
             ),
             Self::Lock => format!(
                 "{username} will not be able to sign in or use existing sessions until the account is unlocked."
@@ -444,7 +444,7 @@ pub fn PasionAccountShowPage(user_id: String) -> Element {
                     CardHeader {
                         CardTitle { "Administrator" }
                         CardDescription {
-                            "Admins can request the urn:pasion:admin scope and sign in to padmin. Homeserver admin rights are managed separately on the Users page."
+                            "Only admins can obtain admin scopes and sign in to padmin. This role is mirrored onto the homeserver admin flag."
                         }
                     }
                     CardContent { class: "flex items-center justify-between gap-4".to_string(),

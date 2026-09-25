@@ -508,51 +508,113 @@ pub async fn refresh_oauth_token() -> bool {
 
 // ── Admin verification ───────────────────────────────────────────────────────
 
-/// Check whether the currently authenticated user has homeserver admin
-/// privileges by probing a cheap admin-only endpoint
-/// (`GET /_palpo/admin/v1/server_version`):
+/// Check whether the current user is an administrator.
+///
+/// Admin status is decided by the servers alone (pasion's `admin` flag,
+/// mirrored onto palpo's `is_admin`), never by anything cached client side.
+/// We probe a cheap admin-only endpoint on every backend the dashboard
+/// talks to and require *all* of them to accept the token:
+///
+///   - palpo  `GET /_palpo/admin/v1/server_version`
+///   - pasion `GET {pasion_url}/api/admin/v1/version` (when configured)
+///
+/// Outcome per probe:
 ///
 ///   - 200 → admin
-///   - 403 M_FORBIDDEN → authenticated but not admin
-///   - 401 → token is bad / expired (let the caller refresh)
-///   - network / other errors → returned as `HttpError` so the caller can
-///     decide whether to retry or treat as "unknown"
+///   - 403 → authenticated but not admin; one 403 is enough to deny
+///   - 401 → refresh the token and retry once
+///   - network / other errors → `Err`, the caller must NOT treat this as
+///     admin (show an error and let the user retry)
 ///
 /// We deliberately avoid `GET /_palpo/admin/v2/users/{self}` here — the
-/// `user_id` we have in localStorage is pasion's OAuth subject (a ULID),
+/// `user_id` we have in storage is pasion's OAuth subject (a ULID),
 /// not the Matrix `@localpart:server_name` that palpo's admin API
 /// expects, and palpo rejects it with 400 `M_BAD_JSON`.
-///
-/// The result is cached in `localStorage.is_admin` so subsequent page
-/// loads don't re-probe. [`logout`] clears the cache.
 pub async fn verify_admin() -> Result<bool, HttpError> {
-    let access_token =
-        storage::get_item("access_token").ok_or_else(|| make_err("Not authenticated".into()))?;
-
-    let response = Request::get("/_palpo/admin/v1/server_version")
-        .header("Accept", "application/json")
-        .header("Authorization", &format!("Bearer {access_token}"))
-        .send()
-        .await
-        .map_err(|e| make_err(e.to_string()))?;
-
-    let status = response.status();
-    if status == 200 {
-        storage::set_item("is_admin", "true");
-        return Ok(true);
-    }
-    if status == 403 {
-        storage::set_item("is_admin", "false");
+    if !probe_admin_endpoint("/_palpo/admin/v1/server_version").await? {
         return Ok(false);
     }
-    let text = response.text().await.unwrap_or_default();
-    Err(make_err(format!("admin probe HTTP {status}: {text}")))
+    let base = storage::get_item("pasion_url")
+        .or_else(|| web_sys::window().and_then(|w| w.location().origin().ok()))
+        .ok_or_else(|| make_err("Pasion URL is not configured".into()))?;
+    let url = format!("{}/api/admin/v1/version", base.trim_end_matches('/'));
+    probe_admin_endpoint(&url).await
 }
 
-/// Read the cached admin flag populated by [`verify_admin`].
-/// Returns `None` if the check hasn't run yet.
-pub fn cached_is_admin() -> Option<bool> {
-    storage::get_item("is_admin").map(|v| v == "true")
+async fn probe_admin_endpoint(url: &str) -> Result<bool, HttpError> {
+    let mut refreshed = false;
+    loop {
+        let access_token = storage::get_item("access_token")
+            .ok_or_else(|| make_err("Not authenticated".into()))?;
+
+        let response = Request::get(url)
+            .header("Accept", "application/json")
+            .header("Authorization", &format!("Bearer {access_token}"))
+            .send()
+            .await
+            .map_err(|e| make_err(e.to_string()))?;
+
+        match response.status() {
+            200 => {
+                let is_json = response
+                    .headers()
+                    .get("content-type")
+                    .is_some_and(|ct| ct.contains("json"));
+                let body = response.text().await.unwrap_or_default();
+                let is_object = serde_json::from_str::<serde_json::Value>(&body)
+                    .is_ok_and(|v| v.is_object());
+                if is_json && is_object {
+                    return Ok(true);
+                }
+                return Err(make_err(format!(
+                    "admin probe {url}: unexpected non-JSON response (is the admin API proxied?)"
+                )));
+            }
+            403 => return Ok(false),
+            401 if !refreshed && handle_unauthorized().await => refreshed = true,
+            status => {
+                let text = response.text().await.unwrap_or_default();
+                return Err(make_err(format!("admin probe HTTP {status}: {text}")));
+            }
+        }
+    }
+}
+
+thread_local! {
+    static REVERIFYING: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+    /// Set when another re-verification was requested while one was in
+    /// flight; that probe may have started before the revocation landed.
+    static REVERIFY_AGAIN: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+/// Called by the API clients whenever a backend answers 403, and
+/// periodically by the authenticated layout.
+///
+/// The user's admin flag may have been revoked mid-session. Re-probe in the
+/// background (at most one probe in flight, re-run if more requests arrived
+/// meanwhile) and drop the dashboard as soon as the servers say the user is
+/// no longer an administrator. A 403 caused by something else (e.g. a
+/// refused action) leaves the verdict untouched.
+pub fn handle_forbidden() {
+    if REVERIFYING.with(|flag| flag.replace(true)) {
+        REVERIFY_AGAIN.with(|flag| flag.set(true));
+        return;
+    }
+    // Spawned on the root scope so it survives the page that got the 403 and
+    // runs inside the Dioxus runtime (it writes a GlobalSignal).
+    dioxus::dioxus_core::spawn_forever(async {
+        loop {
+            REVERIFY_AGAIN.with(|flag| flag.set(false));
+            if let Ok(false) = verify_admin().await {
+                crate::router::set_admin_verdict(false);
+                break;
+            }
+            if !REVERIFY_AGAIN.with(|flag| flag.replace(false)) {
+                break;
+            }
+        }
+        REVERIFYING.with(|flag| flag.set(false));
+    });
 }
 
 // ── Logout ───────────────────────────────────────────────────────────────────
@@ -582,8 +644,9 @@ pub async fn logout() -> Result<(), HttpError> {
         .send()
         .await;
 
-    // Clear cached identity / admin flag so the next login starts fresh.
+    // Clear cached identity / admin verdict so the next login starts fresh.
     storage::remove_item("is_admin");
+    crate::router::reset_admin_cache();
     crate::utils::config::clear_config();
     Ok(())
 }
