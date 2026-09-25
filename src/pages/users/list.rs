@@ -5,9 +5,10 @@ use std::collections::HashSet;
 use wasm_bindgen::JsCast;
 
 use crate::api::users;
+use crate::components::deactivate_user_dialog::{DeactivateUserDialog, show_account_change_toast};
 use crate::components::ui::badge::{Badge, BadgeVariant};
 use crate::components::ui::button::{Button, ButtonSize, ButtonVariant};
-use crate::components::ui::dialog::{ConfirmDialog, Modal, ModalSize};
+use crate::components::ui::dialog::{Modal, ModalSize};
 use crate::components::ui::empty_state::EmptyState;
 use crate::components::ui::icons::Icon;
 use crate::components::ui::input::SearchInput;
@@ -18,8 +19,8 @@ use crate::components::ui::relative_time::RelativeTime;
 use crate::components::ui::table::*;
 use crate::components::ui::toast::{ToastVariant, show_toast};
 use crate::components::user_import::UserImport;
+use crate::pages::users::tabs::{UsersTab, UsersTabs};
 use crate::router::Route;
-use crate::types::UserRecord;
 use crate::utils::i18n::t;
 
 const PAGE_SIZE_OPTIONS: &[u64] = &[10, 25, 50, 100];
@@ -122,8 +123,8 @@ pub fn UserList() -> Element {
     let mut search_input = use_signal(move || initial_search.clone());
     let mut search = use_signal(move || initial_search2.clone());
     let mut page = use_signal(move || initial_page);
-    let mut delete_dialog_open = use_signal(|| false);
-    let mut user_to_delete = use_signal(|| Option::<UserRecord>::None);
+    // Accounts waiting for confirmation in the deactivate dialog; empty = closed.
+    let mut deactivate_targets = use_signal(Vec::<String>::new);
     let mut debounce_task = use_signal(|| Option::<Task>::None);
     let mut per_page = use_signal(|| DEFAULT_PAGE_SIZE);
     let mut exporting = use_signal(|| false);
@@ -207,63 +208,53 @@ pub fn UserList() -> Element {
         });
     };
 
-    let handle_delete_confirm = move |_| {
-        let user = user_to_delete.read().clone();
-        if let Some(user) = user {
-            let user_id = user.id.clone();
-            spawn(async move {
-                match users::erase_user(&user_id).await {
-                    Ok(_) => {
-                        selected_users.write().remove(&user_id);
-                        show_toast("User deleted successfully", ToastVariant::Success);
-                        delete_dialog_open.set(false);
-                        user_to_delete.set(None);
-                        users_data.restart();
-                    }
-                    Err(e) => {
-                        show_toast(
-                            &format!("Failed to delete user: {}", e.message),
-                            ToastVariant::Error,
-                        );
-                    }
-                }
-            });
-        }
-    };
-
-    let handle_bulk_deactivate = move |_: MouseEvent| {
-        if *bulk_running.read() {
-            return;
-        }
-        let ids: Vec<String> = selected_users.read().iter().cloned().collect();
-        if ids.is_empty() {
+    let handle_deactivate_confirm = move |erase: bool| {
+        let ids = deactivate_targets.read().clone();
+        deactivate_targets.set(Vec::new());
+        if ids.is_empty() || *bulk_running.read() {
             return;
         }
         bulk_running.set(true);
         spawn(async move {
             let total = ids.len();
             let results = stream::iter(ids.iter())
-                .map(|uid| async move { users::deactivate_user(uid, false).await.is_ok() })
+                .map(|uid| async move { (uid, users::deactivate_account(uid, erase).await) })
                 .buffer_unordered(BULK_CONCURRENCY)
-                .collect::<Vec<bool>>()
+                .collect::<Vec<_>>()
                 .await;
-            let success_count = results.iter().filter(|ok| **ok).count();
-            let fail_count = total - success_count;
-            if fail_count == 0 {
-                show_toast(
-                    &format!("Deactivated {} users", success_count),
-                    ToastVariant::Success,
-                );
-            } else {
-                show_toast(
-                    &format!("Deactivated {success_count} of {total} users ({fail_count} failed)"),
+            let failures: Vec<String> = results
+                .iter()
+                .filter_map(|(uid, r)| r.as_ref().err().map(|e| format!("{uid}: {}", e.message)))
+                .collect();
+            match (total, results.first()) {
+                (1, Some((uid, Ok(owner)))) => show_account_change_toast(uid, true, *owner),
+                _ if failures.is_empty() => {
+                    show_toast(&format!("Deactivated {total} users"), ToastVariant::Success)
+                }
+                _ => show_toast(
+                    &format!(
+                        "Deactivated {} of {total} users. Failed: {}",
+                        total - failures.len(),
+                        failures.join("; ")
+                    ),
                     ToastVariant::Error,
-                );
+                ),
             }
-            selected_users.set(HashSet::new());
+            for (uid, result) in &results {
+                if result.is_ok() {
+                    selected_users.write().remove(*uid);
+                }
+            }
             bulk_running.set(false);
             users_data.restart();
         });
+    };
+
+    let handle_bulk_deactivate = move |_: MouseEvent| {
+        let ids: Vec<String> = selected_users.read().iter().cloned().collect();
+        if !ids.is_empty() && !*bulk_running.read() {
+            deactivate_targets.set(ids);
+        }
     };
 
     let has_pasion = crate::utils::storage::get_item("pasion_url").is_some();
@@ -331,6 +322,7 @@ pub fn UserList() -> Element {
                     {t("users.create")}
                 }
             }
+            UsersTabs { active: UsersTab::Accounts }
 
             div { class: "flex items-center gap-4",
                 div { class: "flex-1",
@@ -583,7 +575,6 @@ pub fn UserList() -> Element {
                                             let is_admin = user.user.admin;
                                             let is_deactivated = user.user.deactivated;
                                             let creation_ts_ms = user.creation_ts_ms;
-                                            let user_for_delete = user.clone();
                                             let user_id_for_deactivate = user.id.clone();
                                             let user_id_for_checkbox = user.id.clone();
                                             let is_checked = selected_users.read().contains(&user_id);
@@ -646,16 +637,19 @@ pub fn UserList() -> Element {
                                                             Button {
                                                                 variant: ButtonVariant::Ghost,
                                                                 size: ButtonSize::Sm,
+                                                                disabled: is_bulk_running,
                                                                 onclick: {
                                                                     let uid = user_id_for_deactivate.clone();
                                                                     move |_| {
                                                                         let uid = uid.clone();
-                                                                        let deactivate = !is_deactivated;
+                                                                        if !is_deactivated {
+                                                                            deactivate_targets.set(vec![uid]);
+                                                                            return;
+                                                                        }
                                                                         spawn(async move {
-                                                                            match users::set_user_deactivated(&uid, deactivate).await {
-                                                                                Ok(_) => {
-                                                                                    let msg = if deactivate { "User deactivated" } else { "User reactivated" };
-                                                                                    show_toast(msg, ToastVariant::Success);
+                                                                            match users::reactivate_account(&uid).await {
+                                                                                Ok(owner) => {
+                                                                                    show_account_change_toast(&uid, false, owner);
                                                                                     users_data.restart();
                                                                                 }
                                                                                 Err(e) => show_toast(&format!("Failed: {}", e.message), ToastVariant::Error),
@@ -674,15 +668,6 @@ pub fn UserList() -> Element {
                                                                     });
                                                                 },
                                                                 {t("common.view")}
-                                                            }
-                                                            Button {
-                                                                variant: ButtonVariant::Ghost,
-                                                                size: ButtonSize::Sm,
-                                                                onclick: move |_| {
-                                                                    user_to_delete.set(Some(user_for_delete.clone()));
-                                                                    delete_dialog_open.set(true);
-                                                                },
-                                                                {t("users.delete")}
                                                             }
                                                         }
                                                     }
@@ -738,20 +723,11 @@ pub fn UserList() -> Element {
             }
         }
 
-        ConfirmDialog {
-            open: *delete_dialog_open.read(),
-            title: t("users.delete"),
-            description: {
-                let name = user_to_delete.read().as_ref().map(|u| u.id.clone()).unwrap_or_default();
-                format!("Are you sure you want to delete {name}? This action cannot be undone.")
-            },
-            confirm_text: t("common.delete"),
-            destructive: true,
-            on_confirm: handle_delete_confirm,
-            on_cancel: move |_| {
-                delete_dialog_open.set(false);
-                user_to_delete.set(None);
-            },
+        DeactivateUserDialog {
+            open: !deactivate_targets.read().is_empty(),
+            user_ids: deactivate_targets.read().clone(),
+            on_confirm: handle_deactivate_confirm,
+            on_cancel: move |_| deactivate_targets.set(Vec::new()),
         }
     }
 }

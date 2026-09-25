@@ -1,3 +1,4 @@
+pub mod deactivate_user_dialog;
 pub mod experimental_features;
 pub mod header;
 pub mod keyboard_shortcuts;
