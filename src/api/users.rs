@@ -87,8 +87,9 @@ pub async fn get_users(
         ("dir", dir),
     ];
 
+    // `/v2/users` filters on `name` (the localpart); it has no `search_term`.
     if !search_term.is_empty() {
-        params.push(("search_term", search_term));
+        params.push(("name", search_term));
     }
 
     let url = build_url("/_palpo/admin/v2/users", &params)?;
@@ -188,8 +189,78 @@ pub async fn set_user_deactivated(id: &str, deactivated: bool) -> Result<UserRec
     Ok(map_user(user))
 }
 
-pub async fn erase_user(id: &str) -> Result<(), HttpError> {
-    deactivate_user(id, true).await
+/// Which service carried out a deactivation or reactivation.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AccountOwner {
+    /// Pasion owns the account: the change is made there and Pasion applies
+    /// it to the homeserver (deactivation runs as a background job).
+    Pasion,
+    /// The account only exists on the homeserver (bots, appservice users, or
+    /// deployments without Pasion) and was changed there directly.
+    Homeserver,
+}
+
+/// The Pasion account behind a Matrix user, if Pasion is configured and has
+/// one with the same username. Only a 404 means "no account"; any other error
+/// is returned so a failed lookup never silently bypasses Pasion.
+async fn pasion_account_for(user_id: &str) -> Result<Option<PasionUser>, HttpError> {
+    if crate::utils::storage::get_item("pasion_url").is_none() {
+        return Ok(None);
+    }
+    let mxid = return_mxid(user_id);
+    let localpart = mxid
+        .trim_start_matches('@')
+        .split(':')
+        .next()
+        .unwrap_or_default();
+    match crate::api::pasion::pasion_get_user_by_username(localpart).await {
+        Ok(account) => Ok(Some(account)),
+        Err(e) if e.status == 404 => Ok(None),
+        Err(e) => Err(e),
+    }
+}
+
+/// Deactivate a local Matrix account through the service that owns it.
+///
+/// Deactivating only the homeserver side of a Pasion account leaves Pasion
+/// signing the user in to a Matrix account that rejects every request, so
+/// Pasion accounts are deactivated in Pasion. Accounts without one, and a
+/// Pasion account that is already deactivated there, are fully deactivated on
+/// the homeserver (sessions, devices and room memberships).
+pub async fn deactivate_account(id: &str, erase: bool) -> Result<AccountOwner, HttpError> {
+    if let Some(account) = pasion_account_for(id).await?
+        && account.deactivated_at.is_none()
+    {
+        crate::api::pasion::pasion_update_user(
+            &account.id,
+            serde_json::json!({ "deactivated": true, "hs_erase": erase }),
+        )
+        .await?;
+        invalidate_user_related_caches();
+        return Ok(AccountOwner::Pasion);
+    }
+    deactivate_user(id, erase).await?;
+    Ok(AccountOwner::Homeserver)
+}
+
+/// Reactivate a local Matrix account through the service that owns it.
+/// Pasion reactivates the homeserver account itself; an account Pasion still
+/// considers active (for example one deactivated on the homeserver only) is
+/// reactivated on the homeserver directly.
+pub async fn reactivate_account(id: &str) -> Result<AccountOwner, HttpError> {
+    if let Some(account) = pasion_account_for(id).await?
+        && account.deactivated_at.is_some()
+    {
+        crate::api::pasion::pasion_update_user(
+            &account.id,
+            serde_json::json!({ "deactivated": false }),
+        )
+        .await?;
+        invalidate_user_related_caches();
+        return Ok(AccountOwner::Pasion);
+    }
+    set_user_deactivated(id, false).await?;
+    Ok(AccountOwner::Homeserver)
 }
 
 pub async fn get_user_devices(

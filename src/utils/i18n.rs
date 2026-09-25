@@ -262,6 +262,26 @@ impl I18n {
         // Users
         m.insert("users.title".into(), "Users".into());
         m.insert("users.subtitle".into(), "Manage Matrix users".into());
+        m.insert("users.tab_accounts".into(), "Local accounts".into());
+        m.insert("users.tab_known".into(), "Seen users".into());
+        m.insert("users.known_subtitle".into(), "Every user this server has seen in its rooms, local or remote".into());
+        m.insert("users.origin_all".into(), "All users".into());
+        m.insert("users.origin_local".into(), "Local".into());
+        m.insert("users.origin_remote".into(), "Remote".into());
+        m.insert("users.server".into(), "Server".into());
+        m.insert("users.filter_by_server".into(), "Show only users from this server".into());
+        m.insert("users.all_rooms".into(), "All rooms".into());
+        m.insert("users.last_membership_change".into(), "Last membership change".into());
+        m.insert("users.banned".into(), "banned".into());
+        m.insert("users.known_empty".into(), "No users match these filters".into());
+        m.insert("users.open_account".into(), "Open local account".into());
+        m.insert("users.remote_note".into(), "This account lives on another homeserver and can only be managed there. Here you can only ban it from individual rooms on this server.".into());
+        m.insert("users.seen_in_rooms".into(), "Rooms".into());
+        m.insert("users.seen_in_rooms_desc".into(), "Rooms where this server has recorded a membership for the user, most recent first".into());
+        m.insert("users.room".into(), "Room".into());
+        m.insert("users.membership".into(), "Membership".into());
+        m.insert("users.membership_sender".into(), "Changed by".into());
+        m.insert("users.updated".into(), "Updated".into());
         m.insert("users.create".into(), "Create User".into());
         m.insert("users.user_id".into(), "User ID".into());
         m.insert("users.display_name".into(), "Display Name".into());
@@ -1341,6 +1361,86 @@ impl I18n {
         m.insert(
             "users.subtitle".into(),
             "\u{7ba1}\u{7406} Matrix \u{7528}\u{6237}".into(),
+        );
+        m.insert(
+            "users.tab_accounts".into(),
+            "\u{672c}\u{5730}\u{8d26}\u{53f7}".into(),
+        );
+        m.insert(
+            "users.tab_known".into(),
+            "\u{5df2}\u{89c1}\u{7528}\u{6237}".into(),
+        );
+        m.insert(
+            "users.known_subtitle".into(),
+            "\u{672c}\u{670d}\u{52a1}\u{5668}\u{5728}\u{623f}\u{95f4}\u{4e2d}\u{89c1}\u{8fc7}\u{7684}\u{6240}\u{6709}\u{7528}\u{6237}\u{ff08}\u{542b}\u{672c}\u{5730}\u{548c}\u{8fdc}\u{7a0b}\u{ff09}".into(),
+        );
+        m.insert(
+            "users.origin_all".into(),
+            "\u{5168}\u{90e8}\u{7528}\u{6237}".into(),
+        );
+        m.insert(
+            "users.origin_local".into(),
+            "\u{672c}\u{5730}".into(),
+        );
+        m.insert(
+            "users.origin_remote".into(),
+            "\u{8fdc}\u{7a0b}".into(),
+        );
+        m.insert(
+            "users.server".into(),
+            "\u{670d}\u{52a1}\u{5668}".into(),
+        );
+        m.insert(
+            "users.filter_by_server".into(),
+            "\u{53ea}\u{663e}\u{793a}\u{8be5}\u{670d}\u{52a1}\u{5668}\u{7684}\u{7528}\u{6237}".into(),
+        );
+        m.insert(
+            "users.all_rooms".into(),
+            "\u{5168}\u{90e8}\u{623f}\u{95f4}".into(),
+        );
+        m.insert(
+            "users.last_membership_change".into(),
+            "\u{6700}\u{8fd1}\u{6210}\u{5458}\u{53d8}\u{66f4}".into(),
+        );
+        m.insert(
+            "users.banned".into(),
+            "\u{5df2}\u{5c01}\u{7981}".into(),
+        );
+        m.insert(
+            "users.known_empty".into(),
+            "\u{6ca1}\u{6709}\u{7b26}\u{5408}\u{7b5b}\u{9009}\u{6761}\u{4ef6}\u{7684}\u{7528}\u{6237}".into(),
+        );
+        m.insert(
+            "users.open_account".into(),
+            "\u{6253}\u{5f00}\u{672c}\u{5730}\u{8d26}\u{53f7}".into(),
+        );
+        m.insert(
+            "users.remote_note".into(),
+            "\u{8be5}\u{8d26}\u{53f7}\u{5c5e}\u{4e8e}\u{5176}\u{4ed6}\u{670d}\u{52a1}\u{5668}\u{ff0c}\u{53ea}\u{80fd}\u{7531}\u{90a3}\u{53f0}\u{670d}\u{52a1}\u{5668}\u{7ba1}\u{7406}\u{3002}\u{5728}\u{8fd9}\u{91cc}\u{53ea}\u{80fd}\u{5728}\u{672c}\u{670d}\u{52a1}\u{5668}\u{7684}\u{5404}\u{4e2a}\u{623f}\u{95f4}\u{4e2d}\u{5c01}\u{7981}\u{8be5}\u{7528}\u{6237}\u{3002}".into(),
+        );
+        m.insert(
+            "users.seen_in_rooms".into(),
+            "\u{623f}\u{95f4}".into(),
+        );
+        m.insert(
+            "users.seen_in_rooms_desc".into(),
+            "\u{672c}\u{670d}\u{52a1}\u{5668}\u{8bb0}\u{5f55}\u{8fc7}\u{8be5}\u{7528}\u{6237}\u{6210}\u{5458}\u{5173}\u{7cfb}\u{7684}\u{623f}\u{95f4}\u{ff0c}\u{6309}\u{6700}\u{8fd1}\u{53d8}\u{66f4}\u{6392}\u{5e8f}".into(),
+        );
+        m.insert(
+            "users.room".into(),
+            "\u{623f}\u{95f4}".into(),
+        );
+        m.insert(
+            "users.membership".into(),
+            "\u{6210}\u{5458}\u{72b6}\u{6001}".into(),
+        );
+        m.insert(
+            "users.membership_sender".into(),
+            "\u{64cd}\u{4f5c}\u{8005}".into(),
+        );
+        m.insert(
+            "users.updated".into(),
+            "\u{66f4}\u{65b0}\u{65f6}\u{95f4}".into(),
         );
         m.insert(
             "users.create".into(),

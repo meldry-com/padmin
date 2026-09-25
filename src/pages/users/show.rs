@@ -1,11 +1,12 @@
 use dioxus::prelude::*;
 
 use crate::api::{pasion, users};
+use crate::components::deactivate_user_dialog::{DeactivateUserDialog, show_account_change_toast};
 use crate::components::experimental_features::ExperimentalFeatures;
 use crate::components::ui::badge::{Badge, BadgeVariant};
 use crate::components::ui::button::{Button, ButtonVariant};
 use crate::components::ui::card::*;
-use crate::components::ui::dialog::{ConfirmDialog, Modal};
+use crate::components::ui::dialog::Modal;
 use crate::components::ui::icons::Icon;
 use crate::components::ui::input::{Input, Label};
 use crate::components::ui::loading::{LoadingSkeleton, PageSkeleton};
@@ -72,6 +73,7 @@ pub fn UserShow(user_id: String) -> Element {
                     let user_id_str = user.id.clone();
                     let uid_for_actions = user_id_str.clone();
                     let uid_for_deactivate = user_id_str.clone();
+                    let uid_for_reactivate = user_id_str.clone();
                     let uid_for_tabs = user_id_str.clone();
                     let uid_for_edit = user_id_str.clone();
                     let uid_for_reset_pw = user_id_str.clone();
@@ -151,6 +153,26 @@ pub fn UserShow(user_id: String) -> Element {
                                         variant: ButtonVariant::Outline,
                                         onclick: move |_| show_deactivate_dialog.set(true),
                                         {t("users.deactivate")}
+                                    }
+                                } else {
+                                    Button {
+                                        variant: ButtonVariant::Outline,
+                                        onclick: {
+                                            let uid = uid_for_reactivate.clone();
+                                            move |_| {
+                                                let uid = uid.clone();
+                                                spawn(async move {
+                                                    match users::reactivate_account(&uid).await {
+                                                        Ok(owner) => {
+                                                            show_account_change_toast(&uid, false, owner);
+                                                            user_data.restart();
+                                                        }
+                                                        Err(e) => show_toast(&format!("Failed: {}", e.message), ToastVariant::Error),
+                                                    }
+                                                });
+                                            }
+                                        },
+                                        {t("users.reactivate")}
                                     }
                                 }
                             }
@@ -501,19 +523,16 @@ pub fn UserShow(user_id: String) -> Element {
                         }
 
                         // Deactivate dialog
-                        ConfirmDialog {
+                        DeactivateUserDialog {
                             open: *show_deactivate_dialog.read(),
-                            title: t("users.deactivate_user"),
-                            description: format!("Are you sure you want to deactivate {}? This will log the user out of all sessions.", uid_for_deactivate),
-                            confirm_text: t("users.deactivate"),
-                            destructive: true,
-                            on_confirm: move |_| {
+                            user_ids: vec![uid_for_deactivate.clone()],
+                            on_confirm: move |erase: bool| {
                                 let uid = uid_for_actions.clone();
                                 show_deactivate_dialog.set(false);
                                 spawn(async move {
-                                    match users::deactivate_user(&uid, false).await {
-                                        Ok(_) => {
-                                            show_toast("User deactivated", ToastVariant::Success);
+                                    match users::deactivate_account(&uid, erase).await {
+                                        Ok(owner) => {
+                                            show_account_change_toast(&uid, true, owner);
                                             user_data.restart();
                                         }
                                         Err(e) => show_toast(&format!("Failed: {}", e.message), ToastVariant::Error),

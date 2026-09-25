@@ -27,6 +27,10 @@ pub enum Route {
         UserList {},
         #[route("/users/create")]
         UserCreate {},
+        #[route("/users/known")]
+        KnownUserList {},
+        #[route("/users/known/:user_id")]
+        KnownUserShow { user_id: String },
         #[route("/users/:user_id")]
         UserShow { user_id: String },
 
@@ -264,6 +268,20 @@ fn UserCreate() -> Element {
 fn UserShow(user_id: String) -> Element {
     rsx! {
         pages::users::show::UserShow { user_id }
+    }
+}
+
+#[component]
+fn KnownUserList() -> Element {
+    rsx! {
+        pages::users::known::KnownUserList {}
+    }
+}
+
+#[component]
+fn KnownUserShow(user_id: String) -> Element {
+    rsx! {
+        pages::users::known_show::KnownUserShow { user_id }
     }
 }
 
