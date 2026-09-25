@@ -47,6 +47,9 @@ async fn pasion_fetch<T: DeserializeOwned>(
         if err.status == 401 && crate::api::auth::handle_unauthorized().await {
             return raw_fetch::<T, _>(&url, method, body, format_pasion_error).await;
         }
+        if err.status == 403 {
+            crate::api::auth::handle_forbidden();
+        }
     }
 
     result

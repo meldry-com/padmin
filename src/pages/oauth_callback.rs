@@ -48,13 +48,10 @@ pub fn OAuthCallback(
                 return;
             }
 
-            // Step 2: Best-effort admin check. We always navigate to the
-            // dashboard so the user lands somewhere recognizable; individual
-            // admin pages will surface their own permission errors if the
-            // user isn't actually an admin. This avoids dead-ending users
-            // who just logged in via an upstream provider and aren't yet a
-            // Matrix admin.
-            let _ = auth::verify_admin().await;
+            // Step 2: Forget any verdict from a previous login in this tab;
+            // `AuthenticatedLayout` probes the servers for the new user and
+            // shows the "not authorized" page unless they are an admin.
+            crate::router::reset_admin_cache();
             processing.set(false);
             nav.replace(Route::Dashboard {});
         });

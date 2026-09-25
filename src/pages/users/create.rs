@@ -38,6 +38,9 @@ pub fn UserCreate() -> Element {
     let mut display_name = use_signal(|| String::new());
     let mut password = use_signal(|| String::new());
     let mut is_admin = use_signal(|| false);
+    // With Pasion the admin flag is owned by the Pasion account (palpo
+    // refuses local changes), so it can't be set when creating here.
+    let has_pasion = crate::utils::storage::get_item("pasion_url").is_some();
     let mut is_locked = use_signal(|| false);
     let mut email = use_signal(|| String::new());
     let mut phone = use_signal(|| String::new());
@@ -77,7 +80,7 @@ pub fn UserCreate() -> Element {
         let user = username.read().clone();
         let name = display_name.read().clone();
         let pass = password.read().clone();
-        let admin = *is_admin.read();
+        let admin = !has_pasion && *is_admin.read();
         let locked = *is_locked.read();
         let utype = user_type.read().clone();
         let email_val = email.read().clone();
@@ -302,18 +305,20 @@ pub fn UserCreate() -> Element {
                             }
 
                             div { class: "form-span-full responsive-option-grid",
-                                div { class: "setting-toggle",
-                                    input {
-                                        r#type: "checkbox",
-                                        id: "admin",
-                                        class: "mt-1 h-4 w-4 rounded border-input",
-                                        checked: *is_admin.read(),
-                                        onchange: move |evt: FormEvent| {
-                                            is_admin.set(evt.value() == "true");
-                                        },
-                                    }
-                                    div { class: "flex-1",
-                                        Label { r#for: "admin".to_string(), {t("users.admin_privileges")} }
+                                if !has_pasion {
+                                    div { class: "setting-toggle",
+                                        input {
+                                            r#type: "checkbox",
+                                            id: "admin",
+                                            class: "mt-1 h-4 w-4 rounded border-input",
+                                            checked: *is_admin.read(),
+                                            onchange: move |evt: FormEvent| {
+                                                is_admin.set(evt.value() == "true");
+                                            },
+                                        }
+                                        div { class: "flex-1",
+                                            Label { r#for: "admin".to_string(), {t("users.admin_privileges")} }
+                                        }
                                     }
                                 }
 
