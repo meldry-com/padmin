@@ -59,10 +59,17 @@ fn download_csv(filename: &str, content: &str) {
 }
 
 fn escape_csv_field(field: &str) -> String {
-    if field.contains(',') || field.contains('"') || field.contains('\n') {
-        format!("\"{}\"", field.replace('"', "\"\""))
+    // A leading = + - @ (or tab / CR) makes spreadsheets evaluate the cell as
+    // a formula; display names are user-controlled.
+    let field = if field.starts_with(['=', '+', '-', '@', '\t', '\r']) {
+        format!("'{field}")
     } else {
         field.to_string()
+    };
+    if field.contains(',') || field.contains('"') || field.contains('\n') || field.contains('\r') {
+        format!("\"{}\"", field.replace('"', "\"\""))
+    } else {
+        field
     }
 }
 

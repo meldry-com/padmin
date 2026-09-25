@@ -534,11 +534,11 @@ pub async fn verify_admin() -> Result<bool, HttpError> {
     if !probe_admin_endpoint("/_palpo/admin/v1/server_version").await? {
         return Ok(false);
     }
-    if let Some(base) = storage::get_item("pasion_url") {
-        let url = format!("{}/api/admin/v1/version", base.trim_end_matches('/'));
-        return probe_admin_endpoint(&url).await;
-    }
-    Ok(true)
+    let base = storage::get_item("pasion_url")
+        .or_else(|| web_sys::window().and_then(|w| w.location().origin().ok()))
+        .ok_or_else(|| make_err("Pasion URL is not configured".into()))?;
+    let url = format!("{}/api/admin/v1/version", base.trim_end_matches('/'));
+    probe_admin_endpoint(&url).await
 }
 
 async fn probe_admin_endpoint(url: &str) -> Result<bool, HttpError> {
@@ -555,7 +555,21 @@ async fn probe_admin_endpoint(url: &str) -> Result<bool, HttpError> {
             .map_err(|e| make_err(e.to_string()))?;
 
         match response.status() {
-            200 => return Ok(true),
+            200 => {
+                let is_json = response
+                    .headers()
+                    .get("content-type")
+                    .is_some_and(|ct| ct.contains("json"));
+                let body = response.text().await.unwrap_or_default();
+                let is_object = serde_json::from_str::<serde_json::Value>(&body)
+                    .is_ok_and(|v| v.is_object());
+                if is_json && is_object {
+                    return Ok(true);
+                }
+                return Err(make_err(format!(
+                    "admin probe {url}: unexpected non-JSON response (is the admin API proxied?)"
+                )));
+            }
             403 => return Ok(false),
             401 if !refreshed && handle_unauthorized().await => refreshed = true,
             status => {
@@ -568,23 +582,36 @@ async fn probe_admin_endpoint(url: &str) -> Result<bool, HttpError> {
 
 thread_local! {
     static REVERIFYING: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+    /// Set when another re-verification was requested while one was in
+    /// flight; that probe may have started before the revocation landed.
+    static REVERIFY_AGAIN: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
 }
 
-/// Called by the API clients whenever a backend answers 403.
+/// Called by the API clients whenever a backend answers 403, and
+/// periodically by the authenticated layout.
 ///
 /// The user's admin flag may have been revoked mid-session. Re-probe in the
-/// background (at most one probe in flight) and drop the dashboard as soon
-/// as the servers say the user is no longer an administrator. A 403 caused
-/// by something else (e.g. a refused action) leaves the verdict untouched.
+/// background (at most one probe in flight, re-run if more requests arrived
+/// meanwhile) and drop the dashboard as soon as the servers say the user is
+/// no longer an administrator. A 403 caused by something else (e.g. a
+/// refused action) leaves the verdict untouched.
 pub fn handle_forbidden() {
     if REVERIFYING.with(|flag| flag.replace(true)) {
+        REVERIFY_AGAIN.with(|flag| flag.set(true));
         return;
     }
     // Spawned on the root scope so it survives the page that got the 403 and
     // runs inside the Dioxus runtime (it writes a GlobalSignal).
     dioxus::dioxus_core::spawn_forever(async {
-        if let Ok(false) = verify_admin().await {
-            crate::router::set_admin_verdict(false);
+        loop {
+            REVERIFY_AGAIN.with(|flag| flag.set(false));
+            if let Ok(false) = verify_admin().await {
+                crate::router::set_admin_verdict(false);
+                break;
+            }
+            if !REVERIFY_AGAIN.with(|flag| flag.replace(false)) {
+                break;
+            }
         }
         REVERIFYING.with(|flag| flag.set(false));
     });

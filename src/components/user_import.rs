@@ -55,6 +55,9 @@ pub fn UserImport(on_import_complete: EventHandler<()>) -> Element {
 
         importing.set(true);
         let on_import_complete = on_import_complete.clone();
+        // With Pasion the admin flag is owned by the Pasion account (palpo
+        // refuses local changes), so the `admin` column is ignored.
+        let has_pasion = crate::utils::storage::get_item("pasion_url").is_some();
 
         spawn(async move {
             let mut created = 0usize;
@@ -75,7 +78,7 @@ pub fn UserImport(on_import_complete: EventHandler<()>) -> Element {
                     } else {
                         Some(line.displayname.clone())
                     },
-                    admin: line.admin,
+                    admin: !has_pasion && line.admin,
                     deactivated: Some(line.deactivated),
                     ..Default::default()
                 };

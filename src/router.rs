@@ -147,6 +147,17 @@ fn AuthenticatedLayout() -> Element {
         };
     }
 
+    // Re-check periodically too: a revoked admin who only uses pages that
+    // keep answering (or sits idle) must not keep the dashboard open.
+    use_future(|| async {
+        loop {
+            gloo_timers::future::sleep(std::time::Duration::from_secs(60)).await;
+            if *ADMIN_VERDICT.peek() == Some(true) {
+                auth::handle_forbidden();
+            }
+        }
+    });
+
     let mut probe = use_resource(move || async move {
         // Already decided this session — don't re-probe on navigation.
         if ADMIN_VERDICT.peek().is_some() {
