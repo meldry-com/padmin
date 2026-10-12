@@ -4,12 +4,19 @@ set -eu
 BACKEND_MATRIX="${PALPO_URL:-$MATRIX_URL}"
 PADMIN_PORT="${PADMIN_PORT:-80}"
 PADMIN_BASE_PATH="${PADMIN_BASE_PATH:-}"
-# Restrict this public mount to the two supported modes. It is interpolated
-# into nginx, JavaScript and sed expressions below.
-case "$PADMIN_BASE_PATH" in
-    ""|/admin) ;;
-    *) echo 'PADMIN_BASE_PATH must be empty or /admin' >&2; exit 1 ;;
-esac
+PADMIN_PASION_BASE_PATH="${PADMIN_PASION_BASE_PATH:-}"
+# These paths are interpolated into nginx, JavaScript and sed expressions.
+# Accept nested URL segments without permitting directives or regex syntax.
+normalize_mount() {
+    mount="${1%/}"
+    if [ -n "$mount" ] && ! printf '%s' "$mount" | grep -Eq '^(/[A-Za-z0-9_-]+)+$'; then
+        echo 'Mount paths must be empty or slash-separated letters, digits, underscores and hyphens' >&2
+        exit 1
+    fi
+    printf '%s' "$mount"
+}
+PADMIN_BASE_PATH="$(normalize_mount "$PADMIN_BASE_PATH")"
+PADMIN_PASION_BASE_PATH="$(normalize_mount "$PADMIN_PASION_BASE_PATH")"
 RESOLVERS="$(awk '/^nameserver / { print $2 }' /etc/resolv.conf | paste -sd ' ' -)"
 LOOKUP_UNAVAILABLE=0
 
@@ -93,7 +100,7 @@ for file in /usr/share/nginx/html/index.html /usr/share/nginx/html/assets/*.js; 
     sed -e "s@/\./assets/@/assets/@g" \
         -e "s@/assets/@${PADMIN_BASE_PATH}/assets/@g" "$file.original" > "$file"
 done
-printf "window.PADMIN_BASE_PATH='%s';\n" "$PADMIN_BASE_PATH" > /usr/share/nginx/html/runtime-config.js
+printf "window.PADMIN_BASE_PATH='%s';window.PADMIN_PASION_BASE_PATH='%s';\n" "$PADMIN_BASE_PATH" "$PADMIN_PASION_BASE_PATH" > /usr/share/nginx/html/runtime-config.js
 sed -i "s@</head>@<script src='${PADMIN_BASE_PATH}/runtime-config.js'></script></head>@" /usr/share/nginx/html/index.html
 printf '{"pasion_public_url":"%s","oauth_client_id":"%s"}' \
     "$PASION_PUBLIC_URL" "$PADMIN_OAUTH_CLIENT_ID" \
@@ -128,6 +135,9 @@ EOF
 
 if [ -n "$PASION_URL" ]; then
     if can_resolve_url_host "$PASION_URL"; then
+        if [ -n "$PADMIN_PASION_BASE_PATH" ] && [ "$PADMIN_PASION_BASE_PATH" != /auth ]; then
+            write_proxy_location "${PADMIN_PASION_BASE_PATH}/" "$PASION_URL"
+        fi
         write_proxy_location "/auth/" "$PASION_URL"
         write_proxy_location "/api/v1/auth/" "$PASION_URL"
         write_proxy_location "/api/admin/" "$PASION_URL" "\$http_authorization"
@@ -141,6 +151,9 @@ if [ -n "$PASION_URL" ]; then
     set \$pasion_backend ${PASION_URL};
 EOF
         write_dynamic_proxy_location "/auth/" "pasion_backend"
+        if [ -n "$PADMIN_PASION_BASE_PATH" ] && [ "$PADMIN_PASION_BASE_PATH" != /auth ]; then
+            write_dynamic_proxy_location "${PADMIN_PASION_BASE_PATH}/" "pasion_backend"
+        fi
         write_dynamic_proxy_location "/api/v1/auth/" "pasion_backend"
         write_dynamic_proxy_location "/api/admin/" "pasion_backend" "\$http_authorization"
         write_dynamic_proxy_location "/authorize" "pasion_backend"
@@ -168,22 +181,26 @@ EOF
     write_dynamic_proxy_location "/_synapse/" "matrix_backend"
 fi
 
+if [ -n "$PADMIN_BASE_PATH" ]; then
 cat >> /etc/nginx/conf.d/default.conf <<EOF
-    location = /admin {
-        return 308 /admin/\$is_args\$args;
+    location = ${PADMIN_BASE_PATH} {
+        return 308 ${PADMIN_BASE_PATH}/\$is_args\$args;
     }
 
-    location ^~ /admin/assets/ {
+    location ^~ ${PADMIN_BASE_PATH}/assets/ {
         alias /usr/share/nginx/html/assets/;
         expires 1y;
     }
 
-    location ^~ /admin/ {
-        rewrite ^/admin/(.*)\$ /\$1 break;
+    location ^~ ${PADMIN_BASE_PATH}/ {
+        rewrite ^${PADMIN_BASE_PATH}/(.*)\$ /\$1 break;
         try_files \$uri \$uri/ /index.html;
         expires -1;
     }
+EOF
+fi
 
+cat >> /etc/nginx/conf.d/default.conf <<EOF
     location ~* \.(wasm|js|css|png|jpg|ico|svg)$ {
         expires 1y;
         add_header Cache-Control "public, immutable";

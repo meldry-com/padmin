@@ -12,8 +12,8 @@ fn main() {
 
     components::theme::apply_theme();
 
-    // Pasion admin API uses /auth/api/admin/ in mounted deployments and
-    // /api/admin/ in standalone deployments. Pin its same-origin base so all
+    // Pasion admin API uses the configured PADMIN_PASION_BASE_PATH, or the
+    // original root proxy when empty. Pin its same-origin base so all
     // Pasion admin features (upstream OIDC providers, sessions, audit log,
     // etc.) are reachable and their sidebar entries become visible on every
     // load — not only on the login page.

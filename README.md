@@ -144,7 +144,8 @@ See [LICENSE](LICENSE) for details.
 
 ## Hosting under `/admin`
 
-Set `PADMIN_BASE_PATH=/admin` and `PASION_PUBLIC_URL=https://YOUR_WORKSPACE/auth`.
+Set `PADMIN_BASE_PATH=/admin`, `PADMIN_PASION_BASE_PATH=/auth` and
+`PASION_PUBLIC_URL=https://YOUR_WORKSPACE/auth`.
 The edge proxy must preserve `/admin/` when forwarding to Padmin (port 8080
 by default), and preserve `/auth/` when forwarding to Pasion. Configure the
 Pasion listener with `prefix: /auth`, set `http.public_base` and `http.issuer`
@@ -153,7 +154,14 @@ to `https://YOUR_WORKSPACE/auth/`, and register the Padmin callback as
 
 Matrix routes (`/_matrix/`, `/_palpo/`) stay on the workspace origin and point
 to Palpo. Padmin loads its runtime configuration, JS, WASM and static assets
-under `/admin/`. Empty `PADMIN_BASE_PATH` retains standalone root hosting.
+under `/admin/`. Empty `PADMIN_BASE_PATH` and `PADMIN_PASION_BASE_PATH` retain standalone
+root hosting and its original proxy endpoints. Both mount variables support
+other paths, including nested paths such as `/console/manage` and `/identity`.
+Match the Pasion listener prefix, public URL, issuer and OAuth callback to those
+configured paths; the edge proxy must preserve the prefixes.
+
+Override `PADMIN_MOUNT_PATH` and `PASION_MOUNT_PATH` in the tests to cover custom
+mounts, or set both to empty strings to cover standalone root hosting.
 
 Verify a running isolated stack with
 `PADMIN_MOUNT_TEST_URL=http://127.0.0.1:17060 npx playwright test -c playwright.mount.config.ts`.

@@ -56,11 +56,11 @@ pub fn app_path(path: &str) -> String {
 }
 
 pub fn pasion_proxy_base(origin: &str) -> String {
-    if base_path().is_empty() {
-        origin.to_string()
-    } else {
-        format!("{origin}/auth")
-    }
+    let prefix = web_sys::window()
+        .and_then(|window| js_sys::Reflect::get(&window, &"PADMIN_PASION_BASE_PATH".into()).ok())
+        .and_then(|value| value.as_string())
+        .unwrap_or_default();
+    format!("{origin}{}", prefix.trim_end_matches('/'))
 }
 
 /// Get the Pasion public URL. Falls back to same-origin /authorize if not configured.
