@@ -132,7 +132,8 @@ async fn send_bearer_get(url: &str, access_token: &str) -> Result<TextResponse, 
 }
 
 async fn send_oauth_form_request(path: &str, body: &str) -> Result<TextResponse, HttpError> {
-    match send_form_post(path, body).await {
+    let proxy_path = format!("{}{path}", crate::utils::config::pasion_proxy_base(""));
+    match send_form_post(&proxy_path, body).await {
         Ok(response) if response.status < 500 => Ok(response),
         Ok(proxy_response) => {
             let Some(public_url) = oauth_public_url(path) else {
@@ -292,7 +293,10 @@ pub async fn start_oauth_login() -> Result<(), HttpError> {
         let origin = location
             .origin()
             .map_err(|e| js_err("window.location.origin unavailable", e))?;
-        format!("{origin}/oauth/callback")
+        format!(
+            "{origin}{}",
+            crate::utils::config::app_path("/oauth/callback")
+        )
     };
 
     // Use Pasion's public URL for the browser redirect.
@@ -369,7 +373,10 @@ pub async fn handle_oauth_callback(
             .location()
             .origin()
             .map_err(|e| js_err("window.location.origin unavailable", e))?;
-        format!("{origin}/oauth/callback")
+        format!(
+            "{origin}{}",
+            crate::utils::config::app_path("/oauth/callback")
+        )
     };
 
     // Token exchange
@@ -561,8 +568,8 @@ async fn probe_admin_endpoint(url: &str) -> Result<bool, HttpError> {
                     .get("content-type")
                     .is_some_and(|ct| ct.contains("json"));
                 let body = response.text().await.unwrap_or_default();
-                let is_object = serde_json::from_str::<serde_json::Value>(&body)
-                    .is_ok_and(|v| v.is_object());
+                let is_object =
+                    serde_json::from_str::<serde_json::Value>(&body).is_ok_and(|v| v.is_object());
                 if is_json && is_object {
                     return Ok(true);
                 }
@@ -639,7 +646,11 @@ pub async fn logout() -> Result<(), HttpError> {
     // POST /api/v1/auth/logout (proxied to pasion same-origin via nginx)
     // clears pasion's `mas_session` cookie, forcing a fresh login next
     // time.
-    let _ = Request::post("/api/v1/auth/logout")
+    let logout_url = format!(
+        "{}/api/v1/auth/logout",
+        crate::utils::config::pasion_proxy_base("")
+    );
+    let _ = Request::post(&logout_url)
         .header("Accept", "application/json")
         .send()
         .await;

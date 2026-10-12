@@ -59,6 +59,7 @@ ENV PASION_URL=""
 ENV PASION_PUBLIC_URL=""
 ENV PADMIN_OAUTH_CLIENT_ID=""
 ENV PADMIN_PORT="8080"
+ENV PADMIN_BASE_PATH=""
 
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD wget -q --spider "http://127.0.0.1:${PADMIN_PORT:-8080}/healthz" || exit 1

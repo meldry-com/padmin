@@ -3,6 +3,13 @@ set -eu
 
 BACKEND_MATRIX="${PALPO_URL:-$MATRIX_URL}"
 PADMIN_PORT="${PADMIN_PORT:-80}"
+PADMIN_BASE_PATH="${PADMIN_BASE_PATH:-}"
+# Restrict this public mount to the two supported modes. It is interpolated
+# into nginx, JavaScript and sed expressions below.
+case "$PADMIN_BASE_PATH" in
+    ""|/admin) ;;
+    *) echo 'PADMIN_BASE_PATH must be empty or /admin' >&2; exit 1 ;;
+esac
 RESOLVERS="$(awk '/^nameserver / { print $2 }' /etc/resolv.conf | paste -sd ' ' -)"
 LOOKUP_UNAVAILABLE=0
 
@@ -79,6 +86,15 @@ EOF
 }
 
 PADMIN_OAUTH_CLIENT_ID="${PADMIN_OAUTH_CLIENT_ID:-}"
+# Keep pristine files so container restarts never double-prefix asset URLs.
+for file in /usr/share/nginx/html/index.html /usr/share/nginx/html/assets/*.js; do
+    [ -f "$file" ] || continue
+    [ -f "$file.original" ] || cp "$file" "$file.original"
+    sed -e "s@/\./assets/@/assets/@g" \
+        -e "s@/assets/@${PADMIN_BASE_PATH}/assets/@g" "$file.original" > "$file"
+done
+printf "window.PADMIN_BASE_PATH='%s';\n" "$PADMIN_BASE_PATH" > /usr/share/nginx/html/runtime-config.js
+sed -i "s@</head>@<script src='${PADMIN_BASE_PATH}/runtime-config.js'></script></head>@" /usr/share/nginx/html/index.html
 printf '{"pasion_public_url":"%s","oauth_client_id":"%s"}' \
     "$PASION_PUBLIC_URL" "$PADMIN_OAUTH_CLIENT_ID" \
     > /usr/share/nginx/html/config.json
@@ -98,12 +114,15 @@ server {
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
     add_header Permissions-Policy "accelerometer=(), camera=(), geolocation=(), microphone=(), payment=(), usb=()" always;
     add_header Cross-Origin-Opener-Policy "same-origin" always;
-    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' ${PASION_PUBLIC_URL}; frame-ancestors 'none'; base-uri 'self'; form-action 'self'" always;
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' ${PASION_PUBLIC_URL}; frame-ancestors 'none'; base-uri 'self'; form-action 'self'" always;
 
     location = /healthz {
         access_log off;
         default_type text/plain;
         return 200 'ok';
+    }
+    location = /runtime-config.js {
+        expires -1;
     }
 EOF
 
@@ -150,6 +169,21 @@ EOF
 fi
 
 cat >> /etc/nginx/conf.d/default.conf <<EOF
+    location = /admin {
+        return 308 /admin/\$is_args\$args;
+    }
+
+    location ^~ /admin/assets/ {
+        alias /usr/share/nginx/html/assets/;
+        expires 1y;
+    }
+
+    location ^~ /admin/ {
+        rewrite ^/admin/(.*)\$ /\$1 break;
+        try_files \$uri \$uri/ /index.html;
+        expires -1;
+    }
+
     location ~* \.(wasm|js|css|png|jpg|ico|svg)$ {
         expires 1y;
         add_header Cache-Control "public, immutable";

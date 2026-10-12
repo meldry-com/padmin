@@ -32,9 +32,34 @@ pub struct RuntimeConfig {
 }
 
 pub async fn load_runtime_config() -> RuntimeConfig {
-    match gloo_net::http::Request::get("/config.json").send().await {
+    match gloo_net::http::Request::get(&app_path("/config.json"))
+        .send()
+        .await
+    {
         Ok(resp) => resp.json::<RuntimeConfig>().await.unwrap_or_default(),
         Err(_) => RuntimeConfig::default(),
+    }
+}
+
+/// The container injects the mount path before the WASM module loads.
+pub fn base_path() -> String {
+    web_sys::window()
+        .and_then(|window| js_sys::Reflect::get(&window, &"PADMIN_BASE_PATH".into()).ok())
+        .and_then(|value| value.as_string())
+        .unwrap_or_default()
+        .trim_end_matches('/')
+        .to_string()
+}
+
+pub fn app_path(path: &str) -> String {
+    format!("{}{path}", base_path())
+}
+
+pub fn pasion_proxy_base(origin: &str) -> String {
+    if base_path().is_empty() {
+        origin.to_string()
+    } else {
+        format!("{origin}/auth")
     }
 }
 

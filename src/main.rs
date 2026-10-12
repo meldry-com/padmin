@@ -12,13 +12,13 @@ fn main() {
 
     components::theme::apply_theme();
 
-    // Pasion admin API is served through the same-origin Nginx proxy at
-    // /api/admin/. Pin `pasion_url` to the current window origin so all
+    // Pasion admin API uses /auth/api/admin/ in mounted deployments and
+    // /api/admin/ in standalone deployments. Pin its same-origin base so all
     // Pasion admin features (upstream OIDC providers, sessions, audit log,
     // etc.) are reachable and their sidebar entries become visible on every
     // load — not only on the login page.
     if let Some(origin) = web_sys::window().and_then(|w| w.location().origin().ok()) {
-        utils::storage::set_item("pasion_url", &origin);
+        utils::storage::set_item("pasion_url", &utils::config::pasion_proxy_base(&origin));
 
         // The palpo_admin sidecar (server status, scheduled commands,
         // instance config, …) is reachable through the same-origin Nginx proxy

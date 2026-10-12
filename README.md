@@ -141,3 +141,19 @@ examples/
 ## License
 
 See [LICENSE](LICENSE) for details.
+
+## Hosting under `/admin`
+
+Set `PADMIN_BASE_PATH=/admin` and `PASION_PUBLIC_URL=https://YOUR_WORKSPACE/auth`.
+The edge proxy must preserve `/admin/` when forwarding to Padmin (port 8080
+by default), and preserve `/auth/` when forwarding to Pasion. Configure the
+Pasion listener with `prefix: /auth`, set `http.public_base` and `http.issuer`
+to `https://YOUR_WORKSPACE/auth/`, and register the Padmin callback as
+`https://YOUR_WORKSPACE/admin/oauth/callback`.
+
+Matrix routes (`/_matrix/`, `/_palpo/`) stay on the workspace origin and point
+to Palpo. Padmin loads its runtime configuration, JS, WASM and static assets
+under `/admin/`. Empty `PADMIN_BASE_PATH` retains standalone root hosting.
+
+Verify a running isolated stack with
+`PADMIN_MOUNT_TEST_URL=http://127.0.0.1:17060 npx playwright test -c playwright.mount.config.ts`.

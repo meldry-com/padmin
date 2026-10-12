@@ -104,8 +104,12 @@ pub enum Route {
 
 #[component]
 pub fn AppRouter() -> Element {
+    let prefix = crate::utils::config::base_path();
     rsx! {
-        Router::<Route> {}
+        dioxus::router::components::HistoryProvider {
+            history: move |_: ()| std::rc::Rc::new(dioxus::web::WebHistory::new(Some(prefix.clone()), true)) as std::rc::Rc<dyn dioxus::history::History>,
+            Router::<Route> {}
+        }
     }
 }
 
