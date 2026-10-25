@@ -154,4 +154,4 @@ docker compose down
 docker compose down -v
 ```
 
-Stage the prebuilt Glory context with `scripts/package-container.ps1` before compose. `PADMIN_BUILD_CONTEXT` defaults to `D:/BuildCache/padmin-glory-branch/container`; set it explicitly for another verified build host. Never run compose --build against C-backed Docker build storage.
+Stage the prebuilt Glory context with `scripts/package-container.ps1` before compose. `PADMIN_BUILD_CONTEXT` defaults to `D:/BuildCache/meldry-visual-20261025/padmin/container`; set it explicitly for another verified build host. Never run compose --build against C-backed Docker build storage.

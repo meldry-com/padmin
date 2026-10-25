@@ -109,21 +109,50 @@ fn list(scope: &glory::ui::Scope) -> glory::ui::View {
         })
     };
     load();
-    let mut out = w::page("Rooms").fill((
-        search_input,
-        metadata_column,
-        page_options(size, page, busy, "rooms.size", load.clone()),
-        w::status(message),
-        w::action("Search / refresh", {
-            let load = load.clone();
-            move || {
-                if !busy.get() {
-                    write(page, 1);
-                    write(applied_search, search.get());
-                    load();
+    let create_open = scope.cage(false);
+    let columns_open = scope.cage(false);
+    let create_scope = scope.clone();
+    let mut out = w::page("Rooms").class("page list-page rooms-list").fill((
+        w::label("Manage rooms on your server").class("page-description"),
+        view()
+            .class("page-actions")
+            .fill(w::action("Create room", move || {
+                create_open.revise(|v| *v = !*v)
+            })),
+        view().class("list-toolbar").fill((
+            search_input,
+            page_options(size, page, busy, "rooms.size", load.clone()),
+            w::action("Search / refresh", {
+                let load = load.clone();
+                move || {
+                    if !busy.get() {
+                        write(page, 1);
+                        write(applied_search, search.get());
+                        load();
+                    }
                 }
-            }
-        }),
+            }),
+            w::action("Columns", move || columns_open.revise(|v| *v = !*v)),
+        )),
+        view()
+            .class(columns_open.map(|open| {
+                if *open {
+                    "columns-menu".into()
+                } else {
+                    "bulk-hidden".into()
+                }
+            }))
+            .fill(metadata_column),
+        w::status(message),
+        w::modal(
+            "create-room",
+            "Create room",
+            create_open,
+            view().class("operation-form").fill((
+                create_panel(&create_scope),
+                w::action("Cancel create room", move || write(create_open, false)),
+            )),
+        ),
     ));
     for (label, key) in [
         ("Sort by room name", "name"),
@@ -156,54 +185,65 @@ fn list(scope: &glory::ui::Scope) -> glory::ui::View {
         ("Delete selected rooms", true),
         ("Block selected rooms", false),
     ] {
-        out = out.fill(operation(
-            scope,
-            caption,
-            busy,
-            message,
-            Some("Apply this operation to every selected room? Room deletion cannot be undone."),
-            move || {
-                let ids = selection.get();
-                async move {
-                    if ids.is_empty() {
-                        return Err(HttpError::message("Select at least one room"));
-                    }
-                    let mut succeeded = 0;
-                    let mut errors = Vec::new();
-                    for id in ids {
-                        let result = if deleting {
-                            api::delete_room(&id, false).await
+        out = out.fill(
+            operation(
+                scope,
+                caption,
+                busy,
+                message,
+                Some(
+                    "Apply this operation to every selected room? Room deletion cannot be undone.",
+                ),
+                move || {
+                    let ids = selection.get();
+                    async move {
+                        if ids.is_empty() {
+                            return Err(HttpError::message("Select at least one room"));
+                        }
+                        let mut succeeded = 0;
+                        let mut errors = Vec::new();
+                        for id in ids {
+                            let result = if deleting {
+                                api::delete_room(&id, false).await
+                            } else {
+                                api::block_room(&id, true).await
+                            };
+                            match result {
+                                Ok(()) => succeeded += 1,
+                                Err(error) => errors.push(format!("{id}: {error}")),
+                            }
+                        }
+                        let data = api::get_rooms(
+                            page.get(),
+                            size.get(),
+                            &order.get(),
+                            if descending.get() { "DESC" } else { "ASC" },
+                            &applied_search.get(),
+                        )
+                        .await?;
+                        write(rows, data.data);
+                        write(total, data.total);
+                        write(selection, Vec::new());
+                        if errors.is_empty() {
+                            Ok(format!("Applied to {succeeded} rooms; list refreshed"))
                         } else {
-                            api::block_room(&id, true).await
-                        };
-                        match result {
-                            Ok(()) => succeeded += 1,
-                            Err(error) => errors.push(format!("{id}: {error}")),
+                            Err(HttpError::message(format!(
+                                "Applied to {succeeded} rooms; {} failed: {}",
+                                errors.len(),
+                                errors.join("; ")
+                            )))
                         }
                     }
-                    let data = api::get_rooms(
-                        page.get(),
-                        size.get(),
-                        &order.get(),
-                        if descending.get() { "DESC" } else { "ASC" },
-                        &applied_search.get(),
-                    )
-                    .await?;
-                    write(rows, data.data);
-                    write(total, data.total);
-                    write(selection, Vec::new());
-                    if errors.is_empty() {
-                        Ok(format!("Applied to {succeeded} rooms; list refreshed"))
-                    } else {
-                        Err(HttpError::message(format!(
-                            "Applied to {succeeded} rooms; {} failed: {}",
-                            errors.len(),
-                            errors.join("; ")
-                        )))
-                    }
+                },
+            )
+            .class(selection.map(|ids| {
+                if ids.is_empty() {
+                    "bulk-hidden".into()
+                } else {
+                    "bulk-action".into()
                 }
-            },
-        ));
+            })),
+        );
     }
     out.fill((
         w::action("Select all rooms on this page", move || {
@@ -241,53 +281,109 @@ fn list(scope: &glory::ui::Scope) -> glory::ui::View {
                 }
             }
         }),
-        each(
-            visible,
-            |r| r.id.clone(),
-            move |row, _| {
-                view().class("record").fill((
-                    check()
-                        .label(row.map(|r| format!("Select room {}", r.id)))
-                        .checked(row.map(move |r| selection.with(|ids| ids.contains(&r.id))))
-                        .on(checked_changed, move |event| {
-                            if let Event::CheckedChanged(checked) = event {
-                                let id = row.get().id;
-                                selection.revise(|ids| {
-                                    ids.retain(|v| v != &id);
-                                    if checked {
-                                        ids.push(id);
-                                    }
-                                });
-                            }
-                        }),
-                    text().content(row.map(move |r| {
-                        if !show_metadata.get() {
-                            return format!(
-                                "{} · {}",
-                                r.room.name.as_deref().unwrap_or("Unnamed room"),
-                                r.id
+        view().class("table-container").fill((
+            each(
+                scope.bond(move || vec![visible.get()]),
+                |rows| serde_json::to_string(rows).unwrap_or_default(),
+                move |values, _| {
+                    widget(move |scope| {
+                        let mut body = sapid::table_body();
+                        for (index, row) in values.get().into_iter().enumerate() {
+                            let id = row.id.clone();
+                            let select_id = id.clone();
+                            let event_id = id.clone();
+                            let detail_id = id.clone();
+                            body = body.row(
+                                sapid::table_row(format!("room-{index}"))
+                                    .class("record")
+                                    .cell(sapid::table_cell("select").content(move || {
+                                        let id = select_id.clone();
+                                        let event_id = event_id.clone();
+                                        check()
+                                            .label(format!("Select room {id}"))
+                                            .checked(selection.map(move |ids| ids.contains(&id)))
+                                            .on(checked_changed, move |event| {
+                                                if let Event::CheckedChanged(value) = event {
+                                                    selection.revise(|ids| {
+                                                        ids.retain(|v| v != &event_id);
+                                                        if value {
+                                                            ids.push(event_id.clone())
+                                                        }
+                                                    })
+                                                }
+                                            })
+                                    }))
+                                    .cell(
+                                        sapid::table_cell("name").text(
+                                            row.room
+                                                .name
+                                                .clone()
+                                                .unwrap_or_else(|| "Unnamed room".into()),
+                                        ),
+                                    )
+                                    .cell(sapid::table_cell("id").text(id))
+                                    .cell(
+                                        sapid::table_cell("members").text(row.members.to_string()),
+                                    )
+                                    .cell(sapid::table_cell("status").text(show_metadata.map(
+                                        move |show| {
+                                            if *show {
+                                                format!(
+                                                    "{} {}",
+                                                    if row.is_encrypted {
+                                                        "Encrypted"
+                                                    } else if row.room.public {
+                                                        "Public"
+                                                    } else {
+                                                        "Private"
+                                                    },
+                                                    if row.room.is_blocked_effective() {
+                                                        "Blocked"
+                                                    } else {
+                                                        ""
+                                                    }
+                                                )
+                                            } else {
+                                                "—".into()
+                                            }
+                                        },
+                                    )))
+                                    .cell(sapid::table_cell("actions").content(move || {
+                                        let id = detail_id.clone();
+                                        w::action("Room details", move || {
+                                            crate::ui::navigate(&room_path(&id))
+                                        })
+                                    })),
                             );
                         }
-                        format!(
-                            "{} · {} · {} members · {}{}",
-                            r.room.name.as_deref().unwrap_or("Unnamed room"),
-                            r.id,
-                            r.members,
-                            if r.is_encrypted { "encrypted " } else { "" },
-                            if r.room.is_blocked_effective() {
-                                "blocked"
-                            } else {
-                                ""
-                            }
-                        )
-                    })),
-                    w::action("Room details", move || {
-                        crate::ui::navigate(&room_path(&row.get().id))
-                    }),
+                        let mut header = sapid::table_row("columns");
+                        for (key, label) in [
+                            ("select", ""),
+                            ("name", "Room name"),
+                            ("id", "Room ID"),
+                            ("members", "Members"),
+                            ("status", "Status"),
+                            ("actions", "Actions"),
+                        ] {
+                            header = header.cell(sapid::table_header_cell(key).text(label));
+                        }
+                        let mut table = sapid::table("rooms")
+                            .unstyled()
+                            .class("application-table")
+                            .head(sapid::table_head().row(header))
+                            .body(body);
+                        table.build(scope)
+                    })
+                },
+            ),
+            when(scope.bond(move || visible.with(Vec::is_empty)), || {
+                view().class("empty-table").fill((
+                    w::label("").class("empty-icon rooms-icon"),
+                    w::label("No rooms found").class("empty-title"),
+                    w::label("Try adjusting your search query.").class("empty-description"),
                 ))
-            },
-        ),
-        create_panel(scope),
+            }),
+        )),
     ))
 }
 fn create_panel(scope: &glory::ui::Scope) -> glory::ui::View {
@@ -359,7 +455,7 @@ fn detail(scope: &glory::ui::Scope, id: String) -> glory::ui::View {
         }
     };
     let first = load();
-    w::submit(scope, busy, message, first);
+    w::load_quiet(scope, busy, message, first);
     let mut out = w::page(&format!("Room {id}")).fill((
         w::status(info),
         w::status(message),

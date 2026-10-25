@@ -1,3 +1,5 @@
+> Visual restoration (2026-10-25): layouts were checked against the actual original app and rebuilt with official Glory/Sapid main. See the [visual verification record](docs/visual-migration-2026-10-25.md) for versions, coverage and reproducible commands.
+
 > The `glory` branch uses the local Glory and Sapid checkouts. See the [branch integration record](docs/glory-branch-integration.md) for current verification; the October 23 reports describe the earlier reference migration. Local build/test output stays on D:; Docker builds require verified D: or remote builder storage.
 
 # Palpo Admin
@@ -28,7 +30,7 @@ A web-based admin dashboard for [Palpo](https://github.com/palpo-im/palpo) Matri
 ## Prerequisites
 
 - [Rust](https://rustup.rs/) (latest stable)
-- wasm-bindgen CLI 0.2.129 (install under `D:/BuildCache/padmin-glory-branch/tools`)
+- wasm-bindgen CLI 0.2.129 (install under `D:/BuildCache/meldry-visual-20261025/padmin/tools`)
 - `wasm32-unknown-unknown` target: `rustup target add wasm32-unknown-unknown`
 
 ## Development
@@ -49,7 +51,7 @@ The dev server runs at `http://localhost:8080` by default.
 # Build the Docker image
 powershell -File scripts/package-container.ps1
 # After verifying D: or remote builder storage:
-docker build -t palpo-admin D:/BuildCache/padmin-glory-branch/container
+docker build -t palpo-admin D:/BuildCache/meldry-visual-20261025/padmin/container
 
 # Run on port 9090 — the container listens on 8080 by default because
 # the image uses the unprivileged nginx variant (nginxinc/nginx-unprivileged).
@@ -172,14 +174,14 @@ Verify a running isolated stack with
 
 ## Acceptance
 
-Set `WASM_BINDGEN=D:/BuildCache/padmin-glory-branch/tools/bin/wasm-bindgen.exe`, then build with `python scripts/glory.py build --dev` (omit `--dev` for release). Install the browser driver on D: with `npm install --prefix D:/BuildCache/padmin-glory-branch/runtime --cache D:/BuildCache/padmin-glory-branch/npm-cache --ignore-scripts playwright@1.63.0`. Tests use installed Microsoft Edge and keep browser profiles on D:.
+Set `WASM_BINDGEN=D:/BuildCache/meldry-visual-20261025/padmin/tools/bin/wasm-bindgen.exe`, then build with `python scripts/glory.py build --dev` (omit `--dev` for release). Install the browser driver on D: with `npm install --prefix D:/BuildCache/meldry-visual-20261025/padmin/runtime --cache D:/BuildCache/meldry-visual-20261025/padmin/npm-cache --ignore-scripts playwright@1.63.0`. Tests use installed Microsoft Edge and keep browser profiles on D:.
 
 - `npm test`: actual WASM protocol fixtures, authentication races, keyboard/IME/accessibility, responsive navigation and all domain write suites. It starts a static host if port 8789 is free. Every mutation must have a registered typed fixture.
 - `powershell -File scripts/start-real-stack.ps1`: optional isolated real integration prerequisites using existing Pasion/PostgreSQL binaries and an already cached Palpo image. It performs no image build or pull and never changes source checkouts.
 - `node scripts/real-server.cjs`, then `npm run test:real`: actual OAuth password/consent/PKCE, Matrix/Pasion administration, registration/email verification, two-user messaging and report persistence. Override `PADMIN_REAL_USERNAME`/`PADMIN_REAL_PASSWORD` for another isolated account.
-- `node scripts/nginx-acceptance.cjs`: production entrypoint/non-root nginx contracts against the prepared cached runtime container. `node scripts/native-nginx-acceptance.cjs --same-origin` additionally serves the actual D: JS/WASM through native nginx with root, `/admin` and `/console/manage` app mounts and `/auth` Pasion. This needs the prepared isolated integration services and official nginx 1.31.2 extracted under `D:/BuildCache/padmin-glory-branch/tools/nginx`.
+- `node scripts/nginx-acceptance.cjs`: production entrypoint/non-root nginx contracts against the prepared cached runtime container. `node scripts/native-nginx-acceptance.cjs --same-origin` additionally serves the actual D: JS/WASM through native nginx with root, `/admin` and `/console/manage` app mounts and `/auth` Pasion. This needs the prepared isolated integration services and official nginx 1.31.2 extracted under `D:/BuildCache/meldry-visual-20261025/padmin/tools/nginx`.
 
-The runners reject stale source/build hashes, missing WASM, mismatched served artifacts, missing evidence and nonzero suites. `D:/BuildCache/padmin-glory-branch/acceptance-results.json` binds suite exit codes and evidence paths to the actual WASM SHA-256. `test:source-baseline` retains the imported 18 suites as historical assertions; their old framework-specific selectors and storage-token injection are not the current test entry point. The mapping documents replacement checks and three explicit baseline/backend exceptions.
+The runners reject stale source/build hashes, missing WASM, mismatched served artifacts, missing evidence and nonzero suites. `D:/BuildCache/meldry-visual-20261025/padmin/acceptance-results.json` binds suite exit codes and evidence paths to the actual WASM SHA-256. `test:source-baseline` retains the imported 18 suites as historical assertions; their old framework-specific selectors and storage-token injection are not the current test entry point. The mapping documents replacement checks and three explicit baseline/backend exceptions.
 
 The development server in `glory.py serve` serves static output. `real-server.cjs` forwards same-origin APIs to configured `PALPO_URL`/`PASION_URL`. The nginx deployment supports configured app/auth prefixes while keeping CSP free of `unsafe-inline`; the small external Pasion configuration bridge parses public JSON without evaluation.
 

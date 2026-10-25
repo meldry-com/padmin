@@ -1,3 +1,5 @@
+> 2026-10-25 视觉修复：以实际旧页面为参照恢复布局，并使用官方 Glory/Sapid main。当前截图矩阵、版本和验收记录见[视觉修复报告](docs/visual-migration-2026-10-25.md)。
+
 > `glory` 分支已接入本地 Glory 与 Sapid，当前验证见[分支集成记录](docs/glory-branch-integration.md)。10 月 23 日的迁移报告保留为参考改写的历史证据。本地编译与测试输出均在 D 盘；Docker 构建器需使用 D 盘或远端存储。
 
 # Palpo Admin
@@ -28,7 +30,7 @@
 ## 前置要求
 
 - [Rust](https://rustup.rs/)（最新稳定版）
-- wasm-bindgen CLI 0.2.129（安装到 `D:/BuildCache/padmin-glory-branch/tools`）
+- wasm-bindgen CLI 0.2.129（安装到 `D:/BuildCache/meldry-visual-20261025/padmin/tools`）
 - `wasm32-unknown-unknown` 编译目标：`rustup target add wasm32-unknown-unknown`
 
 ## 开发
@@ -49,7 +51,7 @@ python scripts/glory.py build
 # 构建 Docker 镜像
 powershell -File scripts/package-container.ps1
 # 先核验 Docker builder 的实际数据位置在 D 盘或远端：
-docker build -t palpo-admin D:/BuildCache/padmin-glory-branch/container
+docker build -t palpo-admin D:/BuildCache/meldry-visual-20261025/padmin/container
 
 # 在 9090 端口运行
 docker run -p 9090:8080 -e PALPO_URL=http://your-palpo:8008 -e PASION_URL=http://your-pasion:7080 palpo-admin
@@ -118,14 +120,14 @@ examples/
 
 ## 验收与运行
 
-先设置 `WASM_BINDGEN=D:/BuildCache/padmin-glory-branch/tools/bin/wasm-bindgen.exe`，运行 `python scripts/glory.py build --dev`；正式发布去掉 `--dev`。浏览器驱动安装到 D 盘：`npm install --prefix D:/BuildCache/padmin-glory-branch/runtime --cache D:/BuildCache/padmin-glory-branch/npm-cache --ignore-scripts playwright@1.63.0`。测试使用已安装的 Microsoft Edge，profile 和报告均在 D 盘。
+先设置 `WASM_BINDGEN=D:/BuildCache/meldry-visual-20261025/padmin/tools/bin/wasm-bindgen.exe`，运行 `python scripts/glory.py build --dev`；正式发布去掉 `--dev`。浏览器驱动安装到 D 盘：`npm install --prefix D:/BuildCache/meldry-visual-20261025/padmin/runtime --cache D:/BuildCache/meldry-visual-20261025/padmin/npm-cache --ignore-scripts playwright@1.63.0`。测试使用已安装的 Microsoft Edge，profile 和报告均在 D 盘。
 
 - `npm test`：运行实际 WASM 的权限/协议、键盘/IME/可访问树、移动导航和所有领域写操作 fixture，空闲时自动启动 8789 静态服务。未注册写请求返回 501。
 - `powershell -File scripts/start-real-stack.ps1`：复用已有 Pasion/PostgreSQL 程序与本机已缓存 Palpo 镜像，建立隔离真实验收服务；不构建、不拉镜像、不修改原项目。
 - `node scripts/real-server.cjs` 后运行 `npm run test:real`：真实密码登录/同意/PKCE、Matrix/Pasion 业务写入、邮箱注册、两个用户收发消息及刷新后的举报状态。其他隔离账号可通过 `PADMIN_REAL_USERNAME`、`PADMIN_REAL_PASSWORD` 指定。
 - `node scripts/nginx-acceptance.cjs` 验证生产入口与非 root nginx；`node scripts/native-nginx-acceptance.cjs --same-origin` 用 D 盘真实 JS/WASM 验证根路径、`/admin`、`/console/manage` 和同源 `/auth` 全链路。需准备隔离服务与 D 盘 nginx 1.31.2 程序。
 
-验收器拒绝缺失/过期产物及失败 suite，并将实际 WASM SHA256、退出码和证据路径记录在 `D:/BuildCache/padmin-glory-branch/acceptance-results.json`。原 18 suites 通过 `test:source-baseline` 保留为历史断言，原 DOM 选择器与 localStorage token 注入不再是活动测试入口；逐项迁移和三项明确的源基线/后端差异见行为映射。
+验收器拒绝缺失/过期产物及失败 suite，并将实际 WASM SHA256、退出码和证据路径记录在 `D:/BuildCache/meldry-visual-20261025/padmin/acceptance-results.json`。原 18 suites 通过 `test:source-baseline` 保留为历史断言，原 DOM 选择器与 localStorage token 注入不再是活动测试入口；逐项迁移和三项明确的源基线/后端差异见行为映射。
 
 `glory.py serve` 仅提供静态文件；真实同源 API 可通过 `real-server.cjs` 和 `PALPO_URL`/`PASION_URL` 配置。生产 nginx 的应用/认证前缀支持保持 CSP 禁止 `unsafe-inline`，独立的 Pasion 配置桥只解析公开 JSON，不执行代码。
 

@@ -38,15 +38,15 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           repository: glory-rs/glory
-          ref: aecbe360bd0731f118af31e653f6df2b26ef7576
-          path: glory-rs/glory
+          ref: b9d06545c701510ba18d5cdb7cd363c102cad906
+          path: glory-rs/main/glory
 
       - name: Check out Sapid
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           repository: sapid-ui/sapid
-          ref: fd64d78edf9f91f9dc63bfa2be6e59ec1f739a58
-          path: glory-rs/sapid
+          ref: c5c4e23aeb6d37b3f2537545116bac43dbb40a64
+          path: glory-rs/main/sapid
 
       - name: Build Glory and Sapid WASM on remote runner
         working-directory: meldry/padmin
@@ -131,15 +131,15 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           repository: glory-rs/glory
-          ref: aecbe360bd0731f118af31e653f6df2b26ef7576
-          path: glory-rs/glory
+          ref: b9d06545c701510ba18d5cdb7cd363c102cad906
+          path: glory-rs/main/glory
 
       - name: Check out Sapid
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           repository: sapid-ui/sapid
-          ref: fd64d78edf9f91f9dc63bfa2be6e59ec1f739a58
-          path: glory-rs/sapid
+          ref: c5c4e23aeb6d37b3f2537545116bac43dbb40a64
+          path: glory-rs/main/sapid
 
       - name: Build Glory and Sapid WASM on remote runner
         working-directory: meldry/padmin

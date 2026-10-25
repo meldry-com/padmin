@@ -41,7 +41,7 @@ pub(super) fn render(scope: &Scope, id: String) -> View {
     let uid = id.clone();
     let refresh: Rc<dyn Fn()> = Rc::new(move || {
         let id = uid.clone();
-        submit(&s, busy, message, async move {
+        load_quiet(&s, busy, message, async move {
             reload(&id, user, emails, browser, oauth).await?;
             if first.try_get().unwrap_or(false) {
                 if let Ok(Some(u)) = user.try_get() {

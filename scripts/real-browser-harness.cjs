@@ -2,9 +2,9 @@
 const assert=require('node:assert/strict');
 const crypto=require('node:crypto');
 const fs=require('node:fs');
-const {chromium}=require(process.env.PADMIN_PLAYWRIGHT||'D:/BuildCache/padmin-glory/runtime/node_modules/playwright');
+const {chromium}=require(process.env.PADMIN_PLAYWRIGHT||'D:/BuildCache/glory-dependencies/browser/node_modules/playwright');
 async function createRealHarness(options={}) {
- process.env.TEMP='D:/BuildCache/padmin-glory-branch/tmp';process.env.TMP=process.env.TEMP;
+ process.env.TEMP='D:/BuildCache/meldry-visual-20261025/padmin/tmp';process.env.TMP=process.env.TEMP;
  const baseURL=options.baseURL||process.env.PADMIN_REAL_URL||'http://127.0.0.1:28789';
  const browser=await chromium.launch({channel:'msedge',headless:true});
  const context=await browser.newContext({acceptDownloads:true});const page=await context.newPage();
@@ -43,7 +43,7 @@ async function createRealHarness(options={}) {
   },
   async navigate(p){const label=p.slice(1).split('/').map(s=>s.split('-').map(w=>w[0]?.toUpperCase()+w.slice(1)).join(' ')).join(' · ');await page.getByRole('link',{name:label,exact:true}).click();await page.waitForURL(baseURL+p);},
   async close(){await browser.close();},
-  save(name){assert.deepEqual(errors,[]);fs.writeFileSync('D:/BuildCache/padmin-glory-branch/'+name+'.json',JSON.stringify({baseURL,results,responses,errors},null,2));},
+  save(name){assert.deepEqual(errors,[]);fs.writeFileSync('D:/BuildCache/meldry-visual-20261025/padmin/'+name+'.json',JSON.stringify({baseURL,results,responses,errors},null,2));},
  };
  return h;
 }

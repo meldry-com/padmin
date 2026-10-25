@@ -1,7 +1,7 @@
 """Attach reviewed scenario evidence without treating old DOM selectors as executed tests."""
 import json
 from pathlib import Path
-root=Path(__file__).resolve().parents[1];cache=Path('D:/BuildCache/padmin-glory-branch');path=root/'docs/e2e-behavior-map.json';data=json.loads(path.read_text(encoding='utf-8'));rows=data['tests']
+root=Path(__file__).resolve().parents[1];cache=Path('D:/BuildCache/meldry-visual-20261025/padmin');path=root/'docs/e2e-behavior-map.json';data=json.loads(path.read_text(encoding='utf-8'));rows=data['tests']
 for i,row in enumerate(rows):row['id']=i;row['status']='pending-evidence';row['evidence']=[]
 def attach(ids,script,artifact,fragment,semantics):
     evidence=cache/artifact

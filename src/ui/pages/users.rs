@@ -126,24 +126,28 @@ pub(super) fn page_options(
     key: &'static str,
     load: Rc<dyn Fn()>,
 ) -> glory::ui::View {
-    let mut options = view()
-        .name("Page size")
-        .fill(text().content(size.map(|n| format!("Rows per page: {n}"))));
-    for count in [10u64, 25, 50, 100] {
-        let load = load.clone();
-        options = options.fill(
-            w::action(&format!("{count} rows per page"), move || {
+    view().class("page-size-control").fill((
+        w::label("Rows:"),
+        sapid::native_select(key.replace('.', "-"))
+            .unstyled()
+            .name("Rows per page")
+            .value(size.map(|n| Some(n.to_string())))
+            .options(
+                [10, 25, 50, 100]
+                    .into_iter()
+                    .map(|n| sapid::select_option(n.to_string(), n.to_string())),
+            )
+            .on_value_change(move |value| {
                 if !busy.get() {
-                    write(size, count);
-                    write(page, 1);
-                    remember(key, &count.to_string());
-                    load();
+                    if let Some(value) = value.and_then(|v| v.parse::<u64>().ok()) {
+                        write(size, value);
+                        write(page, 1);
+                        remember(key, &value.to_string());
+                        load();
+                    }
                 }
-            })
-            .enabled(busy.map(|b| !b)),
-        );
-    }
-    options
+            }),
+    ))
 }
 
 /// Paginate endpoints that return a full collection; only clone and mount a bounded slice.
@@ -281,124 +285,282 @@ fn list(scope: &glory::ui::Scope) -> glory::ui::View {
         })
     };
     load();
-    let mut out = w::page("Users").fill((
-        search_input,
-        profile_column,
-        admin_column,
-        created_column,
-        access_column,
-        page_options(size, page, busy, "users.size", load.clone()),
-        w::status(message),
-        w::action("Search / refresh", {
-            let load = load.clone();
-            move || {
-                if !busy.get() {
-                    write(page, 1);
-                    write(applied_search, search.get());
-                    load();
-                }
-            }
-        }),
-        w::action("Previous page", {
-            let load = load.clone();
-            move || {
-                if !busy.get() && page.get() > 1 {
-                    page.revise(|p| *p -= 1);
-                    load();
-                }
-            }
-        }),
-        w::action("Next page", {
-            let load = load.clone();
-            move || {
-                if !busy.get() && page.get() * size.get() < total.get() {
-                    page.revise(|p| *p += 1);
-                    load();
-                }
-            }
-        }),
-        w::action("Create user", || crate::ui::navigate("/users/create")),
-        w::action("Known users", || crate::ui::navigate("/users/known")),
-    ));
-    for (label, key) in [
-        ("Sort by user ID", "name"),
-        ("Sort by display name", "displayname"),
-        ("Sort by administrator", "admin"),
-        ("Sort by creation time", "creation_ts"),
-    ] {
-        let load = load.clone();
-        out = out.fill(w::action(label, move || {
-            if !busy.get() {
-                write(order, key.into());
-                write(page, 1);
-                load();
-            }
-        }));
-    }
-    out = out.fill((
-        w::action("Reverse sort", {
-            let load = load.clone();
-            move || {
-                if !busy.get() {
-                    descending.revise(|v| *v = !*v);
-                    write(page, 1);
-                    load();
-                }
-            }
-        }),
-        each(
-            rows,
-            |row| row.id.clone(),
-            move |row, _| {
-                view().class("record").fill((
-                    check()
-                        .label(row.map(|u| format!("Select {}", u.id)))
-                        .checked(row.map(move |u| selection.with(|s| s.contains(&u.id))))
-                        .on(checked_changed, move |event| {
-                            if let Event::CheckedChanged(selected) = event {
-                                let id = row.get().id;
-                                selection.revise(|s| {
-                                    s.retain(|v| v != &id);
-                                    if selected {
-                                        s.push(id);
+    let columns_open = scope.cage(false);
+    let import_open = scope.cage(false);
+    let export_open = scope.cage(false);
+    let table_load = load.clone();
+    let table_rows = rows.map(move |rows| vec![rows.clone()]);
+    let table = each(
+        table_rows,
+        |rows| serde_json::to_string(rows).unwrap_or_default(),
+        move |values, _| {
+            let table_load = table_load.clone();
+            widget(move |scope| {
+                let mut body = sapid::table_body();
+                for (index, row) in values.get().into_iter().enumerate() {
+                    let display_name = row.user.displayname.clone();
+                    let id = row.id.clone();
+                    let selected_id = id.clone();
+                    let event_id = id.clone();
+                    let detail_id = id.clone();
+                    body = body.row(
+                        sapid::table_row(format!("row-{index}"))
+                            .class("record")
+                            .cell(sapid::table_cell("selection").content(move || {
+                                let id = selected_id.clone();
+                                let event_id = event_id.clone();
+                                check()
+                                    .label(format!("Select {id}"))
+                                    .checked(selection.map(move |selected| selected.contains(&id)))
+                                    .on(checked_changed, move |event| {
+                                        if let Event::CheckedChanged(value) = event {
+                                            selection.revise(|ids| {
+                                                ids.retain(|v| v != &event_id);
+                                                if value {
+                                                    ids.push(event_id.clone())
+                                                }
+                                            })
+                                        }
+                                    })
+                            }))
+                            .cell(sapid::table_cell("id").text(id))
+                            .cell(sapid::table_cell("profile").text(show_profile.map(
+                                move |show| {
+                                    if *show {
+                                        display_name.clone().unwrap_or_else(|| "—".into())
+                                    } else {
+                                        "—".into()
                                     }
-                                });
+                                },
+                            )))
+                            .cell(sapid::table_cell("admin").text(show_admin.map(move |show| {
+                                if *show && row.user.admin {
+                                    "Administrator".into()
+                                } else {
+                                    "—".into()
+                                }
+                            })))
+                            .cell(
+                                sapid::table_cell("status").text(show_access.map(move |show| {
+                                    if *show {
+                                        if row.user.deactivated {
+                                            "Deactivated"
+                                        } else {
+                                            "Active"
+                                        }
+                                        .into()
+                                    } else {
+                                        "—".into()
+                                    }
+                                })),
+                            )
+                            .cell(sapid::table_cell("created").text(show_created.map(
+                                move |show| {
+                                    if *show {
+                                        row.creation_ts_ms.to_string()
+                                    } else {
+                                        "—".into()
+                                    }
+                                },
+                            )))
+                            .cell(sapid::table_cell("actions").content(move || {
+                                let id = detail_id.clone();
+                                w::action("User details", move || {
+                                    crate::ui::navigate(&path("/users", &id))
+                                })
+                            })),
+                    );
+                }
+                let mut table = sapid::table("users")
+                    .unstyled()
+                    .class(scope.bond(move || {
+                        format!(
+                            "application-table {} {} {} {}",
+                            if show_profile.get() {
+                                ""
+                            } else {
+                                "columns-hide-profile"
+                            },
+                            if show_admin.get() {
+                                ""
+                            } else {
+                                "columns-hide-admin"
+                            },
+                            if show_access.get() {
+                                ""
+                            } else {
+                                "columns-hide-access"
+                            },
+                            if show_created.get() {
+                                ""
+                            } else {
+                                "columns-hide-created"
                             }
-                        }),
-                    text().content(row.map(move |u| {
-                        let mut value = u.id.clone();
-                        if show_profile.get() {
-                            value.push_str(&format!(
-                                " · {}",
-                                u.user.displayname.as_deref().unwrap_or("—")
-                            ));
-                        }
-                        if show_admin.get() {
-                            value.push_str(if u.user.admin {
-                                " · administrator"
+                        )
+                    }))
+                    .head(sapid::table_head().row({
+                        let mut row = sapid::table_row("columns");
+                        for (key, label, sort) in [
+                            ("select", "", ""),
+                            ("id", "User ID", "name"),
+                            ("displayname", "Display name", "displayname"),
+                            ("admin", "Admin", "admin"),
+                            ("status", "Status", ""),
+                            ("created", "Created", "creation_ts"),
+                            ("actions", "Actions", ""),
+                        ] {
+                            let load = table_load.clone();
+                            row = row.cell(if key == "select" {
+                                sapid::table_header_cell(key).content(move || {
+                                    check()
+                                        .label("Select all users on this page")
+                                        .checked(selection.map(move |ids| {
+                                            !ids.is_empty() && ids.len() == rows.with(Vec::len)
+                                        }))
+                                        .on(checked_changed, move |event| {
+                                            if let Event::CheckedChanged(value) = event {
+                                                write(
+                                                    selection,
+                                                    if value {
+                                                        rows.with(|rows| {
+                                                            rows.iter()
+                                                                .map(|row| row.id.clone())
+                                                                .collect()
+                                                        })
+                                                    } else {
+                                                        vec![]
+                                                    },
+                                                )
+                                            }
+                                        })
+                                })
+                            } else if sort.is_empty() {
+                                sapid::table_header_cell(key).text(label)
                             } else {
-                                " · regular account"
+                                sapid::table_header_cell(key).content(move || {
+                                    let load = load.clone();
+                                    w::action(label, move || {
+                                        if !busy.get() {
+                                            write(order, sort.into());
+                                            descending.revise(|v| *v = !*v);
+                                            write(page, 1);
+                                            load();
+                                        }
+                                    })
+                                    .name(match sort {
+                                        "name" => "Sort by user ID",
+                                        "displayname" => "Sort by display name",
+                                        "admin" => "Sort by administrator",
+                                        _ => "Sort by creation time",
+                                    })
+                                    .class("table-sort")
+                                })
                             });
                         }
-                        if show_access.get() {
-                            value.push_str(if u.user.deactivated {
-                                " · deactivated"
-                            } else {
-                                " · active"
-                            });
-                        }
-                        if show_created.get() {
-                            value.push_str(&format!(" · Created: {}", u.creation_ts_ms));
-                        }
-                        value
-                    })),
-                    w::action("User details", move || {
-                        crate::ui::navigate(&path("/users", &row.get().id))
-                    }),
-                ))
-            },
-        ),
-    ));
+                        row
+                    }))
+                    .body(body);
+                table.build(scope)
+            })
+        },
+    );
+    let load_search = load.clone();
+    let load_previous = load.clone();
+    let load_next = load.clone();
+    let scope_for_import = scope.clone();
+    let scope_for_export = scope.clone();
+    let mut out =
+        w::page("Users").class("page list-page users-list").fill((
+            w::label("Manage Matrix users").class("page-description"),
+            view().class("page-actions").fill((
+                w::action("Import CSV", move || import_open.revise(|v| *v = !*v)),
+                w::action("Export CSV", move || export_open.revise(|v| *v = !*v)),
+                w::action("Create user", || crate::ui::navigate("/users/create")),
+            )),
+            view().class("list-tabs").fill((
+                w::label("Local accounts").class("tab-active"),
+                w::action("Known users", || crate::ui::navigate("/users/known")),
+            )),
+            view().class("list-toolbar").fill((
+                search_input,
+                page_options(size, page, busy, "users.size", load.clone()),
+                w::action("Search / refresh", move || {
+                    if !busy.get() {
+                        write(page, 1);
+                        write(applied_search, search.get());
+                        load_search();
+                    }
+                }),
+                w::action("Columns", move || columns_open.revise(|v| *v = !*v)),
+            )),
+            view()
+                .class(columns_open.map(|open| {
+                    if *open {
+                        "columns-menu".into()
+                    } else {
+                        "bulk-hidden".into()
+                    }
+                }))
+                .fill((profile_column, admin_column, created_column, access_column)),
+            view().class("table-container").fill((
+                table,
+                when(rows.map(|rows| rows.is_empty()), || {
+                    view().class("empty-table").fill((
+                        w::label("").class("empty-icon users-icon"),
+                        w::label("No users found").class("empty-title"),
+                        w::label("Try adjusting your search query or create a new user.")
+                            .class("empty-description"),
+                        w::action("Create user", || crate::ui::navigate("/users/create")),
+                    ))
+                }),
+            )),
+            view().class("list-pagination").fill((
+                text().content(total.map(move |total| {
+                    format!(
+                        "Showing {}–{} of {total}",
+                        if *total == 0 {
+                            0
+                        } else {
+                            (page.get() - 1) * size.get() + 1
+                        },
+                        (page.get() * size.get()).min(*total)
+                    )
+                })),
+                w::action("Previous page", move || {
+                    if !busy.get() && page.get() > 1 {
+                        page.revise(|v| *v -= 1);
+                        load_previous();
+                    }
+                })
+                .enabled(page.map(|p| *p > 1)),
+                text().content(page.map(move |p| {
+                    format!("Page {p} of {}", total.get().div_ceil(size.get()).max(1))
+                })),
+                w::action("Next page", move || {
+                    if !busy.get() && page.get() * size.get() < total.get() {
+                        page.revise(|v| *v += 1);
+                        load_next();
+                    }
+                })
+                .enabled(total.map(move |total| page.get() * size.get() < *total)),
+            )),
+            w::status(message),
+            w::modal(
+                "import-users",
+                "Import CSV",
+                import_open,
+                view().class("operation-form").fill((
+                    import_panel(&scope_for_import),
+                    w::action("Close import", move || write(import_open, false)),
+                )),
+            ),
+            w::modal(
+                "export-users",
+                "Export CSV",
+                export_open,
+                export_panel(&scope_for_export),
+            ),
+        ));
     for (title, kind) in [
         ("Deactivate selected", 0),
         ("Reactivate selected", 1),
@@ -410,21 +572,27 @@ fn list(scope: &glory::ui::Scope) -> glory::ui::View {
             if ids.is_empty(){return Err(HttpError::message("Select at least one user"));}
             let mut succeeded=0;let mut errors=Vec::new();
             for id in ids {let result=match kind {0|2=>api::deactivate_account(&id,kind==2).await.map(|_|()),1=>api::reactivate_account(&id).await.map(|_|()),3=>delete_devices_exact(&id).await,_=>grant_admin(&id).await};match result {Ok(())=>succeeded+=1,Err(e)=>errors.push(format!("{id}: {e}"))}}
-            let fresh = api::get_users(page.get(), size.get(), &order.get(), if descending.get() { "DESC" } else { "ASC" }, &applied_search.get()).await;
-            match fresh { Ok(data) => { write(total, data.total); write(rows, data.data); write(selection, Vec::new()); }, Err(e) => errors.push(format!("refresh: {e}")) }
+            match api::get_users(page.get(),size.get(),&order.get(),if descending.get(){"DESC"}else{"ASC"},&applied_search.get()).await {Ok(data)=>{write(total,data.total);write(rows,data.data);write(selection,vec![]);},Err(e)=>errors.push(format!("refresh: {e}"))}
             if errors.is_empty(){Ok(format!("Applied to {succeeded} users. List refreshed."))}else{Err(HttpError::message(format!("Applied to {succeeded}; {} failed: {}",errors.len(),errors.join("; "))))}
-        }}));
+        }}).class(selection.map(|ids|if ids.is_empty(){"bulk-hidden".into()}else{"bulk-action".into()})));
     }
     out.fill((
         w::action("Select all users on this page", move || {
             write(
                 selection,
-                rows.with(|rows| rows.iter().map(|r| r.id.clone()).collect()),
+                rows.with(|rows| rows.iter().map(|row| row.id.clone()).collect()),
             )
-        }),
-        w::action("Clear selection", move || write(selection, Vec::new())),
-        import_panel(scope),
-        export_panel(scope),
+        })
+        .class("selection-action"),
+        w::action("Clear selection", move || write(selection, vec![])).class(selection.map(
+            |ids| {
+                if ids.is_empty() {
+                    "bulk-hidden".into()
+                } else {
+                    "bulk-action".into()
+                }
+            },
+        )),
     ))
 }
 async fn delete_devices_exact(id: &str) -> Result<(), HttpError> {
@@ -460,8 +628,7 @@ fn create(scope: &glory::ui::Scope) -> glory::ui::View {
     let (password, password_input) = w::field(scope, "Password");
     let (email, email_input) = w::field(scope, "Email");
     let (phone, phone_input) = w::field(scope, "Phone number (international format)");
-    let (kind, kind_input) = w::field(scope, "User type: regular, bot or support");
-    write(kind, "regular".into());
+    let kind = scope.cage(String::from("regular"));
     let admin = scope.cage(false);
     let locked = scope.cage(false);
     let busy = scope.cage(false);
@@ -503,10 +670,16 @@ fn create(scope: &glory::ui::Scope) -> glory::ui::View {
         }
     });
     let mut out = w::page("Create user").fill((
-        username_input,
+        w::label("Add a new user to the Matrix server").class("form-description"),
+        username_input
+            .full_width()
+            .placeholder("username")
+            .hint("The localpart of the Matrix ID (without @ and :server)"),
         w::status(availability),
-        name_input,
-        password_input.purpose(Purpose::Password),
+        name_input.placeholder("Display Name"),
+        password_input
+            .purpose(Purpose::Password)
+            .placeholder("Password"),
         when(
             password.map(|value| password_strength(value) == "Weak"),
             || w::label("Password strength: Weak"),
@@ -519,10 +692,29 @@ fn create(scope: &glory::ui::Scope) -> glory::ui::View {
             password.map(|value| password_strength(value) == "Strong"),
             || w::label("Password strength: Strong"),
         ),
-        email_input,
-        phone_input,
-        kind_input,
-        toggle(scope, "Locked account", locked),
+        email_input.placeholder("user@example.com"),
+        phone_input
+            .placeholder("+1234567890")
+            .hint("International format recommended (e.g. +1234567890)"),
+        toggle(scope, "Locked account", locked).class("setting-toggle"),
+        view().class("field full-width").fill((
+            w::label("User type").class("field-label"),
+            sapid::native_select("user-type")
+                .unstyled()
+                .name("User type")
+                .value(kind.map(|value| Some(value.clone())))
+                .options([
+                    sapid::select_option("regular", "Regular"),
+                    sapid::select_option("bot", "Bot"),
+                    sapid::select_option("support", "Support"),
+                ])
+                .on_value_change(move |value| {
+                    if let Some(value) = value {
+                        write(kind, value)
+                    }
+                }),
+            w::label("Select the type of user account to create").class("field-hint"),
+        )),
     ));
     if !has_pasion {
         out = out.fill(toggle(scope, "Administrator", admin));
@@ -534,7 +726,7 @@ fn create(scope: &glory::ui::Scope) -> glory::ui::View {
     let context = crate::ui::context::get(scope);
     out.fill((
         w::status(message),
-        w::action("Cancel", || crate::ui::navigate("/users")),
+        w::action("Cancel", || crate::ui::navigate("/users")).class("form-cancel"),
         operation(scope, "Create user", busy, message, None, move || {
             let context = context.clone();
             async move {
@@ -849,7 +1041,7 @@ fn known_detail(scope: &glory::ui::Scope, id: String) -> glory::ui::View {
         }
     };
     let first = load();
-    w::submit(scope, busy, message, first);
+    w::load_quiet(scope, busy, message, first);
     w::page(&format!("Known user {id}")).fill((
         w::status(info),
         w::status(message),
@@ -936,7 +1128,7 @@ fn detail(scope: &glory::ui::Scope, id: String) -> glory::ui::View {
         }
     };
     let first = load();
-    w::submit(scope, busy, message, first);
+    w::load_quiet(scope, busy, message, first);
     let mut out = w::page(&format!("User {id}")).fill((
         text().content(current.map(|u| {
             u.as_ref()

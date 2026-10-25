@@ -1,0 +1,5 @@
+// Actual browser views of the original Dioxus build and current Glory app.
+const{createHarness}=require('./fixture-harness.cjs');
+const fs=require('node:fs');
+const CACHE='D:/BuildCache/meldry-visual-20261025/padmin';
+(async()=>{const rows=[];for(const [name,origin]of[['old','http://127.0.0.1:18789'],['new','http://127.0.0.1:8789']]){const h=await createHarness({origin,viewport:{width:1440,height:1000}});try{const p=h.page;await p.goto(origin+'/login');await p.getByRole('button',{name:/^Sign in$/i}).waitFor();await p.screenshot({path:CACHE+'/'+name+'-login.png'});rows.push({name,login:await p.locator('body').evaluate(e=>({height:e.scrollHeight,width:e.scrollWidth}))});await p.getByRole('button',{name:/^Sign in$/i}).click();await p.getByRole('heading',{name:'Dashboard',exact:true}).waitFor({timeout:20000});await p.screenshot({path:CACHE+'/'+name+'-dashboard.png'});rows.push({name,dashboard:await p.locator('body').evaluate(e=>({width:e.scrollWidth,height:e.scrollHeight}))});}finally{await h.close();}}fs.writeFileSync(CACHE+'/reference-capture.json',JSON.stringify(rows,null,2));process.exit(0)})().catch(e=>{console.error(e);process.exit(1)});

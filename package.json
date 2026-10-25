@@ -18,11 +18,11 @@
     "test:source-baseline:ui": "node scripts/source-baseline.cjs --ui",
     "test:source-baseline:headed": "node scripts/source-baseline.cjs --headed",
     "test:source-baseline:debug": "node scripts/source-baseline.cjs --debug",
-    "test:source-baseline:report": "node scripts/source-baseline.cjs show-report D:/BuildCache/padmin-glory-branch/playwright-report",
+    "test:source-baseline:report": "node scripts/source-baseline.cjs show-report D:/BuildCache/meldry-visual-20261025/padmin/playwright-report",
     "test:source-baseline:example-stack": "node scripts/source-baseline.cjs -c playwright.example-stack.config.ts",
     "test:source-baseline:example-stack:headed": "node scripts/source-baseline.cjs -c playwright.example-stack.config.ts --headed",
     "test:source-baseline:example-stack:debug": "node scripts/source-baseline.cjs -c playwright.example-stack.config.ts --debug",
-    "test:source-baseline:example-stack:report": "node scripts/source-baseline.cjs show-report D:/BuildCache/padmin-glory-branch/playwright-report/example-stack",
+    "test:source-baseline:example-stack:report": "node scripts/source-baseline.cjs show-report D:/BuildCache/meldry-visual-20261025/padmin/playwright-report/example-stack",
     "test:source-baseline:example-stack:fresh": "npm run stack:reset && npm run test:source-baseline:example-stack",
     "test:nginx:full": "node scripts/native-nginx-acceptance.cjs --same-origin"
   },

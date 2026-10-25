@@ -11,7 +11,7 @@ import subprocess
 ROOT = Path(__file__).resolve().parents[1]
 WSL = os.name != 'nt' and 'microsoft' in platform.release().lower()
 REMOTE = os.environ.get('PADMIN_REMOTE_BUILD') == '1' and os.name != 'nt' and not WSL
-requested_cache = Path(os.environ.get('PADMIN_BUILD_ROOT', '/mnt/d/BuildCache/padmin-glory-branch' if WSL else 'D:/BuildCache/padmin-glory-branch'))
+requested_cache = Path(os.environ.get('PADMIN_BUILD_ROOT', '/mnt/d/BuildCache/meldry-visual-20261025/padmin' if WSL else 'D:/BuildCache/meldry-visual-20261025/padmin'))
 if REMOTE and not requested_cache.is_absolute():
     raise RuntimeError('Remote CI requires an absolute PADMIN_BUILD_ROOT')
 CACHE = requested_cache.resolve()
@@ -35,7 +35,7 @@ def source_digest():
     files += [ROOT / name for name in ['Cargo.toml', 'Cargo.lock', 'bootstrap.js', 'pasion-config.js', 'index.html']]
     # Capture local framework/widget changes as build inputs as well as app files.
     for library in ['glory', 'sapid']:
-        base = (ROOT / '../../glory-rs' / library).resolve()
+        base = (ROOT / '../../glory-rs/main' / library).resolve()
         files.append(base / 'Cargo.toml')
         if (base / 'Cargo.lock').is_file(): files.append(base / 'Cargo.lock')
         for directory in (['crates'] if library == 'glory' else ['src']):
@@ -103,6 +103,8 @@ def main():
         run(os.environ.get('WASM_BINDGEN', 'wasm-bindgen'),str(expected/'wasm32-unknown-unknown'/('debug' if args.dev else 'release')/'padmin.wasm'),'--target','web','--out-dir',str(output/'pkg'))
         (output/'index.html').write_text((ROOT/'index.html').read_text().replace('<base href="/">', '<base href="'+args.base_path.rstrip('/')+'/">'))
         shutil.copy(ROOT/'src/style.css',output/'style.css')
+        shutil.copy(ROOT/'src/semantic.css',output/'semantic.css')
+        shutil.copy(ROOT/'src/icons.css',output/'icons.css')
         shutil.copy(ROOT/'bootstrap.js',output/'bootstrap.js')
         shutil.copy(ROOT/'pasion-config.js',output/'pasion-config.js')
         (output/'runtime-config.js').write_text('window.PADMIN_BASE_PATH='+json.dumps(args.base_path.rstrip('/'))+';window.PADMIN_PASION_BASE_PATH="";')

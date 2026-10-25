@@ -1,4 +1,4 @@
-# Build with scripts/package-container.ps1; context is D:/BuildCache/padmin-glory-branch/container.
+# Build with scripts/package-container.ps1; context is D:/BuildCache/meldry-visual-20261025/padmin/container.
 FROM nginxinc/nginx-unprivileged:alpine
 
 # nginxinc/nginx-unprivileged runs as the `nginx` user (UID 101) and listens

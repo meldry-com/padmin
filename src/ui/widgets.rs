@@ -8,8 +8,13 @@ use std::result::Result;
 pub struct LocalText {
     inner: Option<Text>,
     value: String,
+    name: Option<String>,
 }
 impl LocalText {
+    pub fn name(mut self, value: &str) -> Self {
+        self.name = Some(value.into());
+        self
+    }
     pub fn class(mut self, value: impl Into<glory::Lotus<String>>) -> Self {
         self.inner = Some(self.inner.take().unwrap().class(value));
         self
@@ -24,6 +29,9 @@ impl glory::ui::Widget for LocalText {
         let value = self.value.clone();
         let content = localized(scope, value);
         let mut inner = self.inner.take().unwrap().content(content);
+        if let Some(name) = self.name.take() {
+            inner = inner.name(localized(scope, name));
+        }
         inner.build(scope)
     }
 }
@@ -33,6 +41,10 @@ pub struct LocalButton {
     callback: Option<Box<dyn Fn()>>,
 }
 impl LocalButton {
+    pub fn name(mut self, value: impl Into<glory::Lotus<String>>) -> Self {
+        self.inner = Some(self.inner.take().unwrap().name(value));
+        self
+    }
     pub fn class(mut self, value: impl Into<glory::Lotus<String>>) -> Self {
         self.inner = Some(self.inner.take().unwrap().class(value));
         self
@@ -60,8 +72,24 @@ impl glory::ui::Widget for LocalButton {
 pub struct LocalInput {
     inner: Option<Input>,
     caption: String,
+    source: Cage<String>,
+    placeholder: String,
+    hint: String,
+    full_width: bool,
 }
 impl LocalInput {
+    pub fn full_width(mut self) -> Self {
+        self.full_width = true;
+        self
+    }
+    pub fn placeholder(mut self, value: &str) -> Self {
+        self.placeholder = value.into();
+        self
+    }
+    pub fn hint(mut self, value: &str) -> Self {
+        self.hint = value.into();
+        self
+    }
     pub fn class(mut self, value: impl Into<glory::Lotus<String>>) -> Self {
         self.inner = Some(self.inner.take().unwrap().class(value));
         self
@@ -90,10 +118,26 @@ impl LocalInput {
 impl glory::ui::Widget for LocalInput {
     fn build(&mut self, scope: &Scope) -> glory::ui::Result {
         let content = localized(scope, self.caption.clone());
-        let mut inner = view().class("field").fill((
-            text().class("field-label").content(content.clone()),
-            self.inner.take().unwrap().name(content),
-        ));
+        let placeholder = localized(scope, self.placeholder.clone());
+        let mut inner = view()
+            .class(if self.full_width {
+                "field full-width"
+            } else {
+                "field"
+            })
+            .fill((
+                text().class("field-label").content(content.clone()),
+                view().class("input-frame").fill((
+                    self.inner.take().unwrap().name(content),
+                    when(self.source.map(|value| value.is_empty()), move || {
+                        text()
+                            .class("input-placeholder")
+                            .content(placeholder.clone())
+                            .selectable(false)
+                    }),
+                )),
+                label(self.hint.clone()).class("field-hint"),
+            ));
         inner.build(scope)
     }
 }
@@ -109,14 +153,53 @@ pub fn localized(scope: &Scope, value: String) -> glory::Lotus<String> {
     }
 }
 pub fn page(title: &str) -> View {
-    view()
-        .class("page")
-        .fill(label(title).kind(glory::render::TextKind::Heading(1)))
+    let mut page = view().class(if title == "Create user" {
+        "page form-page"
+    } else if title.starts_with("User ")
+        || title.starts_with("Room ")
+        || title.starts_with("Account ")
+        || title.starts_with("Pasion account ")
+        || title.starts_with("Known user ")
+    {
+        "page detail-page"
+    } else {
+        "page"
+    });
+    if title == "Create user" {
+        page = page.fill(view().class("form-breadcrumb").fill((
+            link().target("/users").label("Users"),
+            label("/"),
+            label("Create User"),
+        )));
+    }
+    page.fill(
+        label(if title == "Create user" {
+            "Create New User"
+        } else {
+            title
+        })
+        .name(title)
+        .kind(glory::render::TextKind::Heading(1)),
+    )
+}
+pub fn modal(key: &str, title: &str, open: Cage<bool>, body: View) -> sapid::Dialog {
+    let mut body = Some(body);
+    sapid::dialog(key)
+        .unstyled()
+        .class("operation-dialog")
+        .label(title.to_owned())
+        .title(title.to_owned())
+        .show_trigger(false)
+        .open(open)
+        .on_open_change(move |value| open.revise(|slot| *slot = value))
+        .content_policy(sapid::ContentPolicy::KeepMounted)
+        .content(move || body.take().expect("dialog body retained while closed"))
 }
 pub fn label(value: impl Into<String>) -> LocalText {
     LocalText {
         inner: Some(text()),
         value: value.into(),
+        name: None,
     }
 }
 pub fn field(scope: &Scope, name: &str) -> (Cage<String>, LocalInput) {
@@ -125,6 +208,10 @@ pub fn field(scope: &Scope, name: &str) -> (Cage<String>, LocalInput) {
         value,
         LocalInput {
             caption: name.into(),
+            source: value,
+            placeholder: String::new(),
+            hint: String::new(),
+            full_width: false,
             inner: Some(
                 input()
                     .value(value)
@@ -138,8 +225,20 @@ pub fn field(scope: &Scope, name: &str) -> (Cage<String>, LocalInput) {
     )
 }
 pub fn action(name: &str, callback: impl Fn() + 'static) -> LocalButton {
+    let class = match name {
+        "English" => "control-language language-en",
+        "中文" => "control-language language-zh",
+        "Light" => "control-theme theme-light",
+        "Dark" => "control-theme theme-dark",
+        "System" => "control-theme theme-system",
+        "High contrast" => "control-contrast",
+        "Keyboard shortcuts" => "control-shortcuts",
+        "Sign out" => "control-logout",
+        "Create user" | "Create room" => "btn-primary",
+        _ => "",
+    };
     LocalButton {
-        inner: Some(sapid::button().unstyled()),
+        inner: Some(sapid::button().unstyled().class(class)),
         caption: name.into(),
         callback: Some(Box::new(callback)),
     }
@@ -173,6 +272,23 @@ pub fn submit(
     message: Cage<String>,
     future: impl Future<Output = Result<String, HttpError>> + 'static,
 ) {
+    submit_with_toast(scope, busy, message, future, true);
+}
+pub fn load_quiet(
+    scope: &Scope,
+    busy: Cage<bool>,
+    message: Cage<String>,
+    future: impl Future<Output = Result<String, HttpError>> + 'static,
+) {
+    submit_with_toast(scope, busy, message, future, false);
+}
+fn submit_with_toast(
+    scope: &Scope,
+    busy: Cage<bool>,
+    message: Cage<String>,
+    future: impl Future<Output = Result<String, HttpError>> + 'static,
+    announce_success: bool,
+) {
     if busy.get() {
         return;
     }
@@ -182,7 +298,7 @@ pub fn submit(
         let result = future.await;
         let failed = result.is_err();
         let text = result.unwrap_or_else(|e| e.to_string());
-        if let Some(ctx) = super::context::current() {
+        if let Some(ctx) = super::context::current().filter(|_| announce_success || failed) {
             ctx.toast(text.clone(), failed);
         }
         let _ = message.try_revise(|v| *v = text);

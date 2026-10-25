@@ -4,11 +4,11 @@ const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 const {spawnSync}=require('node:child_process');
-const CACHE='D:/BuildCache/padmin-glory-branch';
+const CACHE='D:/BuildCache/meldry-visual-20261025/padmin';
 function playwright(){
   if(process.env.PADMIN_PLAYWRIGHT) return require(process.env.PADMIN_PLAYWRIGHT);
   try { return require('playwright'); } catch {}
-  return require('D:/BuildCache/padmin-glory/runtime/node_modules/playwright');
+  return require('D:/BuildCache/glory-dependencies/browser/node_modules/playwright');
 }
 async function closeOwnedBrowser(server,browser){
  if(process.platform!=='win32'){await server.kill();await browser.close();return;}
@@ -39,7 +39,7 @@ async function createHarness(options={}) {
  const handlers=[];
  function route(method,match,handler){handlers.push({method,match,handler});}
  const result={page,context,browser,requests,errors,unhandled,state,baseURL,prefix,route,dir,
-  async navigate(p){const label=p.slice(1).split('/').map(s=>s.split('-').map(w=>w[0]?.toUpperCase()+w.slice(1)).join(' ')).join(' · ');await page.getByRole('link',{name:label,exact:true}).click();await page.waitForURL(baseURL+p);},
+  async navigate(p){if(await page.getByRole('dialog').filter({visible:true}).count()){await page.keyboard.press('Escape');}if(p==='/users/create'){await page.getByRole('link',{name:'Users',exact:true}).click();await page.getByRole('button',{name:'Create user',exact:true}).first().click();await page.waitForURL(baseURL+p);return;}const label=p.slice(1).split('/').map(s=>s.split('-').map(w=>w[0]?.toUpperCase()+w.slice(1)).join(' ')).join(' · ');const target=page.getByRole('link',{name:label,exact:true});if(await target.count())await target.click();else await page.goto(baseURL+p);await page.waitForURL(baseURL+p);},
   async login(){await page.goto(baseURL+'/login');await page.getByRole('button',{name:'Sign in',exact:true}).click();await page.getByRole('heading',{name:'Dashboard',exact:true}).waitFor({timeout:20000});assert.equal(state.exchanges,1);},
   async close(){await closeOwnedBrowser(browserServer,browser);},
   assertNoErrors(){assert.deepEqual(errors,[]);},

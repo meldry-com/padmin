@@ -1,6 +1,6 @@
 // Same-origin host with real backend forwarding; build static output separately.
 const http=require('node:http'),fs=require('node:fs'),path=require('node:path');
-const root=process.env.PADMIN_DIST||'D:/BuildCache/padmin-glory-branch/dist';
+const root=process.env.PADMIN_DIST||'D:/BuildCache/meldry-visual-20261025/padmin/dist';
 const prefix=(process.env.PADMIN_BASE_PATH||'').replace(/\/$/,'');
 const palpo=process.env.PALPO_URL||'http://127.0.0.1:28008';
 const pasion=process.env.PASION_URL||'http://127.0.0.1:27080';

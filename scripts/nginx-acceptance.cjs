@@ -3,7 +3,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),crypto=require(
 const container=process.env.PADMIN_NGINX_CONTAINER||'padmin-glory-nginx';const base=process.env.PADMIN_NGINX_URL||'http://127.0.0.1:28880';
 function docker(args){const p=spawnSync('docker',args,{encoding:'utf8'});if(p.status!==0)throw Error(p.stderr);}
 const pause=ms=>new Promise(r=>setTimeout(r,ms));
-(async()=>{const info=JSON.parse(fs.readFileSync('D:/BuildCache/padmin-glory-branch/dist/build-info.json','utf8'));const wasm=crypto.createHash('sha256').update(fs.readFileSync('D:/BuildCache/padmin-glory-branch/dist/pkg/padmin_bg.wasm')).digest('hex');assert.equal(wasm,info.wasm_sha256);const results=[];
+(async()=>{const info=JSON.parse(fs.readFileSync('D:/BuildCache/meldry-visual-20261025/padmin/dist/build-info.json','utf8'));const wasm=crypto.createHash('sha256').update(fs.readFileSync('D:/BuildCache/meldry-visual-20261025/padmin/dist/pkg/padmin_bg.wasm')).digest('hex');assert.equal(wasm,info.wasm_sha256);const results=[];
 for(const prefix of ['', '/admin','/console/manage']){
  docker(['exec','--user','nginx',container,'nginx','-s','quit']);await pause(100);
  docker(['exec','-d','--user','nginx','-e','PADMIN_BASE_PATH='+prefix,container,'sh','/task-entrypoint.sh']);
@@ -16,5 +16,5 @@ for(const prefix of ['', '/admin','/console/manage']){
  const config=await(await fetch(base+prefix+'/runtime-config.js')).text();assert.ok(config.includes("PADMIN_BASE_PATH='"+prefix+"'"));
  results.push((prefix||'root')+': actual nginx nonroot health/redirect/deep-link/runtime-config/strict-static404/security headers/real Matrix proxy');
 }
-fs.writeFileSync('D:/BuildCache/padmin-glory-branch/nginx-acceptance-results.json',JSON.stringify({results,wasm_sha256:wasm,source_sha256:info.source_sha256,exit_code:0,scope:'Cached nginx executes production entrypoint as nginx user. Source index only, no built WASM copied to C-backed Docker storage. Full app served from D: separately; no image build claim.'},null,2));console.log(results.join('\n'));
+fs.writeFileSync('D:/BuildCache/meldry-visual-20261025/padmin/nginx-acceptance-results.json',JSON.stringify({results,wasm_sha256:wasm,source_sha256:info.source_sha256,exit_code:0,scope:'Cached nginx executes production entrypoint as nginx user. Source index only, no built WASM copied to C-backed Docker storage. Full app served from D: separately; no image build claim.'},null,2));console.log(results.join('\n'));
 })().catch(e=>{console.error(e);process.exitCode=1});

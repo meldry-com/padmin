@@ -45,7 +45,7 @@ const {createHarness,CACHE}=require('./fixture-harness.cjs');
   await p.locator('.page .status').filter({hasText:'Statistics refreshed'}).waitFor();
   assert.equal(refreshes,1);assert.equal(h.requests.filter(r=>r.method==='GET'&&r.headers.authorization==='Bearer refreshed-synthetic').length>=2,true);
   passed.push('Concurrent 401s coalesce into one refresh and retry using the rotated access token');
-  await h.navigate('/users');h.state.verdict=403;
+  await h.navigate('/users');await p.getByRole('main').getByText('No users found',{exact:true}).first().waitFor();await p.waitForTimeout(250);h.state.verdict=403;
   h.route('GET','/_palpo/admin/v2/users',()=>({status:403,json:{errcode:'M_FORBIDDEN',error:'revoked fixture'}}));
   h.route('GET','/_palpo/admin/v1/server_version',()=>({status:403,json:{errcode:'M_FORBIDDEN',error:'revoked fixture'}}));
   await p.getByRole('button',{name:'Search / refresh',exact:true}).click();await p.getByRole('heading',{name:'Not authorized',exact:true}).waitFor();
@@ -83,7 +83,7 @@ const {createHarness,CACHE}=require('./fixture-harness.cjs');
  });
  await run(async h=>{
   const p=h.page;await h.login();h.route('POST','/api/v1/auth/logout',()=>({json:{}}));
-  const other=await h.context.newPage();await other.goto(h.baseURL+'/login');await other.getByRole('button',{name:'Sign out',exact:true}).click();
+  const other=await h.context.newPage();await other.goto(h.baseURL+'/login');await other.getByRole('button',{name:'Sign in',exact:true}).click();await other.getByRole('heading',{name:'Dashboard',exact:true}).waitFor();await other.getByRole('button',{name:'Sign out',exact:true}).click();
   await p.getByRole('heading',{name:'Sign in to Padmin',exact:true}).waitFor();
   await h.navigate('/users');await p.getByRole('heading',{name:'Sign in required',exact:true}).waitFor();await other.close();passed.push('An actual storage event from another tab retires this app session without sharing tokens');
  });

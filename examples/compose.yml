@@ -86,7 +86,7 @@ services:
 
   padmin:
     build:
-      context: "${PADMIN_BUILD_CONTEXT:-D:/BuildCache/padmin-glory-branch/container}"
+      context: "${PADMIN_BUILD_CONTEXT:-D:/BuildCache/meldry-visual-20261025/padmin/container}"
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:

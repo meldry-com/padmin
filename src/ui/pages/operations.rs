@@ -27,12 +27,26 @@ fn optional_number(value: &str, name: &str) -> Result<Option<u64>, HttpError> {
         number(value, name).map(Some)
     }
 }
+fn operation_dialog(key: &str, caption: &str, body: View) -> sapid::Dialog {
+    let mut body = Some(body);
+    sapid::dialog(key)
+        .unstyled()
+        .class("operation-dialog")
+        .label(caption.to_owned())
+        .title(caption.to_owned())
+        .content_policy(sapid::ContentPolicy::KeepMounted)
+        .content(move || {
+            body.take()
+                .expect("dialog body mounts once with KeepMounted")
+        })
+}
 fn toggle(scope: &Scope, caption: &str, initial: bool) -> (Cage<bool>, glory::ui::Check) {
     let value = scope.cage(initial);
     (
         value,
         check()
             .name(localized(scope, caption.to_owned()))
+            .label(localized(scope, caption.to_owned()))
             .checked(value)
             .on(checked_changed, move |event| {
                 if let glory::render::Event::CheckedChanged(checked) = event {
@@ -46,19 +60,66 @@ struct Row {
     id: String,
     summary: String,
     target: String,
+    columns: Vec<String>,
 }
-fn rows(data: Cage<Vec<Row>>) -> impl glory::ui::Widget {
+fn rows(data: Cage<Vec<Row>>, kind: u8) -> impl glory::ui::Widget {
+    let values = data.map(|rows| vec![rows.clone()]);
     each(
-        data,
-        |r| r.id.clone(),
-        move |row, _| {
-            view()
-                .class("record")
-                .fill(text().content(row.map(|r| r.summary.clone())))
-                .fill(action("Open details", move || {
-                    let target = row.get().target;
-                    crate::ui::navigate(&target);
-                }))
+        values,
+        |rows| {
+            rows.iter()
+                .map(|row| (row.id.clone(), row.summary.clone()))
+                .collect::<Vec<_>>()
+        },
+        move |values, _| {
+            widget(move |scope| {
+                let headers: &[&str] = match kind {
+                    1 => &[
+                        "ID", "Status", "Reporter", "Room", "Reason", "Received", "Actions",
+                    ],
+                    2 => &[
+                        "Destination",
+                        "Last attempt",
+                        "Retry interval",
+                        "Failure",
+                        "Actions",
+                    ],
+                    _ => &[
+                        "User ID",
+                        "Display name",
+                        "Media count",
+                        "Total size",
+                        "Actions",
+                    ],
+                };
+                let mut head = sapid::table_row("columns");
+                for (index, caption) in headers.iter().enumerate() {
+                    head = head.cell(
+                        sapid::table_header_cell(format!("column-{index}"))
+                            .text(localized(scope, (*caption).into())),
+                    );
+                }
+                let mut body = sapid::table_body();
+                for (index, row) in values.get().into_iter().enumerate() {
+                    let mut entry = sapid::table_row(format!("row-{index}")).class("record");
+                    for (column, value) in row.columns.into_iter().enumerate() {
+                        entry = entry.cell(sapid::table_cell(format!("cell-{column}")).text(value));
+                    }
+                    let target = row.target;
+                    entry = entry.cell(sapid::table_cell("actions").content(move || {
+                        let target = target.clone();
+                        action("Open details", move || crate::ui::navigate(&target))
+                            .class("table-action")
+                    }));
+                    body = body.row(entry);
+                }
+                sapid::table(format!("operations-{kind}"))
+                    .unstyled()
+                    .class("application-table")
+                    .head(sapid::table_head().row(head))
+                    .body(body)
+                    .build(scope)
+            })
         },
     )
 }
@@ -66,9 +127,9 @@ fn rows(data: Cage<Vec<Row>>) -> impl glory::ui::Widget {
 pub fn render(scope: &Scope, route: &Route) -> View {
     match route.path.as_str() {
         "/media" => media(scope),
-        "/reports" => listing(scope, "Event reports", 1, None),
+        "/reports" => listing(scope, "Reports", 1, None),
         "/reports/:report_id" => report(scope, route.params.first().cloned().unwrap_or_default()),
-        "/destinations" => listing(scope, "Federation destinations", 2, None),
+        "/destinations" => listing(scope, "Federation", 2, None),
         "/destinations/:destination_id" => {
             destination(scope, route.params.first().cloned().unwrap_or_default())
         }
@@ -95,7 +156,7 @@ fn listing(scope: &Scope, title: &str, kind: u8, refresh: Option<Cage<u64>>) -> 
     let total = scope.cage(0u64);
     let descending = scope.cage(saved["descending"].as_bool().unwrap_or(true));
     let (search, search_input) = field(scope, "Search user ID or display name");
-    let (sort, sort_input) = field(scope, "Sort field");
+    let (sort, _) = field(scope, "Sort field");
     search.revise(|value| *value = saved["search"].as_str().unwrap_or_default().to_owned());
     sort.revise(|stored_value| {
         *stored_value = saved["sort"]
@@ -116,7 +177,7 @@ fn listing(scope: &Scope, title: &str, kind: u8, refresh: Option<Cage<u64>>) -> 
         let query = search.get();
         let order_by = sort.get();
         let direction = if descending.get() { "DESC" } else { "ASC" };
-        submit(&s, busy, message, async move {
+        load_quiet(&s, busy, message, async move {
             let valid = match kind {
                 1 => ["received_ts"].contains(&order_by.as_str()),
                 2 => [
@@ -143,6 +204,14 @@ fn listing(scope: &Scope, title: &str, kind: u8, refresh: Option<Cage<u64>>) -> 
                             .into_iter()
                             .map(|r| Row {
                                 id: r.id.to_string(),
+                                columns: vec![
+                                    r.id.to_string(),
+                                    r.status.clone(),
+                                    r.user_id.clone(),
+                                    r.room_id.clone(),
+                                    r.reason.clone().unwrap_or_default(),
+                                    date::format_timestamp(r.received_ts),
+                                ],
                                 summary: format!(
                                     "#{} · {} · Room {} · Reporter {} · {} · {}",
                                     r.id,
@@ -168,6 +237,15 @@ fn listing(scope: &Scope, title: &str, kind: u8, refresh: Option<Cage<u64>>) -> 
                             .into_iter()
                             .map(|r| Row {
                                 id: r.id.clone(),
+                                columns: vec![
+                                    r.id.clone(),
+                                    date::format_timestamp(r.destination.retry_last_ts),
+                                    format!("{} ms", r.destination.retry_interval),
+                                    r.destination
+                                        .failure_ts
+                                        .map(date::format_timestamp)
+                                        .unwrap_or_else(|| "—".into()),
+                                ],
                                 summary: format!(
                                     "{} · Retry interval {} ms · Last attempt {} · Failure {}",
                                     r.id,
@@ -195,6 +273,15 @@ fn listing(scope: &Scope, title: &str, kind: u8, refresh: Option<Cage<u64>>) -> 
                             .into_iter()
                             .map(|r| Row {
                                 id: r.id.clone(),
+                                columns: vec![
+                                    r.id.clone(),
+                                    r.statistic
+                                        .displayname
+                                        .clone()
+                                        .unwrap_or_else(|| "—".into()),
+                                    r.statistic.media_count.to_string(),
+                                    date::format_bytes(r.statistic.media_length),
+                                ],
                                 summary: format!(
                                     "{} · {} · {} files · {}",
                                     r.id,
@@ -240,24 +327,127 @@ fn listing(scope: &Scope, title: &str, kind: u8, refresh: Option<Cage<u64>>) -> 
             }
         });
     }
-    let mut root = page(title);
+    let mut root = page(title).class("page list-page operations-list").fill(
+        label(match kind {
+            1 => "Event reports submitted by users",
+            2 => "Manage federation destinations and retry status",
+            _ => "Media usage statistics by user",
+        })
+        .class("page-description"),
+    );
+    let mut toolbar = view().class("list-toolbar");
     if kind == 0 {
-        root = root
-            .fill(label("Search user ID or display name"))
-            .fill(search_input);
+        toolbar = toolbar.fill(search_input);
     }
     let search_reload = reload.clone();
     let order_reload = reload.clone();
     let previous = reload.clone();
     let next = reload.clone();
-    root.fill(label("Sort field")).fill(sort_input)
-        .fill(label(match kind {1=>"Sort: received_ts",2=>"Sort: destination, retry_last_ts, retry_interval, failure_ts, last_successful_stream_ordering",_=>"Sort: user_id, displayname, media_count, media_length"}))
-        .fill(action("Apply filters", move || { if !busy.get() {current.revise(|stored_value| *stored_value = 1); search_reload();} }))
-        .fill(action("Reverse sort", move || { if !busy.get() { descending.revise(|stored_value| *stored_value = !*stored_value); current.revise(|stored_value| *stored_value = 1);order_reload();} }))
-        .fill(action("Refresh / Retry", move || reload()))
-        .fill(status(message)).fill(rows(data))
-        .fill(action("Previous page", move || { if !busy.get() && current.get()>1 {current.revise(|stored_value| *stored_value -= 1);previous();} }))
-        .fill(action("Next page", move || { if !busy.get() && current.get().saturating_mul(25)<total.get() {current.revise(|stored_value| *stored_value += 1);next();} }))
+    let sort_options: &[(&str, &str)] = match kind {
+        1 => &[("received_ts", "Received")],
+        2 => &[
+            ("destination", "Destination"),
+            ("retry_last_ts", "Last attempt"),
+            ("retry_interval", "Retry interval"),
+            ("failure_ts", "Failure"),
+            ("last_successful_stream_ordering", "Last successful stream"),
+        ],
+        _ => &[
+            ("user_id", "User ID"),
+            ("displayname", "Display name"),
+            ("media_count", "Media count"),
+            ("media_length", "Total size"),
+        ],
+    };
+    let sort_input = sapid::native_select(format!("operations-sort-{kind}"))
+        .unstyled()
+        .name("Sort field")
+        .value(sort.map(|value| Some(value.clone())))
+        .options(
+            sort_options
+                .iter()
+                .map(|(value, caption)| sapid::select_option(*value, *caption)),
+        )
+        .on_value_change(move |value| {
+            if let Some(value) = value {
+                sort.revise(|stored| *stored = value);
+            }
+        });
+    toolbar = toolbar.fill((
+        view()
+            .class("sort-field")
+            .fill((label("Sort:"), sort_input)),
+        action("Apply filters", move || {
+            if !busy.get() {
+                current.revise(|stored_value| *stored_value = 1);
+                search_reload();
+            }
+        }),
+        action("Reverse sort", move || {
+            if !busy.get() {
+                descending.revise(|stored_value| *stored_value = !*stored_value);
+                current.revise(|stored_value| *stored_value = 1);
+                order_reload();
+            }
+        }),
+        action("Refresh / Retry", move || reload()),
+    ));
+    root = root.fill((
+        toolbar,
+        status(message),
+        view().class("table-container").fill((
+            rows(data, kind),
+            when(data.map(Vec::is_empty), move || {
+                view().class("empty-table").fill((
+                    label(match kind {
+                        1 => "No reports",
+                        2 => "No federation destinations",
+                        _ => "No media statistics found",
+                    })
+                    .class("empty-title"),
+                    label(match kind {
+                        1 => "There are no event reports to review at this time.",
+                        2 => "No federation destinations match the current filters.",
+                        _ => "Media uploaded by users will appear here.",
+                    })
+                    .class("empty-description"),
+                ))
+            }),
+        )),
+    ));
+    root.fill(
+        view().class("list-pagination").fill((
+            text().content(total.map(move |count| {
+                format!(
+                    "Showing {}–{} of {count}",
+                    if *count == 0 {
+                        0
+                    } else {
+                        (current.get() - 1) * 25 + 1
+                    },
+                    (current.get() * 25).min(*count)
+                )
+            })),
+            action("Previous page", move || {
+                if !busy.get() && current.get() > 1 {
+                    current.revise(|stored_value| *stored_value -= 1);
+                    previous();
+                }
+            })
+            .enabled(current.map(|page| *page > 1)),
+            text()
+                .content(current.map(move |page| {
+                    format!("Page {page} of {}", total.get().div_ceil(25).max(1))
+                })),
+            action("Next page", move || {
+                if !busy.get() && current.get().saturating_mul(25) < total.get() {
+                    current.revise(|stored_value| *stored_value += 1);
+                    next();
+                }
+            })
+            .enabled(total.map(move |count| current.get().saturating_mul(25) < *count)),
+        )),
+    )
 }
 
 fn media(scope: &Scope) -> View {
@@ -271,12 +461,9 @@ fn media(scope: &Scope) -> View {
     let (keep, keep_input) = toggle(scope, "Keep profile media", false);
     let s = scope.clone();
     let s2 = scope.clone();
-    root = root
-        .fill(label("Bulk media cleanup"))
+    let cleanup = view().class("operation-form")
         .fill(label("This server bulk cleanup includes profile media. Preserving profile media is unavailable; selecting it blocks submission."))
-        .fill(label("Before UTC timestamp (milliseconds)"))
         .fill(before_input)
-        .fill(label("Minimum size in bytes"))
         .fill(size_input)
         .fill(keep_input)
         .fill(action("Delete local media", move || {
@@ -296,7 +483,11 @@ fn media(scope: &Scope) -> View {
                 refresh.revise(|v| *v += 1);
                 Ok(format!("Deleted {} media files", result.total))
             });
-        }))
+        }));
+    let purge = view().class("operation-form")
+        .fill(label("Remove cached remote files older than the supplied timestamp. This does not delete remote originals.").class("page-description"))
+        .fill(view().class("field").fill((label("Before UTC timestamp (milliseconds)").class("field-label"),
+            input().name("Before UTC timestamp (milliseconds)").value(before).on(value_changed,move |event|{if let Event::ValueChanged{value,..}=event{before.revise(|stored|*stored=value);}}))))
         .fill(action("Purge remote media cache", move || {
             if !confirm("Purge cached remote media before this timestamp?") {
                 return;
@@ -313,17 +504,14 @@ fn media(scope: &Scope) -> View {
             });
         }));
     let (id, id_input) = field(scope, "Media ID");
-    root = root
-        .fill(label("Manage individual media"))
-        .fill(label("Media ID"))
-        .fill(id_input);
+    let mut individual = view().class("operation-form").fill(id_input);
     for (caption, kind) in [
         ("Delete media", 0),
         ("Quarantine media", 1),
         ("Protect media", 2),
     ] {
         let s = scope.clone();
-        root = root.fill(action(caption, move || {
+        individual = individual.fill(action(caption, move || {
             if !confirm(&format!("{caption}?")) {
                 return;
             }
@@ -345,6 +533,11 @@ fn media(scope: &Scope) -> View {
             });
         }));
     }
+    root = root.fill(view().class("page-actions").fill((
+        operation_dialog("delete-local-media", "Delete Local Media", cleanup),
+        operation_dialog("purge-remote-media", "Purge Remote Media", purge),
+        operation_dialog("individual-media", "Manage individual media", individual),
+    )));
     root.fill(status(message))
 }
 
@@ -373,7 +566,7 @@ fn report(scope: &Scope, id: String) -> View {
     let read_id = id.clone();
     let load: Rc<dyn Fn()> = Rc::new(move || {
         let id = read_id.clone();
-        submit(&s, busy, message, async move {
+        load_quiet(&s, busy, message, async move {
             let r = api::reports::get_report(number(&id, "Report ID")?).await?;
             record.revise(|value| *value = Some(r.clone()));
             detail.revise(|stored_value| *stored_value = report_detail(r));
@@ -522,7 +715,7 @@ fn destination(scope: &Scope, id: String) -> View {
     let target = id.clone();
     let load: Rc<dyn Fn()> = Rc::new(move || {
         let id = target.clone();
-        submit(&s, busy, message, async move {
+        load_quiet(&s, busy, message, async move {
             let r = api::destinations::get_destination(&id).await?.destination;
             detail.revise(|stored_value| *stored_value = format!("{}\nRetry interval: {} ms\nLast retry: {}\nFailure: {}\nLast successful stream ordering: {:?}",r.destination,r.retry_interval,date::format_timestamp(r.retry_last_ts),r.failure_ts.map(date::format_timestamp).unwrap_or_default(),r.last_successful_stream_ordering));
             Ok("Destination loaded".into())
@@ -565,7 +758,7 @@ fn tokens(scope: &Scope) -> View {
     });
     let s = scope.clone();
     let reload: Rc<dyn Fn()> = Rc::new(move || {
-        submit(&s, busy, message, async move {
+        load_quiet(&s, busy, message, async move {
             let items = api::registration_tokens::get_registration_tokens().await?;
             let n = items.len();
             data.revise(|stored_value| *stored_value = items);
@@ -603,50 +796,108 @@ fn tokens(scope: &Scope) -> View {
     let s = scope.clone();
 
     let table = each(
-        visible,
-        |r| r.id.clone(),
-        move |row, _| {
-            let s1 = s.clone();
-            let s2 = s.clone();
-
-            view()
-                .class("record")
-                .fill(text().content(row.map(|r| {
-                    format!(
-                        "{} · Uses allowed {} · Pending {} · Completed {} · Expiry {}",
-                        r.id,
-                        r.token
-                            .uses_allowed
-                            .map(|v| v.to_string())
-                            .unwrap_or_else(|| "unlimited".into()),
+        scope.bond(move || vec![visible.get()]),
+        |rows| {
+            rows.iter()
+                .map(|r| {
+                    (
+                        r.id.clone(),
                         r.token.pending,
                         r.token.completed,
-                        r.token
-                            .expiry_time
-                            .map(date::format_timestamp)
-                            .unwrap_or_else(|| "never".into())
+                        r.token.uses_allowed,
+                        r.token.expiry_time,
                     )
-                })))
-                .fill(action("Copy token", move || {
-                    let token = row.get().id;
-                    submit(&s1, busy, message, async move {
-                        copy(&token).await?;
-                        Ok("Token copied".into())
-                    });
-                }))
-                .fill(action("Delete token", move || {
-                    if !confirm("Delete this registration token?") {
-                        return;
-                    }
-                    let id = row.get().id;
-
-                    submit(&s2, busy, message, async move {
-                        api::registration_tokens::delete_registration_token(&id).await?;
-                        data.revise(|items| items.retain(|v| v.id != id));
-
-                        Ok("Token deleted".into())
-                    });
-                }))
+                })
+                .collect::<Vec<_>>()
+        },
+        move |values, _| {
+            let owner = s.clone();
+            widget(move |scope| {
+                let mut head = sapid::table_row("columns");
+                for (index, caption) in [
+                    "Token",
+                    "Uses allowed",
+                    "Pending",
+                    "Completed",
+                    "Expiry",
+                    "Actions",
+                ]
+                .iter()
+                .enumerate()
+                {
+                    head = head.cell(
+                        sapid::table_header_cell(format!("column-{index}"))
+                            .text(localized(scope, (*caption).into())),
+                    );
+                }
+                let mut body = sapid::table_body();
+                for (index, row) in values.get().into_iter().enumerate() {
+                    let id = row.id;
+                    let event_id = id.clone();
+                    let owner = owner.clone();
+                    body = body.row(
+                        sapid::table_row(format!("token-{index}"))
+                            .class("record")
+                            .cell(sapid::table_cell("token").text(id).class("token-value"))
+                            .cell(
+                                sapid::table_cell("uses").text(
+                                    row.token
+                                        .uses_allowed
+                                        .map(|v| v.to_string())
+                                        .unwrap_or_else(|| "Unlimited".into()),
+                                ),
+                            )
+                            .cell(sapid::table_cell("pending").text(row.token.pending.to_string()))
+                            .cell(
+                                sapid::table_cell("completed")
+                                    .text(row.token.completed.to_string()),
+                            )
+                            .cell(
+                                sapid::table_cell("expiry").text(
+                                    row.token
+                                        .expiry_time
+                                        .map(date::format_timestamp)
+                                        .unwrap_or_else(|| "Never".into()),
+                                ),
+                            )
+                            .cell(sapid::table_cell("actions").content(move || {
+                                let copy_id = event_id.clone();
+                                let delete_id = event_id.clone();
+                                let copy_scope = owner.clone();
+                                let delete_scope = owner.clone();
+                                view().class("table-actions").fill((
+                                    action("Copy token", move || {
+                                        let token = copy_id.clone();
+                                        submit(&copy_scope, busy, message, async move {
+                                            copy(&token).await?;
+                                            Ok("Token copied".into())
+                                        });
+                                    }),
+                                    action("Delete token", move || {
+                                        if !confirm("Delete this registration token?") {
+                                            return;
+                                        }
+                                        let id = delete_id.clone();
+                                        submit(&delete_scope, busy, message, async move {
+                                            api::registration_tokens::delete_registration_token(
+                                                &id,
+                                            )
+                                            .await?;
+                                            data.revise(|items| items.retain(|row| row.id != id));
+                                            Ok("Token deleted".into())
+                                        });
+                                    }),
+                                ))
+                            })),
+                    );
+                }
+                sapid::table("registration-tokens")
+                    .unstyled()
+                    .class("application-table")
+                    .head(sapid::table_head().row(head))
+                    .body(body)
+                    .build(scope)
+            })
         },
     );
     let (token, token_input) = field(scope, "Token (blank to generate)");
@@ -655,16 +906,56 @@ fn tokens(scope: &Scope) -> View {
     let (length, length_input) = field(scope, "Generated token length (1–64)");
     length.revise(|stored_value| *stored_value = "16".into());
     let s = scope.clone();
-    page("Registration tokens").fill(label("Search registration tokens")).fill(query_input).fill(action("All tokens",move ||mode.revise(|stored_value| *stored_value = 0))).fill(action("Active tokens",move ||mode.revise(|stored_value| *stored_value = 1))).fill(action("Expired tokens",move ||mode.revise(|stored_value| *stored_value = 2))).fill(action("Refresh / Retry",move ||reload())).fill(status(message)).fill(table)
-        .fill(action("Previous token page",move ||token_page.revise(|v|*v=v.saturating_sub(1))))
-        .fill(action("Next token page",move ||{if has_more.get(){token_page.revise(|v|*v=v.saturating_add(1));}}))
-        .fill(label("Create registration token")).fill(label("Token (blank to generate)")).fill(token_input).fill(label("Allowed uses (blank for unlimited)")).fill(uses_input).fill(label("Expiry date UTC (YYYY-MM-DD; blank for none)")).fill(expiry_input).fill(label("Generated token length (1–64)")).fill(length_input)
+    let form = view().class("operation-form").fill((token_input,uses_input,expiry_input,length_input))
         .fill(action("Create token",move ||{let token=token.get();let uses=uses.get();let expiry=expiry.get();let length=length.get();submit(&s,busy,message,async move{
             let uses=optional_number(&uses,"Allowed uses")?;
             let expiry=if expiry.trim().is_empty(){None}else{let date=chrono::NaiveDate::parse_from_str(&expiry,"%Y-%m-%d").map_err(|_|HttpError::message("Expiry must be YYYY-MM-DD"))?;let ts=date.and_hms_opt(23,59,59).unwrap().and_utc().timestamp_millis();if ts<=chrono::Utc::now().timestamp_millis(){return Err(HttpError::message("Expiry must be in the future"));}Some(ts as u64)};
             let length=if token.is_empty(){let length=number(&length,"Length")?;if !(1..=64).contains(&length){return Err(HttpError::message("Length must be 1–64"));}Some(length)}else{if !token.chars().all(|c|c.is_ascii_alphanumeric()||"._~-".contains(c)){return Err(HttpError::message("Token may contain only letters, digits, dot, underscore, tilde and dash"));}None};
             let result=api::registration_tokens::create_registration_token(if token.is_empty(){None}else{Some(token.as_str())},uses,expiry,length).await?;data.revise(|items|items.push(result));Ok("Registration token created".into())
-        });}))
+        });}));
+    page("Registration tokens")
+        .class("page list-page tokens-list")
+        .fill(label("Manage registration tokens for new accounts").class("page-description"))
+        .fill(view().class("page-actions").fill(operation_dialog(
+            "create-registration-token",
+            "Create registration token",
+            form,
+        )))
+        .fill(view().class("list-toolbar").fill((
+            query_input,
+            view().class("filter-tabs").fill((
+                action("All tokens", move || mode.revise(|v| *v = 0)),
+                action("Active tokens", move || mode.revise(|v| *v = 1)),
+                action("Expired tokens", move || mode.revise(|v| *v = 2)),
+            )),
+            action("Refresh / Retry", move || reload()),
+        )))
+        .fill(status(message))
+        .fill(view().class("table-container").fill((
+            table,
+            when(scope.bond(move || visible.with(Vec::is_empty)), || {
+                view().class("empty-table").fill((
+                    label("No registration tokens").class("empty-title"),
+                    label("Create a registration token to allow new users to register.")
+                        .class("empty-description"),
+                ))
+            }),
+        )))
+        .fill(
+            view().class("list-pagination").fill((
+                action("Previous token page", move || {
+                    token_page.revise(|v| *v = v.saturating_sub(1))
+                })
+                .enabled(token_page.map(|page| *page > 0)),
+                text().content(token_page.map(|page| format!("Page {}", page + 1))),
+                action("Next token page", move || {
+                    if has_more.get() {
+                        token_page.revise(|v| *v = v.saturating_add(1));
+                    }
+                })
+                .enabled(has_more),
+            )),
+        )
 }
 
 fn diagnostics(scope: &Scope) -> View {
@@ -673,7 +964,7 @@ fn diagnostics(scope: &Scope) -> View {
     let message = scope.cage(String::new());
     let s = scope.clone();
     let reload: Rc<dyn Fn()> = Rc::new(move || {
-        submit(&s, busy, message, async move {
+        load_quiet(&s, busy, message, async move {
             let discovered = api::diagnostics::discover().await;
             data.revise(|stored_value| *stored_value = discovered);
             Ok("Discovery completed; individual endpoint outcomes are shown below".into())
@@ -737,7 +1028,7 @@ fn server_status(scope: &Scope) -> View {
     let s = scope.clone();
     let reload: Rc<dyn Fn()> = Rc::new(move || {
         let url = url.get();
-        submit(&s, busy, message, async move {
+        load_quiet(&s, busy, message, async move {
             let url = configured_url(url)?;
             let status = api::palpo_admin::get_server_status(&url).await?;
             let process = api::palpo_admin::get_server_running_process(&url).await;
@@ -924,7 +1215,7 @@ fn notifications(scope: &Scope) -> View {
     let s = scope.clone();
     let reload: Rc<dyn Fn()> = Rc::new(move || {
         let url = url.get();
-        submit(&s, busy, message, async move {
+        load_quiet(&s, busy, message, async move {
             let result = api::palpo_admin::get_server_notifications(&configured_url(url)?).await?;
             let n = result.notifications.len();
             items.revise(|stored_value| *stored_value = result.notifications);
@@ -1091,7 +1382,7 @@ fn server_actions(scope: &Scope) -> View {
     let s = scope.clone();
     let load: Rc<dyn Fn()> = Rc::new(move || {
         let url = url.get();
-        submit(&s, busy, message, async move {
+        load_quiet(&s, busy, message, async move {
             let url = configured_url(url)?;
             let process = api::palpo_admin::get_server_running_process(&url).await?;
             locked.revise(|stored_value| *stored_value = process.command.is_some());
@@ -1223,7 +1514,7 @@ fn schedule_editor(
     let s = scope.clone();
     let load: Rc<dyn Fn()> = Rc::new(move || {
         let url = url.get();
-        submit(&s, busy, message, async move {
+        load_quiet(&s, busy, message, async move {
             let url = configured_url(url)?;
             let rows = if recurring {
                 api::palpo_admin::get_recurring_commands(&url)

@@ -5,8 +5,8 @@ param(
     [string]$PalpoImage = 'complement-palpo:pr517-ack'
 )
 $ErrorActionPreference = 'Stop'
-$stack = 'D:/BuildCache/padmin-glory-branch/real-stack'
-$env:TEMP = 'D:/BuildCache/padmin-glory-branch/tmp'
+$stack = 'D:/BuildCache/meldry-visual-20261025/padmin/real-stack'
+$env:TEMP = 'D:/BuildCache/meldry-visual-20261025/padmin/tmp'
 $env:TMP = $env:TEMP
 New-Item -ItemType Directory -Force $stack,$env:TEMP | Out-Null
 $pasion = Join-Path $PasionRoot 'target/debug/pasion.exe'
@@ -35,7 +35,7 @@ $env:PADMIN_ACCEPTANCE_PASION_ROOT = $PasionRoot
 @'
 from pathlib import Path
 import os,re
-p=Path('D:/BuildCache/padmin-glory-branch/real-stack')
+p=Path('D:/BuildCache/meldry-visual-20261025/padmin/real-stack')
 s=(p/'generated.yaml').read_text()
 s=s.replace('uri: postgresql://','uri: postgresql://padmin_test@127.0.0.1:25432/pasion').replace('http://[::]:7080/','http://127.0.0.1:27080/').replace("address: '[::]:7080'","address: '127.0.0.1:27080'")
 s=s.replace('    - name: assets','    - name: adminapi\n    - name: assets\n      path: '+os.environ['PADMIN_ACCEPTANCE_PASION_ROOT']+'/dist')

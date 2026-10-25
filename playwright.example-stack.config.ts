@@ -8,9 +8,9 @@ export default defineConfig({
   retries: 2,
   reporter: [
     ["list"],
-    ["html", { open: "never", outputFolder: "D:/BuildCache/padmin-glory-branch/playwright-report/example-stack" }],
+    ["html", { open: "never", outputFolder: "D:/BuildCache/meldry-visual-20261025/padmin/playwright-report/example-stack" }],
   ],
-  outputDir: "D:/BuildCache/padmin-glory-branch/test-results/example-stack",
+  outputDir: "D:/BuildCache/meldry-visual-20261025/padmin/test-results/example-stack",
   timeout: 120_000,
   expect: { timeout: 15_000 },
   use: {

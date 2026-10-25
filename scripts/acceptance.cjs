@@ -1,8 +1,8 @@
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const {spawn,spawnSync}=require('node:child_process'),crypto=require('node:crypto');
-const root=process.env.PADMIN_ACCEPTANCE_SOURCE_ROOT?path.resolve(process.env.PADMIN_ACCEPTANCE_SOURCE_ROOT):path.resolve(__dirname,'..'),cache='D:/BuildCache/padmin-glory-branch';
+const root=process.env.PADMIN_ACCEPTANCE_SOURCE_ROOT?path.resolve(process.env.PADMIN_ACCEPTANCE_SOURCE_ROOT):path.resolve(__dirname,'..'),cache='D:/BuildCache/meldry-visual-20261025/padmin';
 const real=process.argv.includes('--real');
-const runtime=fs.existsSync(cache+'/runtime/node_modules/playwright')?cache+'/runtime':'D:/BuildCache/padmin-glory/runtime';
+const runtime=fs.existsSync(cache+'/runtime/node_modules/playwright')?cache+'/runtime':'D:/BuildCache/glory-dependencies/browser';
 const env={...process.env,TEMP:cache+'/tmp',TMP:cache+'/tmp',PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD:'1',PADMIN_PLAYWRIGHT:process.env.PADMIN_PLAYWRIGHT||runtime+'/node_modules/playwright'};
 fs.mkdirSync(env.TEMP,{recursive:true});
 const suites=real?['real-backend-acceptance.cjs','browser-real-matrix.cjs','browser-real-domains.cjs','browser-real-operations.cjs','browser-real-stack.cjs','browser-real-source.cjs']:['browser-fixture.cjs','browser-auth.cjs','browser-shell.cjs','browser-source-behaviors.cjs','browser-domains.cjs','browser-domains-writes.cjs','browser-rooms-writes.cjs','browser-operations.cjs'];

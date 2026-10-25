@@ -8,8 +8,8 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: 1,
-  reporter: [["html", { open: "never", outputFolder: "D:/BuildCache/padmin-glory-branch/playwright-report" }], ["list"]],
-  outputDir: "D:/BuildCache/padmin-glory-branch/test-results",
+  reporter: [["html", { open: "never", outputFolder: "D:/BuildCache/meldry-visual-20261025/padmin/playwright-report" }], ["list"]],
+  outputDir: "D:/BuildCache/meldry-visual-20261025/padmin/test-results",
   timeout: 60_000,
   expect: { timeout: 15_000 },
 

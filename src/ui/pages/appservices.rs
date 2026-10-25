@@ -426,7 +426,7 @@ pub fn render(scope: &Scope, _route: &crate::router::Route) -> View {
     };
     let s = scope.clone();
     let reload: Rc<dyn Fn()> = Rc::new(move || {
-        submit(&s, busy, message, async move {
+        load_quiet(&s, busy, message, async move {
             let list = api::list_appservices().await?;
             let n = list.len();
             rows.revise(|v| *v = list);
@@ -439,6 +439,7 @@ pub fn render(scope: &Scope, _route: &crate::router::Route) -> View {
     });
     reload();
     let s = scope.clone();
+    let editor_open = scope.cage(false);
     let installed = each(
         rows,
         |r| r.id.clone(),
@@ -448,7 +449,7 @@ pub fn render(scope: &Scope, _route: &crate::router::Route) -> View {
             let delete_scope = s.clone();
             let export_scope = s.clone();
             view().class("record").fill(text().content(entry.map(|r|format!("{} · {} · Sender {} · {}",r.id,r.url.clone().unwrap_or_else(||"no URL".into()),r.sender_localpart,if r.disabled{"Disabled"}else{"Enabled"}))))
-            .fill(action("Edit registration",move ||{let id=entry.get().id;submit(&read_scope,busy,message,async move{let reg=api::get_appservice(&id).await?;expected_url.revise(|v|*v=reg.url.clone());form.apply(reg);editing.revise(|v|*v=Some(id));notes.revise(|v|*v="Editing an installed registration: only the callback URL can be updated in place. Tokens, sender, namespaces, protocols and flags are read-only. Use the separately confirmed Delete action and a new registration to replace those fields.".into());Ok("Registration loaded into editor".into())});}))
+            .fill(action("Edit registration",move ||{let id=entry.get().id;submit(&read_scope,busy,message,async move{let reg=api::get_appservice(&id).await?;expected_url.revise(|v|*v=reg.url.clone());editor_open.revise(|v|*v=true);form.apply(reg);editing.revise(|v|*v=Some(id));notes.revise(|v|*v="Editing an installed registration: only the callback URL can be updated in place. Tokens, sender, namespaces, protocols and flags are read-only. Use the separately confirmed Delete action and a new registration to replace those fields.".into());Ok("Registration loaded into editor".into())});}))
             .fill(action("Enable / Disable",move ||{let row=entry.get();if !confirm(&format!("{} appservice {}?",if row.disabled{"Enable"}else{"Disable"},row.id)){return;}submit(&switch_scope,busy,message,async move{if row.disabled{api::enable_appservice(&row.id).await?;}else{api::disable_appservice(&row.id).await?;}rows.revise(|items|{if let Some(item)=items.iter_mut().find(|v|v.id==row.id){item.disabled=!row.disabled;}});if editing.get().as_deref()==Some(row.id.as_str()){disabled.revise(|v|*v=!row.disabled);}Ok("Appservice status updated".into())});}))
             .fill(action("Delete appservice",move ||{let id=entry.get().id;if !confirm(&format!("Permanently delete appservice {id}?")){return;}submit(&delete_scope,busy,message,async move{api::delete_appservice(&id).await?;rows.revise(|items|items.retain(|v|v.id!=id));Ok("Appservice deleted".into())});}))
             .fill(action("Export registration YAML",move ||{let id=entry.get().id;submit(&export_scope,busy,message,async move{let reg=api::get_appservice(&id).await?;let yaml=serde_saphyr::to_string(&reg).map_err(|e|HttpError::message(e.to_string()))?;download_text("registration.yaml",&yaml,"application/yaml")?;Ok("Registration downloaded".into())});}))
@@ -475,13 +476,25 @@ pub fn render(scope: &Scope, _route: &crate::router::Route) -> View {
         |t| t.key,
         move |entry, _| {
             view()
-                .class("record")
-                .fill(text().content(
-                    entry.map(|t| format!("{} · {}\n{}", t.name, t.category, t.description)),
+                .class("record template-card")
+                .fill((
+                    text()
+                        .class("template-icon")
+                        .content(entry.map(|t| t._icon.to_owned())),
+                    text()
+                        .class("template-category")
+                        .content(entry.map(|t| t.category.to_owned())),
+                    text()
+                        .class("template-title")
+                        .content(entry.map(|t| t.name.to_owned())),
+                    text()
+                        .class("template-description")
+                        .content(entry.map(|t| t.description.to_owned())),
                 ))
                 .fill(action("Configure template", move || {
                     let t = entry.get();
                     let id = rows.with(|rows| unique_id(t.default_id_prefix, rows));
+                    editor_open.revise(|v| *v = true);
                     form.apply(AppserviceRegistration {
                         id,
                         url: if t.default_url.is_empty() {
@@ -504,19 +517,22 @@ pub fn render(scope: &Scope, _route: &crate::router::Route) -> View {
     let copy_scope = scope.clone();
     let copy_scope2 = scope.clone();
     let yaml_copy_scope = scope.clone();
-    page("Appservices").fill(action("Refresh / Retry",move ||reload())).fill(status(message)).fill(installed)
-        .fill(label("Template library")).fill(label("Search appservice templates")).fill(search_input)
-        .fill(action("All categories",move ||category.revise(|v|v.clear())))
-        .fill(action("Bridges",move ||category.revise(|v|*v="Bridge".into())))
-        .fill(action("Bots",move ||category.revise(|v|*v="Bot".into())))
-        .fill(action("Custom",move ||category.revise(|v|*v="Custom".into()))).fill(gallery)
-        .fill(label("Registration editor")).fill(status(notes)).fill(label("Appservice ID")).fill(id_input.enabled(editing.map(|v|v.is_none()))).fill(label("Appservice URL")).fill(url_input).fill(label("Sender localpart")).fill(sender_input.enabled(editing.map(|v|v.is_none())))
-        .fill(label("Application service token")).fill(as_input.purpose(reveal_tokens.map(|show|if *show {Purpose::Text}else{Purpose::Password})).enabled(editing.map(|v|v.is_none()))).fill(label("Homeserver token")).fill(hs_input.purpose(reveal_tokens.map(|show|if *show {Purpose::Text}else{Purpose::Password})).enabled(editing.map(|v|v.is_none())))
+    page("Appservices").class("page appservices-page")
+        .fill(label("Install and manage Matrix application services at runtime.").class("page-description"))
+        .fill(view().class("page-actions").fill(action("Refresh / Retry",move ||reload())))
+        .fill(status(message)).fill(label("Installed").kind(glory::render::TextKind::Heading(2)))
+        .fill(view().class("installed-table table-container").fill((view().class("installed-head").fill((label("ID"),label("Sender"),label("URL"),label("Status"),label("Actions"))),installed,when(rows.map(|rows|rows.is_empty()),||view().class("empty-table").fill((label("").class("empty-icon plug-icon"),label("No appservices installed").class("empty-title"),label("Pick a template from the gallery below to install a bridge or bot.").class("empty-description")))))))
+        .fill(view().class("gallery-heading").fill((label("Install a new appservice").kind(glory::render::TextKind::Heading(2)),label("Pick a ready-made bridge or bot — the form pre-fills sensible defaults.").class("page-description"),action("Import registration.yaml",move||editor_open.revise(|v|*v=true)),search_input)))
+        .fill(view().class("template-categories").fill((action("All categories",move ||category.revise(|v|v.clear())),action("Bridges",move ||category.revise(|v|*v="Bridge".into())),action("Bots",move ||category.revise(|v|*v="Bot".into())),action("Custom",move ||category.revise(|v|*v="Custom".into())))))
+        .fill(view().class("template-gallery").fill(gallery))
+        .fill(crate::ui::widgets::modal("appservice-editor","Registration editor",editor_open,view().class("registration-editor operation-form").fill(action("Close registration editor",move||editor_open.revise(|v|*v=false)))
+        .fill(status(notes)).fill(id_input.enabled(editing.map(|v|v.is_none()))).fill(url_input).fill(sender_input.enabled(editing.map(|v|v.is_none())))
+        .fill(as_input.purpose(reveal_tokens.map(|show|if *show {Purpose::Text}else{Purpose::Password})).enabled(editing.map(|v|v.is_none()))).fill(hs_input.purpose(reveal_tokens.map(|show|if *show {Purpose::Text}else{Purpose::Password})).enabled(editing.map(|v|v.is_none())))
         .fill(check().name(localized(scope,"Show registration tokens".to_owned())).checked(reveal_tokens).on(checked_changed,move|event|{if let Event::CheckedChanged(show)=event{reveal_tokens.revise(|v|*v=show);}})).fill(label("Show registration tokens"))
         .fill(action("Generate secure tokens",move ||{if editing.get().is_some(){message.revise(|v|*v="Tokens cannot be changed in place. Delete and register explicitly to rotate credentials.".into());return;}match (random_token(),random_token()){(Ok(a),Ok(h))=>{as_token.revise(|v|*v=a);hs_token.revise(|v|*v=h);message.revise(|v|*v="Secure tokens generated; save and configure the bridge with matching tokens".into());},(Err(e),_)|(_,Err(e))=>message.revise(|v|*v=e.to_string())}}))
         .fill(action("Copy AS token",move ||{let value=as_token.get();submit(&copy_scope,busy,message,async move{copy(&value).await?;Ok("AS token copied".into())});}))
         .fill(action("Copy HS token",move ||{let value=hs_token.get();submit(&copy_scope2,busy,message,async move{copy(&value).await?;Ok("HS token copied".into())});}))
-        .fill(label("Namespaces (users, aliases, rooms)")).fill(ns_input.multiline(true).enabled(editing.map(|v|v.is_none()))).fill(label("Protocols (comma separated)")).fill(protocols_input.enabled(editing.map(|v|v.is_none()))).fill(label("Rate limited (blank, true or false)")).fill(rate_input.enabled(editing.map(|v|v.is_none())))
+        .fill(ns_input.multiline(true).enabled(editing.map(|v|v.is_none()))).fill(protocols_input.enabled(editing.map(|v|v.is_none()))).fill(rate_input.enabled(editing.map(|v|v.is_none())))
         .fill(check().name(localized(scope, "Receive ephemeral events".to_owned())).checked(ephemeral).enabled(editing.map(|v|v.is_none())).on(checked_changed,move |event|{if let Event::CheckedChanged(next)=event{ephemeral.revise(|v|*v=next);}})).fill(label("Receive ephemeral events"))
         .fill(check().name(localized(scope, "Device management (MSC4190)".to_owned())).checked(device).enabled(editing.map(|v|v.is_none())).on(checked_changed,move |event|{if let Event::CheckedChanged(next)=event{device.revise(|v|*v=next);}})).fill(label("Device management (MSC4190)"))
         .fill(check().name(localized(scope, "Disabled registration".to_owned())).checked(disabled).enabled(editing.map(|v|v.is_none())).on(checked_changed,move |event|{if let Event::CheckedChanged(next)=event{disabled.revise(|v|*v=next);}})).fill(label("Disabled registration"))
@@ -539,7 +555,7 @@ pub fn render(scope: &Scope, _route: &crate::router::Route) -> View {
                 match selected.await? {
                     Some(contents) => {
                         let reg = parse_registration(&contents)?;
-                        form.apply(reg);
+                        editor_open.revise(|v|*v=true);form.apply(reg);
                         editing.revise(|v| *v = None);
                         Ok("Imported. Review all fields and save to register the appservice.".into())
                     }
@@ -547,8 +563,8 @@ pub fn render(scope: &Scope, _route: &crate::router::Route) -> View {
                 }
             });
         }))
-        .fill(label("Paste registration YAML or JSON")).fill(import_input.multiline(true))
-        .fill(action("Import YAML / JSON into editor",move ||{match parse_registration(&import.get()){Ok(reg)=>{form.apply(reg);editing.revise(|v|*v=None);import.revise(|v|v.clear());message.revise(|v|*v="Imported. Review all fields and save to register the appservice.".into());},Err(e)=>message.revise(|v|*v=e.to_string())}}))
+        .fill(import_input.multiline(true))
+        .fill(action("Import YAML / JSON into editor",move ||{match parse_registration(&import.get()){Ok(reg)=>{editor_open.revise(|v|*v=true);form.apply(reg);editing.revise(|v|*v=None);import.revise(|v|v.clear());message.revise(|v|*v="Imported. Review all fields and save to register the appservice.".into());},Err(e)=>message.revise(|v|*v=e.to_string())}}))))
 }
 
 /// Browser file picker is a host capability; it never mutates a semantic node.

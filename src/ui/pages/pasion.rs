@@ -1,6 +1,6 @@
 //! Dedicated Pasion administration workflows, backed by the Pasion admin API.
 use super::users::{collection_window, remember, stored};
-use crate::ui::widgets::{action, confirm, field, label, page, spawn, status, submit};
+use crate::ui::widgets::{action, confirm, field, label, load_quiet, page, spawn, status, submit};
 use crate::{api::pasion::*, types::*, utils::error::HttpError};
 use glory::{core::Cage, ui::*};
 use std::result::Result;
@@ -98,8 +98,8 @@ fn accounts(scope: &Scope) -> View {
     let busy = scope.cage(false);
     let message = scope.cage(String::new());
     let (search, search_input) = field(scope, "Search username");
-    let (state, state_input) = field(scope, "Status: blank, active, locked, deactivated");
-    let (admin, admin_input) = field(scope, "Administrator: blank, true, false");
+    let (state, _state_input) = field(scope, "Status: blank, active, locked, deactivated");
+    let (admin, _admin_input) = field(scope, "Administrator: blank, true, false");
     search.revise(|v| *v = stored("pasion.accounts.search", ""));
     state.revise(|v| *v = stored("pasion.accounts.state", ""));
     admin.revise(|v| *v = stored("pasion.accounts.admin", ""));
@@ -211,130 +211,218 @@ fn accounts(scope: &Scope) -> View {
     let (make_admin, admin_check) = check_field(scope, "Grant administrator", false);
     let writing = scope.cage(false);
     let s = scope.clone();
-    page("Pasion accounts").fill((
-        label(
-            "Pasion owns these accounts and credentials. Matrix profiles are managed separately.",
-        ),
-        view().fill((
-            search_input,
-            state_input,
-            admin_input,
-            action("Search / apply filters", move || {
-                if busy.get() {
-                    return;
-                }
-                cursor.revise(|slot| *slot = None);
-                history.revise(|slot| *slot = Vec::new());
-                apply_pending.revise(|slot| *slot = true);
-                apply();
-            })
-            .enabled(busy.map(|b| !b)),
-        )),
-        status(message),
-        text().content(total),
-        each(
-            data,
-            |u| u.id.clone(),
-            move |u, _| {
-                let id = u.get().id;
-                view().class("record").fill((
-                    text().content(u.map(|u| {
-                        format!(
-                            "{} · {} · {} · created {}",
-                            u.username,
-                            if u.deactivated_at.is_some() {
-                                "deactivated"
-                            } else if u.locked_at.is_some() {
-                                "locked"
-                            } else {
-                                "active"
-                            },
-                            if u.admin { "admin" } else { "user" },
-                            u.created_at
-                        )
-                    })),
-                    action("Account details", move || {
-                        crate::ui::navigate(&account_path(&id))
+    let create_open = scope.cage(false);
+    let table_data = data.map(|rows| vec![rows.clone()]);
+    page("Local Accounts")
+        .class("page list-page accounts-list")
+        .fill((
+            label(
+                "Accounts managed by Pasion: roles, lock and deactivation, passwords and sessions",
+            )
+            .class("page-description"),
+            view().class("page-actions").fill(
+                action("Create account", move || create_open.revise(|v| *v = !*v))
+                    .class("btn-primary"),
+            ),
+            view().class("list-toolbar").fill((
+                search_input,
+                sapid::native_select("account-status")
+                    .unstyled()
+                    .name("Account status")
+                    .value(state.map(|v| {
+                        Some(if v.is_empty() {
+                            "all".into()
+                        } else {
+                            v.clone()
+                        })
+                    }))
+                    .options([
+                        sapid::select_option("all", "All statuses"),
+                        sapid::select_option("active", "Active"),
+                        sapid::select_option("locked", "Locked"),
+                        sapid::select_option("deactivated", "Deactivated"),
+                    ])
+                    .on_value_change(move |v| {
+                        state.revise(|slot| *slot = v.filter(|v| v != "all").unwrap_or_default())
                     }),
-                ))
-            },
-        ),
-        view().fill((
-            action("Previous", move || {
-                if busy.get() {
-                    return;
-                }
-                let mut h = history.get();
-                if let Some(previous) = h.pop() {
-                    history.revise(|slot| *slot = h);
-                    cursor.revise(|slot| *slot = previous);
-                    back();
-                }
-            })
-            .enabled(history.map(|h| !h.is_empty())),
-            action("Next", move || {
-                if busy.get() {
-                    return;
-                }
-                if let Some(n) = next.get() {
+                sapid::native_select("account-admin")
+                    .unstyled()
+                    .name("Account role")
+                    .value(admin.map(|v| {
+                        Some(if v.is_empty() {
+                            "all".into()
+                        } else {
+                            v.clone()
+                        })
+                    }))
+                    .options([
+                        sapid::select_option("all", "All roles"),
+                        sapid::select_option("true", "Administrator"),
+                        sapid::select_option("false", "Regular"),
+                    ])
+                    .on_value_change(move |v| {
+                        admin.revise(|slot| *slot = v.filter(|v| v != "all").unwrap_or_default())
+                    }),
+                action("Search / apply filters", move || {
+                    if busy.get() {
+                        return;
+                    }
+                    cursor.revise(|slot| *slot = None);
+                    history.revise(|slot| *slot = Vec::new());
+                    apply_pending.revise(|slot| *slot = true);
+                    apply();
+                })
+                .enabled(busy.map(|b| !b)),
+            )),
+            view().class("table-container").fill((
+                each(
+                    table_data,
+                    |rows| serde_json::to_string(rows).unwrap_or_default(),
+                    move |values, _| {
+                        widget(move |scope| {
+                            let mut head = sapid::table_row("head");
+                            for (key, title) in [
+                                ("username", "Username"),
+                                ("name", "Display name"),
+                                ("status", "Status"),
+                                ("created", "Created"),
+                                ("actions", ""),
+                            ] {
+                                head = head.cell(sapid::table_header_cell(key).text(title));
+                            }
+                            let mut body = sapid::table_body();
+                            for (index, row) in values.get().into_iter().enumerate() {
+                                let id = row.id.clone();
+                                body = body.row(
+                                    sapid::table_row(format!("account-{index}"))
+                                        .class("record")
+                                        .cell(
+                                            sapid::table_cell("username")
+                                                .text(row.username.clone()),
+                                        )
+                                        .cell(sapid::table_cell("name").text(
+                                            row.display_name.clone().unwrap_or_else(|| "—".into()),
+                                        ))
+                                        .cell(sapid::table_cell("status").text(
+                                            if row.deactivated_at.is_some() {
+                                                "Deactivated"
+                                            } else if row.locked_at.is_some() {
+                                                "Locked"
+                                            } else {
+                                                "Active"
+                                            },
+                                        ))
+                                        .cell(
+                                            sapid::table_cell("created")
+                                                .text(row.created_at.to_string()),
+                                        )
+                                        .cell(sapid::table_cell("actions").content(move || {
+                                            let id = id.clone();
+                                            action("Account details", move || {
+                                                crate::ui::navigate(&account_path(&id))
+                                            })
+                                        })),
+                                );
+                            }
+                            let mut table = sapid::table("pasion-accounts")
+                                .unstyled()
+                                .class("application-table")
+                                .head(sapid::table_head().row(head))
+                                .body(body);
+                            table.build(scope)
+                        })
+                    },
+                ),
+                when(data.map(|rows| rows.is_empty()), || {
+                    view()
+                        .class("table-empty-compact")
+                        .fill(label("No accounts found"))
+                }),
+            )),
+            status(message),
+            text().content(total),
+            view().class("list-pagination").fill((
+                action("Previous", move || {
+                    if busy.get() {
+                        return;
+                    }
                     let mut h = history.get();
-                    h.push(cursor.get());
-                    history.revise(|slot| *slot = h);
-                    cursor.revise(|slot| *slot = Some(n));
-                    forward();
-                }
-            })
-            .enabled(next.map(|n| n.is_some())),
-        )),
-        view().name("Create account").fill((
-            label("Create account"),
-            username_input,
-            password_input.purpose(Purpose::Password),
-            skip_input,
-            admin_check,
-            action("Create account", move || {
-                let name = username.get();
-                let pw = password.get();
-                let skip = skip.get();
-                let admin = make_admin.get();
-                submit(&s, writing, message, async move {
-                    let name = required(name, "Username")?;
-                    let u = pasion_create_user(&name).await?;
-                    let mut errors = Vec::new();
-                    if !pw.is_empty() {
-                        if let Err(e) = pasion_set_password(&u.id, &pw, skip).await {
-                            errors.push(format!("password: {e}"));
-                        }
+                    if let Some(previous) = h.pop() {
+                        history.revise(|slot| *slot = h);
+                        cursor.revise(|slot| *slot = previous);
+                        back();
                     }
-                    if admin {
-                        if let Err(e) =
-                            pasion_update_user(&u.id, serde_json::json!({"admin":true})).await
-                        {
-                            errors.push(format!("admin: {e}"));
-                        }
+                })
+                .enabled(history.map(|h| !h.is_empty())),
+                action("Next", move || {
+                    if busy.get() {
+                        return;
                     }
-                    let _ = password.try_revise(|slot| *slot = String::new());
-                    let _ = username.try_revise(|slot| *slot = String::new());
-                    // Keep the created account visible even when a follow-up failed.
-                    let _ = data.try_revise(|rows| {
-                        rows.insert(0, u.clone());
-                        rows.truncate(25);
-                    });
-                    Ok(if errors.is_empty() {
-                        crate::ui::navigate(&account_path(&u.id));
-                        format!("Account {} created", u.username)
-                    } else {
-                        format!(
-                            "Account {} created; follow-up failed: {}",
-                            u.username,
-                            errors.join("; ")
-                        )
+                    if let Some(n) = next.get() {
+                        let mut h = history.get();
+                        h.push(cursor.get());
+                        history.revise(|slot| *slot = h);
+                        cursor.revise(|slot| *slot = Some(n));
+                        forward();
+                    }
+                })
+                .enabled(next.map(|n| n.is_some())),
+            )),
+            crate::ui::widgets::modal(
+                "create-account",
+                "Create account",
+                create_open,
+                view().name("Create account").class("operation-form").fill((
+                    label("Create account"),
+                    username_input,
+                    password_input.purpose(Purpose::Password),
+                    skip_input,
+                    admin_check,
+                    action("Create account", move || {
+                        let name = username.get();
+                        let pw = password.get();
+                        let skip = skip.get();
+                        let admin = make_admin.get();
+                        submit(&s, writing, message, async move {
+                            let name = required(name, "Username")?;
+                            let u = pasion_create_user(&name).await?;
+                            let mut errors = Vec::new();
+                            if !pw.is_empty() {
+                                if let Err(e) = pasion_set_password(&u.id, &pw, skip).await {
+                                    errors.push(format!("password: {e}"));
+                                }
+                            }
+                            if admin {
+                                if let Err(e) =
+                                    pasion_update_user(&u.id, serde_json::json!({"admin":true}))
+                                        .await
+                                {
+                                    errors.push(format!("admin: {e}"));
+                                }
+                            }
+                            let _ = password.try_revise(|slot| *slot = String::new());
+                            let _ = username.try_revise(|slot| *slot = String::new());
+                            // Keep the created account visible even when a follow-up failed.
+                            let _ = data.try_revise(|rows| {
+                                rows.insert(0, u.clone());
+                                rows.truncate(25);
+                            });
+                            Ok(if errors.is_empty() {
+                                crate::ui::navigate(&account_path(&u.id));
+                                format!("Account {} created", u.username)
+                            } else {
+                                format!(
+                                    "Account {} created; follow-up failed: {}",
+                                    u.username,
+                                    errors.join("; ")
+                                )
+                            })
+                        });
                     })
-                });
-            })
-            .enabled(writing.map(|b| !b)),
-        )),
-    ))
+                    .enabled(writing.map(|b| !b)),
+                )),
+            ),
+        ))
 }
 
 fn audit(scope: &Scope) -> View {
@@ -367,7 +455,7 @@ fn audit(scope: &Scope) -> View {
         }
     });
     refresh();
-    page("Pasion audit log").fill((
+    page("Pasion audit log").class("page pasion-page").fill((
         input,
         filter_input,
         action("Refresh", move || refresh()).enabled(busy.map(|b| !b)),
@@ -413,7 +501,7 @@ fn health(scope: &Scope) -> View {
     let s = scope.clone();
     let refresh = Rc::new(move || load(&s, busy, message, data, pasion_get_connector_health()));
     refresh();
-    page("Connector health").fill((
+    page("Connector health").class("page pasion-page").fill((
         action("Refresh", move || refresh()).enabled(busy.map(|b| !b)),
         status(message),
         pagination,
@@ -447,7 +535,7 @@ fn channels(scope: &Scope) -> View {
     let refresh =
         Rc::new(move || load(&s, busy, message, data, pasion_get_notification_channels()));
     refresh();
-    page("Notification channels").fill((label("Channel configuration is managed by the server. This API exposes configuration status only."),action("Refresh",move ||refresh()).enabled(busy.map(|b|!b)),status(message),pagination,each(visible,|r|r.channel.clone(),move |r,_|text().content(r.map(|r|format!("{} · {}",r.channel,if r.configured{"configured"}else{"not configured"}))))))
+    page("Notification channels").class("page pasion-page").fill((label("Channel configuration is managed by the server. This API exposes configuration status only."),action("Refresh",move ||refresh()).enabled(busy.map(|b|!b)),status(message),pagination,each(visible,|r|r.channel.clone(),move |r,_|text().content(r.map(|r|format!("{} · {}",r.channel,if r.configured{"configured"}else{"not configured"}))))))
 }
 
 fn templates(scope: &Scope) -> View {
@@ -468,7 +556,7 @@ fn templates(scope: &Scope) -> View {
     let (body, body_input) = field(scope, "Body template");
     let writing = scope.cage(false);
     let s = scope.clone();
-    page("Notification templates").fill((action("Refresh",move ||refresh()),status(message),pagination,each(visible,|r|r.key.clone(),move |r,_|{let name=r.get().key;view().fill((text().content(r.map(|r|format!("{} · {}",r.key,r.description))),action("Select template",move||key.revise(|slot| *slot = name.clone()))))}),view().name("Publish template").fill((label("Publish template"),key_input,locale_input,channel_input,subject_input,body_input.multiline(true),action("Publish template",move||{
+    page("Notification templates").class("page pasion-page").fill((action("Refresh",move ||refresh()),status(message),pagination,each(visible,|r|r.key.clone(),move |r,_|{let name=r.get().key;view().fill((text().content(r.map(|r|format!("{} · {}",r.key,r.description))),action("Select template",move||key.revise(|slot| *slot = name.clone()))))}),view().name("Publish template").class("panel template-editor").fill((label("Publish template"),key_input,locale_input,channel_input,subject_input,body_input.multiline(true),action("Publish template",move||{
         let k=key.get();let l=locale.get();let c=channel.get();let sub=subject.get();let b=body.get();if !confirm("Publish this notification template?"){return;}
         submit(&s,writing,message,async move{let k=required(k,"Template key")?;let l=required(l,"Locale")?;let c=required(c,"Channel")?;required(b.clone(),"Body template")?;let mut payload=serde_json::json!({"template_key":k,"locale":l,"channel":c,"body_template":b});if !sub.is_empty(){payload["subject_template"]=sub.into();}pasion_publish_template(payload).await?;Ok("Template published".into())});
     }).enabled(writing.map(|b|!b))))))
@@ -490,7 +578,7 @@ fn oauth(scope: &Scope) -> View {
     });
     refresh();
     let s = scope.clone();
-    page("OAuth2 sessions").fill((
+    page("OAuth2 sessions").class("page pasion-page").fill((
         input,
         action("Apply filter / refresh", move || refresh()).enabled(busy.map(|b| !b)),
         status(message),
@@ -574,123 +662,140 @@ fn personal(scope: &Scope) -> View {
     let s = scope.clone();
     let rows_scope = s.clone();
     let copy_scope = s.clone();
-    page("Personal sessions / API tokens").fill((
-        action("Refresh", move || refresh()),
-        status(message),
-        view().name("One-time token").fill((
-            label("Copy this token now. It is shown only after creation or regeneration."),
-            text().content(token).selectable(true),
-            action("Copy token", move || {
-                copy(&copy_scope, token.get(), message)
-            }),
-            action("Dismiss token", move || {
-                token.revise(|slot| *slot = String::new())
-            }),
-        )),
-        view().name("Create personal session").fill((
-            name_input,
-            user_input,
-            scope_input,
-            action("Create token", move || {
-                let n = name.get();
-                let u = user.get();
-                let sc = scopes.get();
-                submit(&s, writing, message, async move {
-                    let session = pasion_create_personal_session(CreatePersonalSessionRequest {
-                        human_name: required(n, "Token name")?,
-                        actor_user_id: required(u, "Actor user ID")?,
-                        scope: required(sc, "Scopes")?,
-                        expires_in: None,
-                    })
-                    .await?;
-                    let _ = token.try_revise(|slot| *slot = session.token.unwrap_or_default());
-                    let loaded = pasion_get_personal_sessions().await?;
-                    let _ = data.try_revise(|slot| *slot = loaded);
-                    Ok("Personal session created".into())
-                });
-            })
-            .enabled(writing.map(|b| !b)),
-        )),
-        pagination,
-        each(
-            visible,
-            |r| r.id.clone(),
-            move |r, _| {
-                let id = r.get().id;
-                let reg = id.clone();
-                let det = id.clone();
-                let s = rows_scope.clone();
-                let rs = s.clone();
-                let ds = s.clone();
-                view().class("record").fill((
-                    text().content(r.map(|r| {
-                        format!(
-                            "{} · {} · user {} · {}",
-                            r.id,
-                            r.name.as_deref().unwrap_or("unnamed"),
-                            r.user_id.as_deref().unwrap_or("—"),
-                            if r.revoked_at.is_some() {
-                                "revoked"
-                            } else {
-                                "active"
-                            }
-                        )
-                    })),
-                    text().content(r.map(|r| {
-                        format!(
-                            "Scope {} · created {} · last active {}",
-                            r.scope,
-                            r.created_at,
-                            r.last_active_at.as_deref().unwrap_or("—")
-                        )
-                    })),
-                    action("Details", move || {
-                        let id = det.clone();
-                        submit(&ds, writing, message, async move {
-                            let mut session = pasion_get_personal_session(&id).await?;
-                            session.token = None;
-                            let _ = data.try_revise(|rows| {
-                                if let Some(row) = rows.iter_mut().find(|r| r.id == id) {
-                                    *row = session;
-                                }
-                            });
-                            Ok("Details loaded".into())
-                        });
+    page("Personal sessions / API tokens")
+        .class("page pasion-page")
+        .fill((
+            action("Refresh", move || refresh()),
+            status(message),
+            view()
+                .name("One-time token")
+                .class(token.map(|value| {
+                    if value.is_empty() {
+                        "bulk-hidden".into()
+                    } else {
+                        "panel token-panel".into()
+                    }
+                }))
+                .fill((
+                    label("Copy this token now. It is shown only after creation or regeneration."),
+                    text().content(token).selectable(true),
+                    action("Copy token", move || {
+                        copy(&copy_scope, token.get(), message)
                     }),
-                    action("Regenerate token", move || {
-                        if !confirm("Regenerate this token? The previous token will stop working.")
-                        {
-                            return;
-                        }
-                        let id = reg.clone();
-                        submit(&rs, writing, message, async move {
-                            let session = pasion_regenerate_personal_session(&id).await?;
+                    action("Dismiss token", move || {
+                        token.revise(|slot| *slot = String::new())
+                    }),
+                )),
+            view()
+                .name("Create personal session")
+                .class("panel token-create-panel")
+                .fill((
+                    name_input,
+                    user_input,
+                    scope_input,
+                    action("Create token", move || {
+                        let n = name.get();
+                        let u = user.get();
+                        let sc = scopes.get();
+                        submit(&s, writing, message, async move {
+                            let session =
+                                pasion_create_personal_session(CreatePersonalSessionRequest {
+                                    human_name: required(n, "Token name")?,
+                                    actor_user_id: required(u, "Actor user ID")?,
+                                    scope: required(sc, "Scopes")?,
+                                    expires_in: None,
+                                })
+                                .await?;
                             let _ =
                                 token.try_revise(|slot| *slot = session.token.unwrap_or_default());
                             let loaded = pasion_get_personal_sessions().await?;
                             let _ = data.try_revise(|slot| *slot = loaded);
-                            Ok("Token regenerated".into())
+                            Ok("Personal session created".into())
                         });
                     })
-                    .enabled(r.map(|r| r.revoked_at.is_none())),
-                    action("Revoke", move || {
-                        if !confirm("Permanently revoke this personal session?") {
-                            return;
-                        }
-                        let id = id.clone();
-                        submit(&s, writing, message, async move {
-                            pasion_revoke_personal_session(&id).await?;
-                            let _ = token.try_revise(|slot| *slot = String::new());
-                            let loaded = pasion_get_personal_sessions().await?;
-                            let _ = data.try_revise(|slot| *slot = loaded);
-                            Ok("Session revoked".into())
-                        });
-                    })
-                    .enabled(r.map(|r| r.revoked_at.is_none())),
-                ))
-            },
-        ),
-    ))
+                    .enabled(writing.map(|b| !b)),
+                )),
+            pagination,
+            each(
+                visible,
+                |r| r.id.clone(),
+                move |r, _| {
+                    let id = r.get().id;
+                    let reg = id.clone();
+                    let det = id.clone();
+                    let s = rows_scope.clone();
+                    let rs = s.clone();
+                    let ds = s.clone();
+                    view().class("record").fill((
+                        text().content(r.map(|r| {
+                            format!(
+                                "{} · {} · user {} · {}",
+                                r.id,
+                                r.name.as_deref().unwrap_or("unnamed"),
+                                r.user_id.as_deref().unwrap_or("—"),
+                                if r.revoked_at.is_some() {
+                                    "revoked"
+                                } else {
+                                    "active"
+                                }
+                            )
+                        })),
+                        text().content(r.map(|r| {
+                            format!(
+                                "Scope {} · created {} · last active {}",
+                                r.scope,
+                                r.created_at,
+                                r.last_active_at.as_deref().unwrap_or("—")
+                            )
+                        })),
+                        action("Details", move || {
+                            let id = det.clone();
+                            submit(&ds, writing, message, async move {
+                                let mut session = pasion_get_personal_session(&id).await?;
+                                session.token = None;
+                                let _ = data.try_revise(|rows| {
+                                    if let Some(row) = rows.iter_mut().find(|r| r.id == id) {
+                                        *row = session;
+                                    }
+                                });
+                                Ok("Details loaded".into())
+                            });
+                        }),
+                        action("Regenerate token", move || {
+                            if !confirm(
+                                "Regenerate this token? The previous token will stop working.",
+                            ) {
+                                return;
+                            }
+                            let id = reg.clone();
+                            submit(&rs, writing, message, async move {
+                                let session = pasion_regenerate_personal_session(&id).await?;
+                                let _ = token
+                                    .try_revise(|slot| *slot = session.token.unwrap_or_default());
+                                let loaded = pasion_get_personal_sessions().await?;
+                                let _ = data.try_revise(|slot| *slot = loaded);
+                                Ok("Token regenerated".into())
+                            });
+                        })
+                        .enabled(r.map(|r| r.revoked_at.is_none())),
+                        action("Revoke", move || {
+                            if !confirm("Permanently revoke this personal session?") {
+                                return;
+                            }
+                            let id = id.clone();
+                            submit(&s, writing, message, async move {
+                                pasion_revoke_personal_session(&id).await?;
+                                let _ = token.try_revise(|slot| *slot = String::new());
+                                let loaded = pasion_get_personal_sessions().await?;
+                                let _ = data.try_revise(|slot| *slot = loaded);
+                                Ok("Session revoked".into())
+                            });
+                        })
+                        .enabled(r.map(|r| r.revoked_at.is_none())),
+                    ))
+                },
+            ),
+        ))
 }
 
 fn copy(scope: &Scope, value: String, message: Cage<String>) {
@@ -741,5 +846,5 @@ fn links(scope: &Scope) -> View {
     let (name, name_input) = field(scope, "Human account name (optional)");
     let s = scope.clone();
     let rows_scope = s.clone();
-    page("Upstream account links").fill((view().fill((user_input,provider_input,action("Apply filters / refresh",move||refresh()).enabled(busy.map(|b|!b)))),status(message),view().name("Create upstream link").fill((cu_input,cp_input,subject_input,name_input,action("Create link",move||{let u=cu.get();let p=cp.get();let sub=subject.get();let n=optional(name.get());submit(&s,writing,message,async move{let mut body=serde_json::json!({"user_id":required(u,"User ID")?,"provider_id":required(p,"Provider ID")?,"subject":required(sub,"Subject")?});if let Some(n)=n{body["human_account_name"]=n.into();}let link=pasion_create_upstream_link(body).await?;let _=data.try_revise(|rows|rows.insert(0,link));Ok("Link created".into())});}).enabled(writing.map(|b|!b)))),pagination,each(visible,|r|r.id.clone(),move|r,_|{let id=r.get().id;let s=rows_scope.clone();view().class("record").fill((text().content(r.map(|r|format!("{} · user {} · provider {} · subject {} · {} · {}",r.id,r.user_id.as_deref().unwrap_or("—"),r.provider_id,r.subject,r.human_account_name.as_deref().unwrap_or("—"),r.created_at))),action("Delete link",move||{if !confirm("Delete this upstream identity link?"){return;}let id=id.clone();submit(&s,writing,message,async move{pasion_delete_upstream_link(&id).await?;let _=data.try_revise(|rows|rows.retain(|r|r.id!=id));Ok("Link deleted".into())});})))})))
+    page("Upstream account links").class("page pasion-page").fill((view().fill((user_input,provider_input,action("Apply filters / refresh",move||refresh()).enabled(busy.map(|b|!b)))),status(message),view().name("Create upstream link").class("panel link-create-panel").fill((cu_input,cp_input,subject_input,name_input,action("Create link",move||{let u=cu.get();let p=cp.get();let sub=subject.get();let n=optional(name.get());submit(&s,writing,message,async move{let mut body=serde_json::json!({"user_id":required(u,"User ID")?,"provider_id":required(p,"Provider ID")?,"subject":required(sub,"Subject")?});if let Some(n)=n{body["human_account_name"]=n.into();}let link=pasion_create_upstream_link(body).await?;let _=data.try_revise(|rows|rows.insert(0,link));Ok("Link created".into())});}).enabled(writing.map(|b|!b)))),pagination,each(visible,|r|r.id.clone(),move|r,_|{let id=r.get().id;let s=rows_scope.clone();view().class("record").fill((text().content(r.map(|r|format!("{} · user {} · provider {} · subject {} · {} · {}",r.id,r.user_id.as_deref().unwrap_or("—"),r.provider_id,r.subject,r.human_account_name.as_deref().unwrap_or("—"),r.created_at))),action("Delete link",move||{if !confirm("Delete this upstream identity link?"){return;}let id=id.clone();submit(&s,writing,message,async move{pasion_delete_upstream_link(&id).await?;let _=data.try_revise(|rows|rows.retain(|r|r.id!=id));Ok("Link deleted".into())});})))})))
 }

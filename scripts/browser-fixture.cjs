@@ -40,7 +40,7 @@ const {closeOwnedBrowser}=require('./fixture-harness.cjs');
    assert.equal(await page.locator('.page').count(),1,path);
   }
   results.push('21 additional dedicated route mounts without browser exceptions (responses are fixtures, not backend acceptance)');
-  await page.screenshot({path:'D:/BuildCache/padmin-glory-branch/browser.png',fullPage:true});
+  await page.screenshot({path:'D:/BuildCache/meldry-visual-20261025/padmin/browser.png',fullPage:true});
   await page.goto(baseURL+'/oauth/callback?code=replayed&state=bad');
   await page.getByText(/Missing PKCE verifier/).waitFor();assert.equal(exchanges,1);results.push('Callback replay rejected before exchange');
   verdict=403;
@@ -49,7 +49,7 @@ const {closeOwnedBrowser}=require('./fixture-harness.cjs');
   await page.getByText('Not authorized',{exact:true}).waitFor();
   results.push('Server 403 cannot grant administrator access');
   assert.deepEqual(errors,[]);
-  fs.writeFileSync('D:/BuildCache/padmin-glory-branch/browser-results'+prefix.replaceAll('/','-')+'.json',JSON.stringify({results,errors},null,2));
+  fs.writeFileSync('D:/BuildCache/meldry-visual-20261025/padmin/browser-results'+prefix.replaceAll('/','-')+'.json',JSON.stringify({results,errors},null,2));
   console.log(results.join('\n'));
  } finally {await closeOwnedBrowser(browserServer,browser);}
 })().then(()=>process.exit(0)).catch(e=>{console.error(e);process.exit(1);});

@@ -265,6 +265,7 @@ pub fn app(scope: &Scope, initial: String) -> View {
         },
     );
     let header = header(scope, &ctx);
+    let public_route = route.map(|p| matches!(p.as_str(), "/login" | "/oauth/callback"));
     let nav = view()
         .role(Role::Navigation)
         .name(widgets::localized(scope, "Administration".into()))
@@ -275,37 +276,29 @@ pub fn app(scope: &Scope, initial: String) -> View {
                 "sidebar".into()
             }
         }))
-        .fill(
-            crate::router::PATHS
-                .iter()
-                .filter(|p| !p.contains(':') && !matches!(**p, "/login" | "/oauth/callback"))
-                .map(|p| {
-                    link()
-                        .target(crate::utils::config::app_path(p))
-                        .label(widgets::localized(scope, route_title(p)))
-                        .class(route.map(move |current| {
-                            if current == *p {
-                                "nav nav-link active".into()
-                            } else {
-                                "nav nav-link".into()
-                            }
-                        }))
-                })
-                .collect::<Vec<_>>(),
-        );
+        .fill((view().class("sidebar-brand").fill((widgets::label("◇").class("brand-shield"),widgets::label("Palpo Admin").class("brand-name"))),view().class("sidebar-nav").fill(
+            [("",vec!["/"]),("Identity",vec!["/users","/registration-tokens","/auth-status"]),("Moderation",vec!["/rooms","/reports","/server-notices"]),("Infrastructure",vec!["/destinations","/media"]),("Server operations",vec!["/server-status","/server-actions","/server-notifications","/appservices"]),("Pasion",vec!["/pasion/accounts","/pasion/audit-log","/pasion/oauth2-sessions","/pasion/personal-sessions","/pasion/upstream-providers","/pasion/upstream-links","/pasion/notification-templates","/pasion/connector-health","/pasion/notification-channels"]),("",vec!["/users/known","/settings/notifications"])].into_iter().map(|(label,paths)| {
+                view().class("sidebar-section").fill(widgets::label(label).class("sidebar-section-label")).fill(paths.into_iter().map(|p|link().target(crate::utils::config::app_path(p)).label(widgets::localized(scope,route_title(p))).class(route.map(move|current| if current==p {"nav nav-link sidebar-nav-button active sidebar-nav-active".into()}else{"nav nav-link sidebar-nav-button".into()}))).collect::<Vec<_>>())
+            }).collect::<Vec<_>>(),
+        )));
     let language = ctx.language;
     let theme = ctx.theme;
     let dark = ctx.dark;
     let contrast = ctx.contrast;
     let class = scope.bond(move || {
         format!(
-            "padmin {} {}",
+            "padmin {} {} {}",
             if theme.get() == "dark" || (theme.get() == "system" && dark.get()) {
                 "dark"
             } else {
                 "light"
             },
-            if contrast.get() { "high-contrast" } else { "" }
+            if contrast.get() { "high-contrast" } else { "" },
+            if public_route.get() {
+                "public-layout"
+            } else {
+                "admin-layout"
+            }
         )
     });
     let drawer = ctx.drawer;
@@ -314,7 +307,6 @@ pub fn app(scope: &Scope, initial: String) -> View {
             .class("nav-backdrop")
     });
     view().class(class).fill((
-        header,
         backdrop,
         view()
             .class(ctx.collapsed.map(|v| {
@@ -324,9 +316,13 @@ pub fn app(scope: &Scope, initial: String) -> View {
                     "shell".into()
                 }
             }))
-            .fill((nav, view().role(Role::Main).class("main").fill(content))),
+            .fill((
+                nav,
+                view()
+                    .class("workspace")
+                    .fill((header, view().role(Role::Main).class("main").fill(content))),
+            )),
         help(scope, &ctx),
-        notification_panel(scope, &ctx),
         toast_panel(&ctx),
         text()
             .class("sr-only")
@@ -344,7 +340,17 @@ fn header(scope: &Scope, ctx: &Rc<Context>) -> View {
     let mut head = view().class("header").fill((
         widgets::action("Toggle navigation", move || drawer.revise(|v| *v = !*v))
             .class("menu-toggle"),
-        widgets::label("Padmin"),
+        widgets::label("Palpo Admin").class("header-brand"),
+        text()
+            .class("session-avatar")
+            .content(identity.map(|(id, name)| {
+                name.chars()
+                    .next()
+                    .or_else(|| id.trim_start_matches('@').chars().next())
+                    .unwrap_or('A')
+                    .to_uppercase()
+                    .to_string()
+            })),
         text()
             .class("session-identity")
             .content(identity.map(|(id, name)| {
@@ -358,24 +364,50 @@ fn header(scope: &Scope, ctx: &Rc<Context>) -> View {
             collapsed.revise(|v| *v = !*v)
         })
         .class("desktop-toggle"),
-        widgets::action("English", move || {
-            language.revise(|v| *v = Language::En);
-            i18n::set_language(Language::En);
-        }),
-        widgets::action("中文", move || {
-            language.revise(|v| *v = Language::ZhCn);
-            i18n::set_language(Language::ZhCn);
-        }),
+        sapid::native_select("header-language")
+            .unstyled()
+            .name("Language")
+            .class("header-language")
+            .value(language.map(|value| Some(value.code().to_owned())))
+            .options([
+                sapid::select_option("en", "English"),
+                sapid::select_option("zh-CN", "中文"),
+            ])
+            .on_value_change(move |value| {
+                let next = if value.as_deref() == Some("zh-CN") {
+                    Language::ZhCn
+                } else {
+                    Language::En
+                };
+                language.revise(|v| *v = next);
+                i18n::set_language(next);
+            }),
     ));
-    for (label, value) in [("Light", "light"), ("Dark", "dark"), ("System", "system")] {
-        let theme = ctx.theme;
-        head = head.fill(widgets::action(label, move || {
-            theme.revise(|v| *v = value.into());
-            storage::set_item("theme", value);
-        }));
-    }
+    let theme = ctx.theme;
+    head = head.fill(
+        sapid::button()
+            .unstyled()
+            .class("theme-toggle")
+            .label(theme.map(|value| {
+                if value == "dark" {
+                    "Light".into()
+                } else {
+                    "Dark".into()
+                }
+            }))
+            .on_press(move || {
+                let next = if theme.get() == "dark" {
+                    "light"
+                } else {
+                    "dark"
+                };
+                theme.revise(|v| *v = next.into());
+                storage::set_item("theme", next);
+            }),
+    );
     let help = ctx.help;
     head.fill((
+        notification_panel(scope, ctx),
         widgets::action("High contrast", move || {
             contrast.revise(|v| *v = !*v);
             storage::set_item(
@@ -492,17 +524,32 @@ fn login(scope: &Scope) -> View {
     let busy = scope.cage(false);
     let message = scope.cage(String::new());
     let owner = scope.clone();
-    widgets::page("Sign in to Padmin").fill((
-        widgets::label("Use your Pasion administrator account"),
-        widgets::status(message),
-        widgets::action("Sign in", move || {
-            widgets::submit(&owner, busy, message, async {
-                crate::api::auth::start_oauth_login().await?;
-                Ok("Redirecting…".into())
-            })
-        })
-        .enabled(busy.map(|v| !*v)),
-    ))
+    view().class("page login-page").fill(
+        view().class("login-container").fill((
+            view().class("login-brand").fill((
+                widgets::label("◇").class("login-shield"),
+                widgets::label("Palpo Admin").kind(glory::render::TextKind::Heading(1)),
+                widgets::label("Sign in to manage your server").class("login-subtitle"),
+            )),
+            view().class("login-card glass-panel").fill((
+                widgets::label("Sign in to Padmin")
+                    .class("sr-only")
+                    .kind(glory::render::TextKind::Heading(2)),
+                widgets::label("Sign in with your account to access the admin dashboard")
+                    .class("login-hint"),
+                widgets::status(message),
+                widgets::action("Sign in", move || {
+                    widgets::submit(&owner, busy, message, async {
+                        crate::api::auth::start_oauth_login().await?;
+                        Ok("Redirecting…".into())
+                    })
+                })
+                .enabled(busy.map(|v| !*v))
+                .class("login-submit btn-primary"),
+            )),
+            widgets::label("Palpo Admin - Matrix Server Management").class("login-footer"),
+        )),
+    )
 }
 fn callback(scope: &Scope) -> View {
     let message = scope.cage("Completing sign in…".to_owned());
