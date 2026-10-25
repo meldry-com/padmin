@@ -1,6 +1,8 @@
+> `glory` 分支已接入本地 Glory 与 Sapid，当前验证见[分支集成记录](docs/glory-branch-integration.md)。10 月 23 日的迁移报告保留为参考改写的历史证据。本地编译与测试输出均在 D 盘；Docker 构建器需使用 D 盘或远端存储。
+
 # Palpo Admin
 
-基于 [Dioxus](https://dioxuslabs.com/) 构建的 [Palpo](https://github.com/palpo-im/palpo) Matrix 聊天服务器 Web 管理后台，编译为 WebAssembly 运行。
+基于 Glory 构建的 [Palpo](https://github.com/palpo-im/palpo) Matrix 聊天服务器 Web 管理后台，编译为 WebAssembly 运行。
 
 ## 功能
 
@@ -17,7 +19,8 @@
 
 ## 技术栈
 
-- **[Dioxus](https://dioxuslabs.com/)** - Rust UI 框架，编译为 WebAssembly
+- **Glory** - Rust UI 框架，编译为 WebAssembly
+- **Sapid** - 公共操作按钮，保留应用原有主题样式
 - **[gloo](https://gloo-rs.web.app/)** - Rust/WASM 工具库（网络、存储、定时器）
 - **[wasm-bindgen](https://rustwasm.github.io/docs/wasm-bindgen/)** - Rust/JavaScript 互操作
 - **Nginx** - 静态文件服务器（Docker 中使用）
@@ -25,17 +28,17 @@
 ## 前置要求
 
 - [Rust](https://rustup.rs/)（最新稳定版）
-- [Dioxus CLI](https://dioxuslabs.com/learn/0.7/getting_started)：`cargo install dioxus-cli`
+- wasm-bindgen CLI 0.2.129（安装到 `D:/BuildCache/padmin-glory-branch/tools`）
 - `wasm32-unknown-unknown` 编译目标：`rustup target add wasm32-unknown-unknown`
 
 ## 开发
 
 ```bash
 # 启动开发服务器（支持热重载）
-dx serve
+python scripts/glory.py serve
 
 # 生产环境构建
-dx build --release
+python scripts/glory.py build
 ```
 
 开发服务器默认运行在 `http://localhost:8080`。
@@ -44,20 +47,18 @@ dx build --release
 
 ```bash
 # 构建 Docker 镜像
-docker build -t palpo-admin .
+powershell -File scripts/package-container.ps1
+# 先核验 Docker builder 的实际数据位置在 D 盘或远端：
+docker build -t palpo-admin D:/BuildCache/padmin-glory-branch/container
 
 # 在 9090 端口运行
-docker run -p 9090:80 palpo-admin
+docker run -p 9090:8080 -e PALPO_URL=http://your-palpo:8008 -e PASION_URL=http://your-pasion:7080 palpo-admin
 ```
 
-镜像采用多阶段构建：Rust/Dioxus 编译 WASM 应用，然后由 nginx 提供静态文件服务。
+镜像使用在 D 盘预构建的 Glory JS/WASM，由非 root nginx 提供静态服务。
 Nginx entrypoint 也会暴露 `/healthz`，方便容器与平台进行存活检查。
 
-GitHub Actions 会将 `linux/amd64` 和 `linux/arm64` 多架构镜像发布到 GHCR：
-
-```bash
-docker pull ghcr.io/meldry-com/padmin:latest
-```
+CI 检出固定版本的 Glory、Sapid，在远端 Linux runner 构建并测试 WASM，保留原有 push/tag 触发、运行配置冒烟测试、双架构镜像以及 GHCR/可选 Docker Hub 发布。
 
 ## 完整技术栈示例
 
@@ -84,7 +85,7 @@ Compose 示例统一使用 [`examples/README.zh.md`](examples/README.zh.md) 中�
 npm test
 
 # examples/compose.yml 示例栈 smoke 套件
-npm run test:example-stack:fresh
+npm run test:source-baseline:example-stack:fresh
 ```
 
 示例栈 smoke 的运行方式、fixture 和限制见 [`e2e/example-stack/README.md`](e2e/example-stack/README.md)。
@@ -114,3 +115,18 @@ examples/
 ## 许可证
 
 详见 [LICENSE](LICENSE)。
+
+## 验收与运行
+
+先设置 `WASM_BINDGEN=D:/BuildCache/padmin-glory-branch/tools/bin/wasm-bindgen.exe`，运行 `python scripts/glory.py build --dev`；正式发布去掉 `--dev`。浏览器驱动安装到 D 盘：`npm install --prefix D:/BuildCache/padmin-glory-branch/runtime --cache D:/BuildCache/padmin-glory-branch/npm-cache --ignore-scripts playwright@1.63.0`。测试使用已安装的 Microsoft Edge，profile 和报告均在 D 盘。
+
+- `npm test`：运行实际 WASM 的权限/协议、键盘/IME/可访问树、移动导航和所有领域写操作 fixture，空闲时自动启动 8789 静态服务。未注册写请求返回 501。
+- `powershell -File scripts/start-real-stack.ps1`：复用已有 Pasion/PostgreSQL 程序与本机已缓存 Palpo 镜像，建立隔离真实验收服务；不构建、不拉镜像、不修改原项目。
+- `node scripts/real-server.cjs` 后运行 `npm run test:real`：真实密码登录/同意/PKCE、Matrix/Pasion 业务写入、邮箱注册、两个用户收发消息及刷新后的举报状态。其他隔离账号可通过 `PADMIN_REAL_USERNAME`、`PADMIN_REAL_PASSWORD` 指定。
+- `node scripts/nginx-acceptance.cjs` 验证生产入口与非 root nginx；`node scripts/native-nginx-acceptance.cjs --same-origin` 用 D 盘真实 JS/WASM 验证根路径、`/admin`、`/console/manage` 和同源 `/auth` 全链路。需准备隔离服务与 D 盘 nginx 1.31.2 程序。
+
+验收器拒绝缺失/过期产物及失败 suite，并将实际 WASM SHA256、退出码和证据路径记录在 `D:/BuildCache/padmin-glory-branch/acceptance-results.json`。原 18 suites 通过 `test:source-baseline` 保留为历史断言，原 DOM 选择器与 localStorage token 注入不再是活动测试入口；逐项迁移和三项明确的源基线/后端差异见行为映射。
+
+`glory.py serve` 仅提供静态文件；真实同源 API 可通过 `real-server.cjs` 和 `PALPO_URL`/`PASION_URL` 配置。生产 nginx 的应用/认证前缀支持保持 CSP 禁止 `unsafe-inline`，独立的 Pasion 配置桥只解析公开 JSON，不执行代码。
+
+`glory.py build/serve` 总会生成 `config.json`。可用 `--pasion-public-url`/`PASION_PUBLIC_URL`、`--oauth-client-id`/`PADMIN_OAUTH_CLIENT_ID`、`--palpo-admin-url`/`PALPO_ADMIN_URL` 配置；空 URL 采用同源默认，client 默认匹配示例注册。静态 server 不代理后端；真实登录需反向代理或使用 `real-server.cjs`。

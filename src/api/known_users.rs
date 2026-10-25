@@ -8,7 +8,7 @@ use crate::api::client::*;
 use crate::types::ListResponse;
 use crate::utils::error::HttpError;
 
-#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize, serde::Serialize)]
 pub struct KnownUser {
     pub user_id: String,
     pub server_name: String,
@@ -26,13 +26,13 @@ pub struct KnownUser {
     pub last_membership_ts: u64,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, serde::Serialize)]
 struct KnownUsersResponse {
     users: Vec<KnownUser>,
     total: u64,
 }
 
-#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize, serde::Serialize)]
 pub struct KnownUserRoom {
     pub room_id: String,
     #[serde(default)]
@@ -43,7 +43,7 @@ pub struct KnownUserRoom {
     pub updated_ts: u64,
 }
 
-#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize, serde::Serialize)]
 pub struct KnownUserDetail {
     pub user_id: String,
     pub server_name: String,
@@ -57,7 +57,7 @@ pub struct KnownUserDetail {
 }
 
 /// Which users to list, by where their account lives.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum Origin {
     All,
     Local,

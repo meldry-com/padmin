@@ -1,46 +1,59 @@
-use std::cell::RefCell;
-use std::collections::HashMap;
+use serde::{Serialize, de::DeserializeOwned};
 use std::future::Future;
-
-use serde::Serialize;
-use serde::de::DeserializeOwned;
-
-thread_local! {
-    static CACHE: RefCell<HashMap<String, (f64, String)>> = RefCell::new(HashMap::new());
+const MAX_ENTRIES: usize = 128;
+const MAX_BYTES: usize = 8 * 1024 * 1024;
+fn now() -> f64 {
+    chrono::Utc::now().timestamp_millis() as f64
 }
-
 pub fn get_cached(key: &str, ttl_ms: f64) -> Option<String> {
-    CACHE.with(|c| {
-        let cache = c.borrow();
-        if let Some((timestamp, value)) = cache.get(key) {
-            let now = js_sys::Date::now();
-            if now - timestamp < ttl_ms {
-                return Some(value.clone());
-            }
-        }
-        None
-    })
-}
-
-pub fn set_cached(key: &str, value: &str) {
-    CACHE.with(|c| {
-        let mut cache = c.borrow_mut();
-        cache.insert(key.to_string(), (js_sys::Date::now(), value.to_string()));
-    });
-}
-
-pub fn remove_cached(key: &str) {
-    CACHE.with(|c| {
-        let mut cache = c.borrow_mut();
+    let ctx = crate::ui::context::current()?;
+    let mut cache = ctx.cache.borrow_mut();
+    if cache
+        .get(key)
+        .is_some_and(|(time, _)| now() - *time >= ttl_ms)
+    {
         cache.remove(key);
-    });
+        return None;
+    }
+    cache.get(key).map(|(_, value)| value.clone())
 }
-
+pub fn set_cached(key: &str, value: &str) {
+    if key.len() + value.len() > MAX_BYTES {
+        return;
+    }
+    let Some(ctx) = crate::ui::context::current() else {
+        return;
+    };
+    let mut cache = ctx.cache.borrow_mut();
+    cache.insert(key.to_owned(), (now(), value.to_owned()));
+    while cache.len() > MAX_ENTRIES
+        || cache
+            .iter()
+            .map(|(key, (_, value))| key.len() + value.len())
+            .sum::<usize>()
+            > MAX_BYTES
+    {
+        let Some(oldest) = cache
+            .iter()
+            .min_by(|a, b| a.1.0.total_cmp(&b.1.0))
+            .map(|(key, _)| key.clone())
+        else {
+            break;
+        };
+        cache.remove(&oldest);
+    }
+}
+pub fn remove_cached(key: &str) {
+    if let Some(ctx) = crate::ui::context::current() {
+        ctx.cache.borrow_mut().remove(key);
+    }
+}
 pub fn invalidate_cached_prefix(prefix: &str) {
-    CACHE.with(|c| {
-        let mut cache = c.borrow_mut();
-        cache.retain(|key, _| !key.starts_with(prefix));
-    });
+    if let Some(ctx) = crate::ui::context::current() {
+        ctx.cache
+            .borrow_mut()
+            .retain(|key, _| !key.starts_with(prefix));
+    }
 }
 
 /// Read-through cache for an async fetch.

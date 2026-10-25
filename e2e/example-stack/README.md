@@ -23,15 +23,15 @@ The broader `padmin` regression suite remains under `e2e/` and uses
 npm run stack:reset
 
 # run the smoke suite against the example stack
-npm run test:example-stack
+npm run test:source-baseline:example-stack
 
 # one-shot reset + run
-npm run test:example-stack:fresh
+npm run test:source-baseline:example-stack:fresh
 
 # optional debugging helpers
-npm run test:example-stack:headed
-npm run test:example-stack:debug
-npm run test:example-stack:report
+npm run test:source-baseline:example-stack:headed
+npm run test:source-baseline:example-stack:debug
+npm run test:source-baseline:example-stack:report
 ```
 
 ## Layout
@@ -74,6 +74,6 @@ It does three things:
 ## Known Constraints
 
 - The suite assumes a fresh stack. Use `npm run stack:reset` or
-  `npm run test:example-stack:fresh`.
+  `npm run test:source-baseline:example-stack:fresh`.
 - The example users are intentionally fixed as `alice`, `bob`, and `carol`
   because the smoke checks assert the "first user becomes admin" invariant.

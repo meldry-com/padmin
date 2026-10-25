@@ -25,8 +25,8 @@ fn format_pasion_error(status: u16, text: &str) -> (String, Option<MatrixError>)
                 .map(str::to_string)
         });
     match title {
-        Some(title) => (format!("{title} ({status})"), None),
-        None => (format!("Pasion error ({status}): {text}"), None),
+        Some(title) => (format!("{title} ({})", status), None),
+        None => (format!("Pasion error ({}): {text}", status), None),
     }
 }
 
@@ -35,16 +35,22 @@ async fn pasion_fetch<T: DeserializeOwned>(
     method: &str,
     body: Option<String>,
 ) -> Result<T, HttpError> {
-    let base = get_pasion_url().ok_or_else(|| HttpError::message("Pasion URL is not configured"))?;
-    let url = format!("{base}/api/admin/v1{path}");
+    let base =
+        get_pasion_url().ok_or_else(|| HttpError::message("Pasion URL is not configured"))?;
+    let url = format!("{}/api/admin/v1{path}", base.trim_end_matches('/'));
 
+    let attempted = storage::get_item("access_token");
     let result = raw_fetch::<T, _>(&url, method, body.clone(), format_pasion_error).await;
 
     // On any 401, try to refresh the access token and retry once. If
     // refresh fails, the shared handler clears the stored session so
     // AppLayout's `is_authenticated()` heartbeat redirects to /login.
     if let Err(ref err) = result {
-        if err.status == 401 && crate::api::auth::handle_unauthorized().await {
+        if err.status == 401
+            && ((attempted != storage::get_item("access_token")
+                && storage::get_item("access_token").is_some())
+                || crate::api::auth::handle_unauthorized().await)
+        {
             return raw_fetch::<T, _>(&url, method, body, format_pasion_error).await;
         }
         if err.status == 403 {
@@ -69,14 +75,13 @@ async fn pasion_fetch<T: DeserializeOwned>(
 
 fn flatten_resource<T: DeserializeOwned>(item: &serde_json::Value) -> Result<T, HttpError> {
     let id = item.get("id").cloned().unwrap_or(serde_json::Value::Null);
-    let mut attrs = item
-        .get("attributes")
-        .cloned()
-        .unwrap_or_else(|| serde_json::json!({}));
+    let mut attrs = item.get("attributes").unwrap_or(item).clone();
     if let Some(obj) = attrs.as_object_mut() {
         if !id.is_null() {
             obj.insert("id".to_string(), id);
         }
+    } else {
+        return Err(HttpError::message("Pasion resource must be an object"));
     }
     serde_json::from_value(attrs).map_err(|e| HttpError::message(format!("JSON parse error: {e}")))
 }
@@ -92,10 +97,9 @@ async fn pasion_fetch_list<T: DeserializeOwned>(
     let data_arr = raw
         .get("data")
         .and_then(|d| d.as_array())
-        .cloned()
-        .unwrap_or_default();
+        .ok_or_else(|| HttpError::message("Pasion response is missing its data array"))?;
     let mut data = Vec::with_capacity(data_arr.len());
-    for item in &data_arr {
+    for item in data_arr {
         data.push(flatten_resource::<T>(item)?);
     }
     Ok(PasionListResponse { data, meta })
@@ -111,8 +115,7 @@ async fn pasion_fetch_page<T: DeserializeOwned>(path: &str) -> Result<PasionPage
     let data_arr = raw
         .get("data")
         .and_then(|d| d.as_array())
-        .cloned()
-        .unwrap_or_default();
+        .ok_or_else(|| HttpError::message("Pasion response is missing its data array"))?;
     let has_next = raw
         .pointer("/links/next")
         .is_some_and(|next| !next.is_null());
@@ -126,7 +129,7 @@ async fn pasion_fetch_page<T: DeserializeOwned>(path: &str) -> Result<PasionPage
         None
     };
     let mut data = Vec::with_capacity(data_arr.len());
-    for item in &data_arr {
+    for item in data_arr {
         data.push(flatten_resource::<T>(item)?);
     }
     Ok(PasionPage {
@@ -152,7 +155,7 @@ async fn pasion_fetch_one<T: DeserializeOwned>(
 // ── Users ──────────────────────────────────────────────────────────────────
 
 /// Filters for `GET /users`. `None` means "don't filter on this".
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct PasionUserFilter {
     pub search: Option<String>,
     /// `active`, `locked` (includes deactivated) or `deactivated`.
@@ -175,7 +178,7 @@ pub async fn pasion_get_users(
         path.push_str(&format!("&filter[search]={}", urlencoding::encode(search)));
     }
     if let Some(status) = filter.status.as_deref().filter(|s| !s.is_empty()) {
-        path.push_str(&format!("&filter[status]={status}"));
+        path.push_str(&format!("&filter[status]={}", urlencoding::encode(status)));
     }
     if let Some(admin) = filter.admin {
         path.push_str(&format!("&filter[admin]={admin}"));
@@ -184,7 +187,7 @@ pub async fn pasion_get_users(
 }
 
 pub async fn pasion_get_user(id: &str) -> Result<PasionUser, HttpError> {
-    pasion_fetch_one(&format!("/users/{id}"), "GET", None).await
+    pasion_fetch_one(&format!("/users/{}", urlencoding::encode(id)), "GET", None).await
 }
 
 pub async fn pasion_get_user_by_username(username: &str) -> Result<PasionUser, HttpError> {
@@ -208,7 +211,12 @@ pub async fn pasion_update_user(
     id: &str,
     data: serde_json::Value,
 ) -> Result<PasionUser, HttpError> {
-    pasion_fetch_one(&format!("/users/{id}"), "PATCH", Some(data.to_string())).await
+    pasion_fetch_one(
+        &format!("/users/{}", urlencoding::encode(id)),
+        "PATCH",
+        Some(data.to_string()),
+    )
+    .await
 }
 
 pub async fn pasion_set_password(
@@ -221,7 +229,7 @@ pub async fn pasion_set_password(
         "skip_password_check": skip_password_check,
     });
     let _: serde_json::Value = pasion_fetch(
-        &format!("/users/{id}/set-password"),
+        &format!("/users/{}/set-password", urlencoding::encode(id)),
         "POST",
         Some(body.to_string()),
     )
@@ -230,7 +238,7 @@ pub async fn pasion_set_password(
 }
 
 /// Result of `POST /users/{id}/risk-action`.
-#[derive(Debug, Clone, Default, serde::Deserialize)]
+#[derive(Debug, Clone, Default, serde::Deserialize, serde::Serialize)]
 pub struct PasionRiskActionResult {
     #[serde(default)]
     pub sessions_terminated: Option<u64>,
@@ -247,7 +255,7 @@ pub async fn pasion_risk_action(
     // `terminate_sessions`.
     let body = serde_json::json!({ "action": action, "reason": reason });
     pasion_fetch(
-        &format!("/users/{id}/risk-action"),
+        &format!("/users/{}/risk-action", urlencoding::encode(id)),
         "POST",
         Some(body.to_string()),
     )
@@ -260,7 +268,10 @@ pub async fn pasion_get_user_emails(
     user_id: Option<&str>,
 ) -> Result<Vec<PasionUserEmail>, HttpError> {
     let path = if let Some(uid) = user_id {
-        format!("/user-emails?page[first]=100&filter[user]={uid}")
+        format!(
+            "/user-emails?page[first]=100&filter[user]={}",
+            urlencoding::encode(uid)
+        )
     } else {
         "/user-emails?page[first]=100".to_string()
     };
@@ -280,7 +291,7 @@ pub async fn pasion_update_user_email(
     data: serde_json::Value,
 ) -> Result<PasionUserEmail, HttpError> {
     pasion_fetch_one(
-        &format!("/user-emails/{id}"),
+        &format!("/user-emails/{}", urlencoding::encode(id)),
         "PATCH",
         Some(data.to_string()),
     )
@@ -288,7 +299,12 @@ pub async fn pasion_update_user_email(
 }
 
 pub async fn pasion_delete_user_email(id: &str) -> Result<(), HttpError> {
-    let _: serde_json::Value = pasion_fetch(&format!("/user-emails/{id}"), "DELETE", None).await?;
+    let _: serde_json::Value = pasion_fetch(
+        &format!("/user-emails/{}", urlencoding::encode(id)),
+        "DELETE",
+        None,
+    )
+    .await?;
     Ok(())
 }
 
@@ -303,7 +319,7 @@ pub async fn pasion_get_browser_sessions(
 ) -> Result<Vec<PasionBrowserSession>, HttpError> {
     let mut path = "/user-sessions?page[first]=100".to_string();
     if let Some(uid) = user_id {
-        path.push_str(&format!("&filter[user]={uid}"));
+        path.push_str(&format!("&filter[user]={}", urlencoding::encode(uid)));
     }
     if active_only {
         path.push_str("&filter[status]=active");
@@ -312,8 +328,12 @@ pub async fn pasion_get_browser_sessions(
 }
 
 pub async fn pasion_finish_browser_session(id: &str) -> Result<(), HttpError> {
-    let _: serde_json::Value =
-        pasion_fetch(&format!("/user-sessions/{id}/finish"), "POST", None).await?;
+    let _: serde_json::Value = pasion_fetch(
+        &format!("/user-sessions/{}/finish", urlencoding::encode(id)),
+        "POST",
+        None,
+    )
+    .await?;
     Ok(())
 }
 
@@ -323,7 +343,7 @@ pub async fn pasion_get_oauth2_sessions(
     user_id: Option<&str>,
 ) -> Result<Vec<PasionOAuth2Session>, HttpError> {
     let path = if let Some(uid) = user_id {
-        format!("/oauth2-sessions?filter[user]={uid}")
+        format!("/oauth2-sessions?filter[user]={}", urlencoding::encode(uid))
     } else {
         "/oauth2-sessions".to_string()
     };
@@ -334,18 +354,29 @@ pub async fn pasion_get_oauth2_sessions(
 pub async fn pasion_get_active_oauth2_sessions_for_user(
     user_id: &str,
 ) -> Result<Vec<PasionOAuth2Session>, HttpError> {
-    let path =
-        format!("/oauth2-sessions?page[first]=100&filter[user]={user_id}&filter[status]=active");
+    let path = format!(
+        "/oauth2-sessions?page[first]=100&filter[user]={}&filter[status]=active",
+        urlencoding::encode(user_id)
+    );
     Ok(pasion_fetch_list::<PasionOAuth2Session>(&path).await?.data)
 }
 
 pub async fn pasion_get_oauth2_session(id: &str) -> Result<PasionOAuth2Session, HttpError> {
-    pasion_fetch_one(&format!("/oauth2-sessions/{id}"), "GET", None).await
+    pasion_fetch_one(
+        &format!("/oauth2-sessions/{}", urlencoding::encode(id)),
+        "GET",
+        None,
+    )
+    .await
 }
 
 pub async fn pasion_finish_oauth2_session(id: &str) -> Result<(), HttpError> {
-    let _: serde_json::Value =
-        pasion_fetch(&format!("/oauth2-sessions/{id}/finish"), "POST", None).await?;
+    let _: serde_json::Value = pasion_fetch(
+        &format!("/oauth2-sessions/{}/finish", urlencoding::encode(id)),
+        "POST",
+        None,
+    )
+    .await?;
     Ok(())
 }
 
@@ -362,25 +393,52 @@ pub async fn pasion_get_personal_sessions() -> Result<Vec<PasionPersonalSession>
     )
 }
 
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct CreatePersonalSessionRequest {
+    pub actor_user_id: String,
+    pub human_name: String,
+    pub scope: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub expires_in: Option<u32>,
+}
 pub async fn pasion_create_personal_session(
-    data: serde_json::Value,
+    data: CreatePersonalSessionRequest,
 ) -> Result<PasionPersonalSession, HttpError> {
-    pasion_fetch_one("/personal-sessions", "POST", Some(data.to_string())).await
+    pasion_fetch_one(
+        "/personal-sessions",
+        "POST",
+        Some(serde_json::to_string(&data).map_err(|e| HttpError::message(e.to_string()))?),
+    )
+    .await
 }
 
 pub async fn pasion_get_personal_session(id: &str) -> Result<PasionPersonalSession, HttpError> {
-    pasion_fetch_one(&format!("/personal-sessions/{id}"), "GET", None).await
+    pasion_fetch_one(
+        &format!("/personal-sessions/{}", urlencoding::encode(id)),
+        "GET",
+        None,
+    )
+    .await
 }
 
 pub async fn pasion_regenerate_personal_session(
     id: &str,
 ) -> Result<PasionPersonalSession, HttpError> {
-    pasion_fetch_one(&format!("/personal-sessions/{id}/regenerate"), "POST", None).await
+    pasion_fetch_one(
+        &format!("/personal-sessions/{}/regenerate", urlencoding::encode(id)),
+        "POST",
+        None,
+    )
+    .await
 }
 
 pub async fn pasion_revoke_personal_session(id: &str) -> Result<(), HttpError> {
-    let _: serde_json::Value =
-        pasion_fetch(&format!("/personal-sessions/{id}/revoke"), "POST", None).await?;
+    let _: serde_json::Value = pasion_fetch(
+        &format!("/personal-sessions/{}/revoke", urlencoding::encode(id)),
+        "POST",
+        None,
+    )
+    .await?;
     Ok(())
 }
 
@@ -406,7 +464,7 @@ pub async fn pasion_update_registration_token(
     data: serde_json::Value,
 ) -> Result<PasionRegistrationToken, HttpError> {
     pasion_fetch_one(
-        &format!("/user-registration-tokens/{id}"),
+        &format!("/user-registration-tokens/{}", urlencoding::encode(id)),
         "PUT",
         Some(data.to_string()),
     )
@@ -415,7 +473,10 @@ pub async fn pasion_update_registration_token(
 
 pub async fn pasion_revoke_registration_token(id: &str) -> Result<(), HttpError> {
     let _: serde_json::Value = pasion_fetch(
-        &format!("/user-registration-tokens/{id}/revoke"),
+        &format!(
+            "/user-registration-tokens/{}/revoke",
+            urlencoding::encode(id)
+        ),
         "POST",
         None,
     )
@@ -425,7 +486,10 @@ pub async fn pasion_revoke_registration_token(id: &str) -> Result<(), HttpError>
 
 pub async fn pasion_unrevoke_registration_token(id: &str) -> Result<(), HttpError> {
     let _: serde_json::Value = pasion_fetch(
-        &format!("/user-registration-tokens/{id}/unrevoke"),
+        &format!(
+            "/user-registration-tokens/{}/unrevoke",
+            urlencoding::encode(id)
+        ),
         "POST",
         None,
     )
@@ -444,7 +508,12 @@ pub async fn pasion_get_upstream_providers() -> Result<Vec<PasionUpstreamProvide
 }
 
 pub async fn pasion_get_upstream_provider(id: &str) -> Result<PasionUpstreamProvider, HttpError> {
-    pasion_fetch_one(&format!("/upstream-oauth-providers/{id}"), "GET", None).await
+    pasion_fetch_one(
+        &format!("/upstream-oauth-providers/{}", urlencoding::encode(id)),
+        "GET",
+        None,
+    )
+    .await
 }
 
 pub async fn pasion_create_upstream_provider(
@@ -458,7 +527,7 @@ pub async fn pasion_update_upstream_provider(
     data: serde_json::Value,
 ) -> Result<PasionUpstreamProvider, HttpError> {
     pasion_fetch_one(
-        &format!("/upstream-oauth-providers/{id}"),
+        &format!("/upstream-oauth-providers/{}", urlencoding::encode(id)),
         "PATCH",
         Some(data.to_string()),
     )
@@ -466,14 +535,21 @@ pub async fn pasion_update_upstream_provider(
 }
 
 pub async fn pasion_delete_upstream_provider(id: &str) -> Result<(), HttpError> {
-    let _: serde_json::Value =
-        pasion_fetch(&format!("/upstream-oauth-providers/{id}"), "DELETE", None).await?;
+    let _: serde_json::Value = pasion_fetch(
+        &format!("/upstream-oauth-providers/{}", urlencoding::encode(id)),
+        "DELETE",
+        None,
+    )
+    .await?;
     Ok(())
 }
 
 pub async fn pasion_disable_upstream_provider(id: &str) -> Result<(), HttpError> {
     let _: serde_json::Value = pasion_fetch(
-        &format!("/upstream-oauth-providers/{id}/disable"),
+        &format!(
+            "/upstream-oauth-providers/{}/disable",
+            urlencoding::encode(id)
+        ),
         "POST",
         None,
     )
@@ -483,7 +559,10 @@ pub async fn pasion_disable_upstream_provider(id: &str) -> Result<(), HttpError>
 
 pub async fn pasion_enable_upstream_provider(id: &str) -> Result<(), HttpError> {
     let _: serde_json::Value = pasion_fetch(
-        &format!("/upstream-oauth-providers/{id}/enable"),
+        &format!(
+            "/upstream-oauth-providers/{}/enable",
+            urlencoding::encode(id)
+        ),
         "POST",
         None,
     )
@@ -499,10 +578,10 @@ pub async fn pasion_get_upstream_links(
 ) -> Result<Vec<PasionUpstreamLink>, HttpError> {
     let mut params = Vec::new();
     if let Some(uid) = user_id {
-        params.push(format!("filter[user]={uid}"));
+        params.push(format!("filter[user]={}", urlencoding::encode(uid)));
     }
     if let Some(pid) = provider_id {
-        params.push(format!("filter[provider]={pid}"));
+        params.push(format!("filter[provider]={}", urlencoding::encode(pid)));
     }
     let path = if params.is_empty() {
         "/upstream-oauth-links".to_string()
@@ -519,8 +598,12 @@ pub async fn pasion_create_upstream_link(
 }
 
 pub async fn pasion_delete_upstream_link(id: &str) -> Result<(), HttpError> {
-    let _: serde_json::Value =
-        pasion_fetch(&format!("/upstream-oauth-links/{id}"), "DELETE", None).await?;
+    let _: serde_json::Value = pasion_fetch(
+        &format!("/upstream-oauth-links/{}", urlencoding::encode(id)),
+        "DELETE",
+        None,
+    )
+    .await?;
     Ok(())
 }
 
@@ -594,4 +677,61 @@ pub async fn pasion_get_connector_health() -> Result<Vec<PasionConnectorHealth>,
 
 pub async fn pasion_get_version() -> Result<PasionVersion, HttpError> {
     pasion_fetch("/version", "GET", None).await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn personal_session_wire_matches_required_actor_and_one_time_access_token() {
+        let request = CreatePersonalSessionRequest {
+            actor_user_id: "actor-id".into(),
+            human_name: "Automation".into(),
+            scope: "openid".into(),
+            expires_in: None,
+        };
+        assert_eq!(
+            serde_json::to_value(request).unwrap(),
+            serde_json::json!({"actor_user_id":"actor-id","human_name":"Automation","scope":"openid"})
+        );
+        let session: PasionPersonalSession = flatten_resource(&serde_json::json!({"id":"session-id","attributes":{"actor_user_id":"actor-id","human_name":"Automation","scope":"openid","access_token":"one-time"}})).unwrap();
+        assert_eq!(session.user_id.as_deref(), Some("actor-id"));
+        assert_eq!(session.name.as_deref(), Some("Automation"));
+        assert_eq!(session.token.as_deref(), Some("one-time"));
+        let list_row: PasionPersonalSession = flatten_resource(&serde_json::json!({"id":"session-id","attributes":{"actor_user_id":"actor-id","human_name":"Automation","scope":"openid"}})).unwrap();
+        assert!(list_row.token.is_none());
+    }
+
+    #[test]
+    fn flatten_preserves_resource_identity_and_bare_attributes() {
+        let user: PasionUser = flatten_resource(&serde_json::json!({
+            "id":"account/id", "attributes":{"id":"untrusted-attribute-id","username":"alice","admin":true}
+        })).unwrap();
+        assert_eq!(user.id, "account/id");
+        assert_eq!(user.username, "alice");
+        assert!(user.admin);
+        let user: PasionUser =
+            flatten_resource(&serde_json::json!({"id":"bob","username":"bob"})).unwrap();
+        assert_eq!(user.username, "bob");
+        assert!(flatten_resource::<PasionUser>(&serde_json::Value::Null).is_err());
+        assert!(flatten_resource::<PasionUser>(&serde_json::json!({"attributes":[]})).is_err());
+    }
+
+    #[test]
+    fn errors_preserve_backend_title_status_and_maintenance() {
+        assert_eq!(
+            format_pasion_error(409, r#"{"errors":[{"title":"Account exists"}]}"#).0,
+            "Account exists (409)"
+        );
+        assert_eq!(
+            format_pasion_error(503, "ignored").0,
+            "Server is in maintenance mode"
+        );
+        assert!(
+            format_pasion_error(502, "upstream failed")
+                .0
+                .contains("upstream failed")
+        );
+    }
 }

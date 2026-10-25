@@ -1,6 +1,8 @@
+> The `glory` branch uses the local Glory and Sapid checkouts. See the [branch integration record](docs/glory-branch-integration.md) for current verification; the October 23 reports describe the earlier reference migration. Local build/test output stays on D:; Docker builds require verified D: or remote builder storage.
+
 # Palpo Admin
 
-A web-based admin dashboard for [Palpo](https://github.com/palpo-im/palpo) Matrix homeserver, built with [Dioxus](https://dioxuslabs.com/) and compiled to WebAssembly.
+A web-based admin dashboard for [Palpo](https://github.com/palpo-im/palpo) Matrix homeserver, built with Glory and compiled to WebAssembly.
 
 ## Features
 
@@ -17,7 +19,8 @@ A web-based admin dashboard for [Palpo](https://github.com/palpo-im/palpo) Matri
 
 ## Tech Stack
 
-- **[Dioxus](https://dioxuslabs.com/)** - Rust UI framework targeting WebAssembly
+- **Glory** - Rust UI framework targeting WebAssembly
+- **Sapid** - Shared semantic action buttons, with the existing application theme
 - **[gloo](https://gloo-rs.web.app/)** - Rust/WASM utilities (network, storage, timers)
 - **[wasm-bindgen](https://rustwasm.github.io/docs/wasm-bindgen/)** - Rust/JavaScript interop
 - **Nginx** - Static file server (in Docker)
@@ -25,17 +28,17 @@ A web-based admin dashboard for [Palpo](https://github.com/palpo-im/palpo) Matri
 ## Prerequisites
 
 - [Rust](https://rustup.rs/) (latest stable)
-- [Dioxus CLI](https://dioxuslabs.com/learn/0.7/getting_started): `cargo install dioxus-cli`
+- wasm-bindgen CLI 0.2.129 (install under `D:/BuildCache/padmin-glory-branch/tools`)
 - `wasm32-unknown-unknown` target: `rustup target add wasm32-unknown-unknown`
 
 ## Development
 
 ```bash
-# Start the dev server with hot reload
-dx serve
+# Start the local development server
+python scripts/glory.py serve --dev
 
 # Build for production
-dx build --release
+python scripts/glory.py build
 ```
 
 The dev server runs at `http://localhost:8080` by default.
@@ -44,28 +47,29 @@ The dev server runs at `http://localhost:8080` by default.
 
 ```bash
 # Build the Docker image
-docker build -t palpo-admin .
+powershell -File scripts/package-container.ps1
+# After verifying D: or remote builder storage:
+docker build -t palpo-admin D:/BuildCache/padmin-glory-branch/container
 
 # Run on port 9090 — the container listens on 8080 by default because
 # the image uses the unprivileged nginx variant (nginxinc/nginx-unprivileged).
-docker run -p 9090:8080 palpo-admin
+docker run -p 9090:8080 -e PALPO_URL=http://your-palpo:8008 -e PASION_URL=http://your-pasion:7080 palpo-admin
 
 # To override the listen port inside the container (e.g. to bind 80 if you
 # pair this with a sidecar that needs the lower port), set PADMIN_PORT and
 # remember to expose that port:
-docker run -p 9090:80 -e PADMIN_PORT=80 palpo-admin
+docker run -p 9090:8081 -e PADMIN_PORT=8081 -e PALPO_URL=http://your-palpo:8008 palpo-admin
 ```
 
-The image uses a multi-stage build: Rust/Dioxus compiles the WASM app, then
-the unprivileged nginx image serves the static files as a non-root user.
+The image serves prebuilt Glory JS/WASM assets through unprivileged nginx.
+The packaging script stages the output on D:. Verify Docker builder storage
+separately before building the runtime image.
 The nginx entrypoint also exposes `/healthz` for container and platform
 liveness checks.
 
-GitHub Actions publishes multi-architecture images for `linux/amd64` and `linux/arm64` to GHCR:
-
-```bash
-docker pull ghcr.io/meldry-com/padmin:latest
-```
+CI checks out pinned Glory and Sapid sources, builds and tests the WASM on remote
+Linux runners, then smoke-tests and publishes the existing multi-platform image
+to GHCR and optional Docker Hub on the original push/tag triggers.
 
 ## Credential rotation policy
 
@@ -111,7 +115,7 @@ The repository now has a single Playwright workspace rooted at `e2e/`.
 npm test
 
 # Example-stack smoke suite against examples/compose.yml
-npm run test:example-stack:fresh
+npm run test:source-baseline:example-stack:fresh
 ```
 
 The example-stack smoke workflow, fixtures, and known limitations are documented in [`e2e/example-stack/README.md`](e2e/example-stack/README.md).
@@ -165,3 +169,18 @@ mounts, or set both to empty strings to cover standalone root hosting.
 
 Verify a running isolated stack with
 `PADMIN_MOUNT_TEST_URL=http://127.0.0.1:17060 npx playwright test -c playwright.mount.config.ts`.
+
+## Acceptance
+
+Set `WASM_BINDGEN=D:/BuildCache/padmin-glory-branch/tools/bin/wasm-bindgen.exe`, then build with `python scripts/glory.py build --dev` (omit `--dev` for release). Install the browser driver on D: with `npm install --prefix D:/BuildCache/padmin-glory-branch/runtime --cache D:/BuildCache/padmin-glory-branch/npm-cache --ignore-scripts playwright@1.63.0`. Tests use installed Microsoft Edge and keep browser profiles on D:.
+
+- `npm test`: actual WASM protocol fixtures, authentication races, keyboard/IME/accessibility, responsive navigation and all domain write suites. It starts a static host if port 8789 is free. Every mutation must have a registered typed fixture.
+- `powershell -File scripts/start-real-stack.ps1`: optional isolated real integration prerequisites using existing Pasion/PostgreSQL binaries and an already cached Palpo image. It performs no image build or pull and never changes source checkouts.
+- `node scripts/real-server.cjs`, then `npm run test:real`: actual OAuth password/consent/PKCE, Matrix/Pasion administration, registration/email verification, two-user messaging and report persistence. Override `PADMIN_REAL_USERNAME`/`PADMIN_REAL_PASSWORD` for another isolated account.
+- `node scripts/nginx-acceptance.cjs`: production entrypoint/non-root nginx contracts against the prepared cached runtime container. `node scripts/native-nginx-acceptance.cjs --same-origin` additionally serves the actual D: JS/WASM through native nginx with root, `/admin` and `/console/manage` app mounts and `/auth` Pasion. This needs the prepared isolated integration services and official nginx 1.31.2 extracted under `D:/BuildCache/padmin-glory-branch/tools/nginx`.
+
+The runners reject stale source/build hashes, missing WASM, mismatched served artifacts, missing evidence and nonzero suites. `D:/BuildCache/padmin-glory-branch/acceptance-results.json` binds suite exit codes and evidence paths to the actual WASM SHA-256. `test:source-baseline` retains the imported 18 suites as historical assertions; their old framework-specific selectors and storage-token injection are not the current test entry point. The mapping documents replacement checks and three explicit baseline/backend exceptions.
+
+The development server in `glory.py serve` serves static output. `real-server.cjs` forwards same-origin APIs to configured `PALPO_URL`/`PASION_URL`. The nginx deployment supports configured app/auth prefixes while keeping CSP free of `unsafe-inline`; the small external Pasion configuration bridge parses public JSON without evaluation.
+
+`glory.py build/serve` always generates `config.json`. Set `--pasion-public-url` (or `PASION_PUBLIC_URL`), `--oauth-client-id` (or `PADMIN_OAUTH_CLIENT_ID`) and `--palpo-admin-url` (or `PALPO_ADMIN_URL`) as needed. Empty URLs use same-origin defaults and the client defaults to the example registration. This static server has no backend proxy; configure a reverse proxy or use `real-server.cjs` for a real session.

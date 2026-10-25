@@ -81,30 +81,44 @@ pub async fn delete_local_media(
     size_gt: u64,
     keep_profiles: bool,
 ) -> Result<DeleteMediaResult, HttpError> {
-    let home_server = get_home_server()?;
-    let url = build_url(&format!("/_palpo/admin/v1/media/{home_server}/delete"), &[])?;
-    let body = serde_json::json!({
-        "before_ts": before_ts,
-        "size_gt": size_gt,
-        "keep_profiles": keep_profiles,
-    })
-    .to_string();
-
-    let result = api_client(&url, "POST", Some(body)).await?;
+    if keep_profiles {
+        return Err(HttpError::message(
+            "This server does not support preserving profile media during bulk cleanup. Uncheck Keep profile media only if you intend to include it.",
+        ));
+    }
+    let before = media_integer(before_ts, "Before timestamp")?.to_string();
+    let size = media_integer(size_gt, "Minimum size")?.to_string();
+    let url = build_url(
+        "/_palpo/admin/v1/media/delete",
+        &[("before_ts", &before), ("size_gt", &size)],
+    )?;
+    let result = api_client(&url, "POST", None).await?;
     invalidate_media_related_caches();
     Ok(result)
 }
 
 pub async fn purge_remote_media(before_ts: u64) -> Result<DeleteMediaResult, HttpError> {
-    let url = build_url("/_palpo/admin/v1/purge_media_cache", &[])?;
-    let body = serde_json::json!({ "before_ts": before_ts }).to_string();
-    let result = api_client(&url, "POST", Some(body)).await?;
+    let before = media_integer(before_ts, "Before timestamp")?.to_string();
+    let url = build_url(
+        "/_palpo/admin/v1/purge_media_cache",
+        &[("before_ts", &before)],
+    )?;
+    #[derive(serde::Deserialize)]
+    struct Purged {
+        deleted: u64,
+    }
+    let result: Purged = api_client(&url, "POST", None).await?;
+    let result = DeleteMediaResult {
+        deleted_media: Vec::new(),
+        total: result.deleted,
+    };
     invalidate_media_related_caches();
     Ok(result)
 }
 
 pub async fn delete_media(media_id: &str) -> Result<(), HttpError> {
-    let home_server = get_home_server()?;
+    let media_id = urlencoding::encode(media_id);
+    let home_server = urlencoding::encode(&get_home_server()?).into_owned();
     let url = build_url(
         &format!("/_palpo/admin/v1/media/{home_server}/{media_id}"),
         &[],
@@ -115,19 +129,59 @@ pub async fn delete_media(media_id: &str) -> Result<(), HttpError> {
 }
 
 pub async fn quarantine_media(media_id: &str) -> Result<(), HttpError> {
-    let home_server = get_home_server()?;
+    let media_id = urlencoding::encode(media_id);
+    let home_server = urlencoding::encode(&get_home_server()?).into_owned();
     let url = build_url(
         &format!("/_palpo/admin/v1/media/quarantine/{home_server}/{media_id}"),
         &[],
     )?;
-    let _: serde_json::Value = api_client(&url, "POST", None).await?;
+    let _: serde_json::Value = api_client(&url, "POST", None)
+        .await
+        .map_err(unsupported_media_operation)?;
     invalidate_media_related_caches();
     Ok(())
 }
 
 pub async fn protect_media(media_id: &str) -> Result<(), HttpError> {
+    let media_id = urlencoding::encode(media_id);
     let url = build_url(&format!("/_palpo/admin/v1/media/protect/{media_id}"), &[])?;
-    let _: serde_json::Value = api_client(&url, "POST", None).await?;
+    let _: serde_json::Value = api_client(&url, "POST", None)
+        .await
+        .map_err(unsupported_media_operation)?;
     invalidate_media_related_caches();
     Ok(())
+}
+
+fn media_integer(value: u64, name: &str) -> Result<i64, HttpError> {
+    i64::try_from(value)
+        .map_err(|_| HttpError::message(format!("{name} exceeds the server integer range")))
+}
+
+fn unsupported_media_operation(mut error: HttpError) -> HttpError {
+    if matches!(error.status, 404 | 405) {
+        error.message = format!(
+            "This server does not support this media operation (HTTP {}): {}",
+            error.status, error.message
+        );
+    }
+    error
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn media_parameters_fit_the_server_integer_contract() {
+        assert_eq!(media_integer(i64::MAX as u64, "size").unwrap(), i64::MAX);
+        assert!(media_integer(i64::MAX as u64 + 1, "size").is_err());
+        assert!(
+            unsupported_media_operation(HttpError::from_status(405, "method not allowed"))
+                .message
+                .contains("does not support")
+        );
+        assert_eq!(
+            unsupported_media_operation(HttpError::from_status(500, "server failure")).message,
+            "server failure"
+        );
+    }
 }

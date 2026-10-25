@@ -31,14 +31,25 @@ pub struct RuntimeConfig {
     pub palpo_admin_url: String,
 }
 
-pub async fn load_runtime_config() -> RuntimeConfig {
-    match gloo_net::http::Request::get(&app_path("/config.json"))
+pub async fn try_load_runtime_config() -> Result<RuntimeConfig, crate::utils::error::HttpError> {
+    use crate::utils::error::HttpError;
+    let response = gloo_net::http::Request::get(&app_path("/config.json"))
         .send()
         .await
-    {
-        Ok(resp) => resp.json::<RuntimeConfig>().await.unwrap_or_default(),
-        Err(_) => RuntimeConfig::default(),
+        .map_err(|e| HttpError::message(format!("config.json: {e}")))?;
+    if !response.ok() {
+        return Err(HttpError::from_status(
+            response.status(),
+            "Unable to load config.json",
+        ));
     }
+    response
+        .json::<RuntimeConfig>()
+        .await
+        .map_err(|e| HttpError::message(format!("Invalid config.json: {e}")))
+}
+pub async fn load_runtime_config() -> RuntimeConfig {
+    try_load_runtime_config().await.unwrap_or_default()
 }
 
 /// The container injects the mount path before the WASM module loads.

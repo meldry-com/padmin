@@ -821,3 +821,43 @@ svg { display: block; }
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Glory semantic shell. Controls remain native semantic Input/Check/Button. */
+.padmin { min-height:100vh; color:#292330; background:#faf8f4; font:15px/1.5 system-ui,sans-serif; }
+.padmin .header { display:flex; align-items:center; justify-content:space-between; padding:16px 24px; border-bottom:1px solid #d8d1db; }
+.padmin .shell { display:grid; grid-template-columns:230px minmax(0,1fr); }
+.padmin .sidebar { display:flex; flex-direction:column; gap:6px; padding:18px; border-right:1px solid #d8d1db; }
+.padmin button { padding:8px 12px; border:1px solid #d8d1db; border-radius:6px; color:inherit; background:#fff; cursor:pointer; text-align:left; }
+.padmin button:hover { background:#f1e9f7; }
+.padmin button:focus-visible,.padmin input:focus-visible,.padmin textarea:focus-visible { outline:3px solid #7050b3; outline-offset:2px; }
+.padmin button:disabled { opacity:.5; cursor:wait; }
+.padmin .page { padding:24px; display:flex; flex-direction:column; gap:14px; min-width:0; }
+.padmin .panel,.padmin .record { padding:14px; background:#fff; border:1px solid #ded8e2; border-radius:8px; display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+.padmin input,.padmin textarea { border:1px solid #aaa0b2; border-radius:5px; padding:9px; max-width:100%; }
+.padmin .status { white-space:pre-wrap; overflow-wrap:anywhere; }
+@media(max-width:760px) { .padmin .shell{grid-template-columns:1fr} .padmin .sidebar{flex-direction:row;overflow:auto;max-width:100vw} .padmin .sidebar button{white-space:nowrap} .padmin .page{padding:14px} }
+
+.padmin .field {display:flex;flex-direction:column;gap:4px;min-width:180px;max-width:100%;align-items:stretch}
+.padmin .field-label {font-size:13px;font-weight:600;color:inherit}
+.padmin .header {flex-wrap:wrap;gap:8px}
+.padmin .sidebar {height:calc(100vh - 100px);position:sticky;top:0;overflow:auto}
+.padmin .main {min-width:0}
+.padmin.dark {background:#19151f;color:#eee8f5;color-scheme:dark}
+.padmin.dark button,.padmin.dark input,.padmin.dark textarea,.padmin.dark .panel,.padmin.dark .record {background:#292132;color:inherit;border-color:#70617f}
+.padmin.dark button:hover,.padmin.dark .nav.active {background:#493260}
+.padmin.high-contrast {color:#000;background:#fff}
+.padmin.high-contrast button,.padmin.high-contrast input,.padmin.high-contrast textarea {color:#000;background:#fff;border:2px solid #000}
+.padmin .shortcut-help {position:fixed;inset:25% 20%;z-index:20;background:#fff;color:#17111d;border:3px solid #7050b3;padding:24px;display:flex;flex-direction:column;gap:20px;box-shadow:0 0 0 200vmax #0008}
+.padmin .notifications {position:fixed;bottom:12px;right:12px;z-index:10}
+.padmin .notification-list {padding:12px;max-width:420px;max-height:50vh;overflow:auto;background:#fff;color:#17111d;border:1px solid #7050b3;display:flex;flex-direction:column;gap:8px}
+.sr-only {position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+@media(max-width:760px){.padmin .sidebar{position:static;height:auto}.padmin .shortcut-help{inset:12% 5%}}
+
+.padmin .toasts{position:fixed;right:12px;top:100px;z-index:15;max-width:min(450px,95vw);display:flex;flex-direction:column;gap:8px;pointer-events:none}.padmin .toast{background:#fff;color:#17111d;border:2px solid #7050b3;padding:12px;display:flex;align-items:center;gap:12px;box-shadow:0 4px 20px #0002;pointer-events:auto}
+
+.padmin .nav-link{display:block;padding:8px 12px;border:1px solid #d8d1db;border-radius:6px;color:inherit;text-decoration:none;background:#fff}.padmin .nav-link:hover,.padmin .nav-link.active{background:#f1e9f7}.padmin.dark .nav-link{background:#292132}.padmin.dark .nav-link.active{background:#493260}.padmin .nav-link:focus-visible{outline:3px solid #7050b3;outline-offset:2px}.padmin.high-contrast .nav-link{background:#fff;color:#000;border:2px solid #000}
+
+.padmin .menu-toggle,.padmin .nav-backdrop{display:none}
+@media(max-width:760px){.padmin .menu-toggle{display:block}.padmin .sidebar{display:none}.padmin .sidebar.open{display:flex;flex-direction:column;position:fixed;inset:0 auto 0 0;z-index:30;width:min(300px,78vw);max-width:78vw;height:100vh;overflow:auto;background:#faf8f4;box-shadow:4px 0 16px #0004}.padmin.dark .sidebar.open{background:#19151f}.padmin .nav-backdrop{display:block;position:fixed;inset:0;z-index:25;border:0;border-radius:0;background:#0008;color:transparent}.padmin .nav-backdrop:hover{background:#0008}}
+
+.padmin .shell.compact{grid-template-columns:150px minmax(0,1fr)}.padmin .session-identity{font-size:13px;overflow-wrap:anywhere}@media(max-width:760px){.padmin .desktop-toggle{display:none}.padmin .shell.compact{grid-template-columns:1fr}}

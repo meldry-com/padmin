@@ -46,17 +46,40 @@ can_resolve_url_host() {
     return 1
 }
 
+write_auth_asset_filter() {
+    if [ "$location_path" = /auth/ ] || { [ -n "$PADMIN_PASION_BASE_PATH" ] && [ "$location_path" = "${PADMIN_PASION_BASE_PATH}/" ]; }; then
+        cat >> /etc/nginx/conf.d/default.conf <<EOF
+        # Some Pasion distributions contain absolute JS-to-WASM asset paths.
+        # Keep those requests within the explicitly configured auth mount.
+        proxy_set_header Accept-Encoding "";
+        sub_filter_types application/javascript text/javascript;
+        sub_filter_once off;
+        sub_filter '/./assets/' '${location_path}assets/';
+        sub_filter '"/assets/' '"${location_path}assets/';
+        # Keep the inherited CSP while making the upstream's public inline
+        # configuration inert. The external bridge uses JSON.parse, never eval.
+        sub_filter '<script>' '<script type="application/json" id="padmin-pasion-config">';
+        sub_filter '</script>' '</script><script src="${PADMIN_BASE_PATH}/pasion-config.js"></script>';
+EOF
+    fi
+}
+
 write_proxy_location() {
     location_path="$1"
     target_url="$2"
     auth_header="${3:-}"
+    # The browser auth mount is a reverse-proxy prefix, not an upstream route.
+    if [ "$location_path" = /auth/ ] || { [ -n "$PADMIN_PASION_BASE_PATH" ] && [ "$location_path" = "${PADMIN_PASION_BASE_PATH}/" ]; }; then
+        target_url="${target_url%/}/"
+    fi
 
     cat >> /etc/nginx/conf.d/default.conf <<EOF
-    location ${location_path} {
+    location ^~ ${location_path} {
         proxy_pass ${target_url};
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
 EOF
+    write_auth_asset_filter
 
     if [ -n "$auth_header" ]; then
 cat >> /etc/nginx/conf.d/default.conf <<EOF
@@ -75,11 +98,19 @@ write_dynamic_proxy_location() {
     auth_header="${3:-}"
 
     cat >> /etc/nginx/conf.d/default.conf <<EOF
-    location ${location_path} {
+    location ^~ ${location_path} {
+EOF
+    if [ "$location_path" = /auth/ ] || { [ -n "$PADMIN_PASION_BASE_PATH" ] && [ "$location_path" = "${PADMIN_PASION_BASE_PATH}/" ]; }; then
+        cat >> /etc/nginx/conf.d/default.conf <<EOF
+        rewrite ^${location_path}(.*)\$ /\$1 break;
+EOF
+    fi
+    cat >> /etc/nginx/conf.d/default.conf <<EOF
         proxy_pass \$${variable_name};
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
 EOF
+    write_auth_asset_filter
 
     if [ -n "$auth_header" ]; then
 cat >> /etc/nginx/conf.d/default.conf <<EOF
@@ -94,14 +125,13 @@ EOF
 
 PADMIN_OAUTH_CLIENT_ID="${PADMIN_OAUTH_CLIENT_ID:-}"
 # Keep pristine files so container restarts never double-prefix asset URLs.
-for file in /usr/share/nginx/html/index.html /usr/share/nginx/html/assets/*.js; do
+for file in /usr/share/nginx/html/index.html; do
     [ -f "$file" ] || continue
     [ -f "$file.original" ] || cp "$file" "$file.original"
-    sed -e "s@/\./assets/@/assets/@g" \
-        -e "s@/assets/@${PADMIN_BASE_PATH}/assets/@g" "$file.original" > "$file"
+    cp "$file.original" "$file"
 done
 printf "window.PADMIN_BASE_PATH='%s';window.PADMIN_PASION_BASE_PATH='%s';\n" "$PADMIN_BASE_PATH" "$PADMIN_PASION_BASE_PATH" > /usr/share/nginx/html/runtime-config.js
-sed -i "s@</head>@<script src='${PADMIN_BASE_PATH}/runtime-config.js'></script></head>@" /usr/share/nginx/html/index.html
+sed -i "s@<base href=\"/\">@<base href=\"${PADMIN_BASE_PATH}/\">@" /usr/share/nginx/html/index.html
 printf '{"pasion_public_url":"%s","oauth_client_id":"%s"}' \
     "$PASION_PUBLIC_URL" "$PADMIN_OAUTH_CLIENT_ID" \
     > /usr/share/nginx/html/config.json
@@ -110,12 +140,13 @@ cat > /etc/nginx/conf.d/default.conf <<EOF
 server {
     listen ${PADMIN_PORT};
     server_name _;
+    absolute_redirect off;
     root /usr/share/nginx/html;
     index index.html;
 
     # Baseline security response headers. \`always\` makes nginx emit them on
     # error pages too, not just 2xx/3xx. CSP allows \`wasm-unsafe-eval\`
-    # because Dioxus runs as WebAssembly.
+    # because Glory runs as WebAssembly.
     add_header X-Content-Type-Options "nosniff" always;
     add_header X-Frame-Options "DENY" always;
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
@@ -187,12 +218,18 @@ cat >> /etc/nginx/conf.d/default.conf <<EOF
         return 308 ${PADMIN_BASE_PATH}/\$is_args\$args;
     }
 
-    location ^~ ${PADMIN_BASE_PATH}/assets/ {
-        alias /usr/share/nginx/html/assets/;
-        expires 1y;
+    location ^~ ${PADMIN_BASE_PATH}/pkg/ {
+        alias /usr/share/nginx/html/pkg/;
+        expires -1;
     }
 
-    location ^~ ${PADMIN_BASE_PATH}/ {
+    location ~ ^${PADMIN_BASE_PATH}/(.+\\.(wasm|js|css|png|jpg|ico|svg))\$ {
+        rewrite ^${PADMIN_BASE_PATH}/(.*)\$ /\$1 break;
+        try_files \$uri =404;
+        expires -1;
+    }
+
+    location ${PADMIN_BASE_PATH}/ {
         rewrite ^${PADMIN_BASE_PATH}/(.*)\$ /\$1 break;
         try_files \$uri \$uri/ /index.html;
         expires -1;
@@ -202,8 +239,8 @@ fi
 
 cat >> /etc/nginx/conf.d/default.conf <<EOF
     location ~* \.(wasm|js|css|png|jpg|ico|svg)$ {
-        expires 1y;
-        add_header Cache-Control "public, immutable";
+        try_files \$uri =404;
+        expires -1;
     }
 
     location / {

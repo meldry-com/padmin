@@ -190,7 +190,7 @@ pub async fn set_user_deactivated(id: &str, deactivated: bool) -> Result<UserRec
 }
 
 /// Which service carried out a deactivation or reactivation.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum AccountOwner {
     /// Pasion owns the account: the change is made there and Pasion applies
     /// it to the homeserver (deactivation runs as a background job).
@@ -277,7 +277,7 @@ pub async fn get_user_devices(
         &[("from", &from_str), ("limit", &limit_str)],
     )?;
 
-    #[derive(serde::Deserialize)]
+    #[derive(serde::Deserialize, serde::Serialize)]
     struct Resp {
         devices: Vec<Device>,
         total: u64,
@@ -300,8 +300,9 @@ pub async fn get_user_devices(
 
 pub async fn delete_user_device(user_id: &str, device_id: &str) -> Result<(), HttpError> {
     let encoded_user = urlencoding::encode(user_id);
+    let encoded_device = urlencoding::encode(device_id);
     let url = build_url(
-        &format!("/_palpo/admin/v2/users/{encoded_user}/devices/{device_id}"),
+        &format!("/_palpo/admin/v2/users/{encoded_user}/devices/{encoded_device}"),
         &[],
     )?;
     let _: serde_json::Value = api_client(&url, "DELETE", None).await?;
@@ -352,7 +353,7 @@ pub async fn get_user_joined_rooms(
         &[("from", &from_str), ("limit", &limit_str)],
     )?;
 
-    #[derive(serde::Deserialize)]
+    #[derive(serde::Deserialize, serde::Serialize)]
     struct Resp {
         joined_rooms: Vec<String>,
         total: u64,
@@ -408,7 +409,7 @@ pub async fn send_server_notice(user_id: &str, body: &str) -> Result<String, Htt
     })
     .to_string();
 
-    #[derive(serde::Deserialize)]
+    #[derive(serde::Deserialize, serde::Serialize)]
     struct Resp {
         event_id: String,
     }

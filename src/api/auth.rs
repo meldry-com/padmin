@@ -273,6 +273,7 @@ fn base64url_encode(data: &[u8]) -> Result<String, HttpError> {
 /// unavailable, so the caller can render a useful error instead of having
 /// the WASM panic and crash the page.
 pub async fn start_oauth_login() -> Result<(), HttpError> {
+    advance_session();
     let verifier = generate_code_verifier()?;
     let challenge = compute_code_challenge(&verifier).await?;
     let state = generate_oauth_state()?;
@@ -336,6 +337,7 @@ pub async fn handle_oauth_callback(
     code: &str,
     received_state: Option<&str>,
 ) -> Result<(), HttpError> {
+    let generation = advance_session();
     let session = session_storage()?;
     let verifier = session
         .get_item(PKCE_VERIFIER_KEY)
@@ -402,11 +404,6 @@ pub async fn handle_oauth_callback(
     let token_resp: TokenResponse =
         serde_json::from_str(&response.text).map_err(|e| make_err(e.to_string()))?;
 
-    storage::set_item("access_token", &token_resp.access_token);
-    if let Some(ref rt) = token_resp.refresh_token {
-        storage::set_item("refresh_token", rt);
-    }
-
     // Resolve the Matrix identity directly from the delegated access token.
     // This keeps the admin dashboard login flow aligned with the tested
     // device-code helper and avoids depending on OIDC userinfo / id_token.
@@ -421,6 +418,17 @@ pub async fn handle_oauth_callback(
 
     let whoami: WhoamiResponse =
         serde_json::from_str(&whoami.text).map_err(|e| make_err(e.to_string()))?;
+    if generation != session_generation() {
+        return Err(make_err("Obsolete sign-in response".into()));
+    }
+    storage::set_item("access_token", &token_resp.access_token);
+    if let Some(ref rt) = token_resp.refresh_token {
+        storage::set_item("refresh_token", rt);
+    }
+
+    if let Some((_, server)) = whoami.user_id.split_once(':') {
+        storage::set_item("home_server", server);
+    }
     storage::set_item("user_id", &whoami.user_id);
     if let Some(device_id) = whoami.device_id.as_deref()
         && is_valid_device_id(device_id)
@@ -428,7 +436,11 @@ pub async fn handle_oauth_callback(
         storage::set_item(OAUTH_DEVICE_ID_STORAGE_KEY, device_id);
     }
 
-    if let Some((_, displayname, avatar)) = get_identity().await {
+    let identity = get_identity().await;
+    if generation != session_generation() {
+        return Err(make_err("Obsolete sign-in response".into()));
+    }
+    if let Some((_, displayname, avatar)) = identity {
         if let Some(name) = displayname {
             storage::set_item("user_display_name", &name);
         }
@@ -461,10 +473,16 @@ struct TokenResponse {
 /// Returns `true` if the caller should retry, `false` if the session
 /// is gone and the redirect will happen on the next tick.
 pub async fn handle_unauthorized() -> bool {
+    let generation = session_generation();
+    let original = storage::get_item("refresh_token");
     if refresh_oauth_token().await {
         return true;
     }
-    // Refresh failed: clear everything that implies an active session.
+    if generation != session_generation() || storage::get_item("refresh_token") != original {
+        return false;
+    }
+    // Refresh failed: retire this session before notifying the application.
+    advance_session();
     storage::remove_item("access_token");
     storage::remove_item("refresh_token");
     storage::remove_item("is_admin");
@@ -477,6 +495,31 @@ pub async fn handle_unauthorized() -> bool {
 /// Attempt to refresh the OAuth2 access token using the stored refresh_token.
 /// Returns `true` if the token was refreshed successfully.
 pub async fn refresh_oauth_token() -> bool {
+    use futures::FutureExt;
+    let Some(ctx) = crate::ui::context::current() else {
+        return false;
+    };
+    let generation = ctx.session.get();
+    let existing = ctx
+        .refresh
+        .borrow()
+        .as_ref()
+        .filter(|(g, _)| *g == generation)
+        .map(|(_, f)| f.clone());
+    let shared = if let Some(future) = existing {
+        future
+    } else {
+        let future = refresh_once(generation).boxed_local().shared();
+        *ctx.refresh.borrow_mut() = Some((generation, future.clone()));
+        future
+    };
+    let result = shared.await;
+    if ctx.session.get() == generation {
+        ctx.refresh.borrow_mut().take();
+    }
+    result
+}
+async fn refresh_once(generation: u64) -> bool {
     let refresh_token = match storage::get_item("refresh_token") {
         Some(rt) => rt,
         None => return false,
@@ -504,6 +547,12 @@ pub async fn refresh_oauth_token() -> bool {
         Ok(t) => t,
         Err(_) => return false,
     };
+
+    if generation != session_generation()
+        || storage::get_item("refresh_token").as_deref() != Some(&refresh_token)
+    {
+        return false;
+    }
 
     storage::set_item("access_token", &token_resp.access_token);
     if let Some(ref rt) = token_resp.refresh_token {
@@ -587,13 +636,6 @@ async fn probe_admin_endpoint(url: &str) -> Result<bool, HttpError> {
     }
 }
 
-thread_local! {
-    static REVERIFYING: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
-    /// Set when another re-verification was requested while one was in
-    /// flight; that probe may have started before the revocation landed.
-    static REVERIFY_AGAIN: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
-}
-
 /// Called by the API clients whenever a backend answers 403, and
 /// periodically by the authenticated layout.
 ///
@@ -603,33 +645,30 @@ thread_local! {
 /// no longer an administrator. A 403 caused by something else (e.g. a
 /// refused action) leaves the verdict untouched.
 pub fn handle_forbidden() {
-    if REVERIFYING.with(|flag| flag.replace(true)) {
-        REVERIFY_AGAIN.with(|flag| flag.set(true));
-        return;
-    }
-    // Spawned on the root scope so it survives the page that got the 403 and
-    // runs inside the Dioxus runtime (it writes a GlobalSignal).
-    dioxus::dioxus_core::spawn_forever(async {
-        loop {
-            REVERIFY_AGAIN.with(|flag| flag.set(false));
-            if let Ok(false) = verify_admin().await {
-                crate::router::set_admin_verdict(false);
-                break;
-            }
-            if !REVERIFY_AGAIN.with(|flag| flag.replace(false)) {
-                break;
-            }
-        }
-        REVERIFYING.with(|flag| flag.set(false));
-    });
+    crate::router::reset_admin_cache();
 }
 
 // ── Logout ───────────────────────────────────────────────────────────────────
 
 pub async fn logout() -> Result<(), HttpError> {
+    let revoked = storage::get_item("access_token");
+    storage::set_item("padmin.logout", &js_sys::Date::now().to_string());
+    advance_session();
+    for key in [
+        "access_token",
+        "refresh_token",
+        "access_token_expires_at",
+        "user_id",
+        "user_display_name",
+        "user_avatar_url",
+        "home_server",
+    ] {
+        storage::remove_item(key);
+    }
+    crate::router::reset_admin_cache();
     // Step 1: revoke the OAuth access token so it can no longer be used
     // against palpo's admin API.
-    if let Some(token) = storage::get_item("access_token") {
+    if let Some(token) = revoked {
         let client_id = crate::utils::config::get_oauth_client_id();
         let body = format!(
             "token={}&client_id={}",
@@ -655,10 +694,6 @@ pub async fn logout() -> Result<(), HttpError> {
         .send()
         .await;
 
-    // Clear cached identity / admin verdict so the next login starts fresh.
-    storage::remove_item("is_admin");
-    crate::router::reset_admin_cache();
-    crate::utils::config::clear_config();
     Ok(())
 }
 
@@ -751,4 +786,32 @@ pub async fn get_oidc_discovery(issuer_url: &str) -> Result<serde_json::Value, H
         return Err(make_err(format!("HTTP {}", response.status())));
     }
     response.json().await.map_err(|e| make_err(e.to_string()))
+}
+
+pub fn session_generation() -> u64 {
+    crate::ui::context::current()
+        .map(|ctx| ctx.session.get())
+        .unwrap_or(0)
+}
+fn advance_session() -> u64 {
+    let Some(ctx) = crate::ui::context::current() else {
+        return 0;
+    };
+    let generation = ctx
+        .session
+        .get()
+        .checked_add(1)
+        .expect("session generation exhausted");
+    ctx.session.set(generation);
+    ctx.refresh.borrow_mut().take();
+    ctx.cache.borrow_mut().clear();
+    ctx.metrics.borrow_mut().clear();
+    generation
+}
+
+pub(crate) fn retire_session() {
+    advance_session();
+    if let Some(ctx) = crate::ui::context::current() {
+        ctx.secrets.borrow_mut().clear();
+    }
 }

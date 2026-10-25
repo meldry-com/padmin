@@ -1,0 +1,3354 @@
+{
+  "original_suites": 18,
+  "inventoried_suites": 17,
+  "test_count": 77,
+  "assertion_line_count": 307,
+  "tests": [
+    {
+      "suite": "admin-scenarios.spec.ts",
+      "line": 66,
+      "test": "Admin navigates all sidebar sections and verifies page loads",
+      "assertions": [
+        {
+          "line": 71,
+          "source": "await expect(page.getByRole(\"heading\", { name: \"Dashboard\" })).toBeVisible({ timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 72,
+          "source": "await expect(page.locator(\"text=Server Version\").first()).toBeVisible({ timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 83,
+          "source": "await expect(page.locator(`text=${text}`).first()).toBeVisible({ timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 95,
+          "source": "await expect(page.locator(`text=${text}`).first()).toBeVisible({ timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 106,
+          "source": "await expect(page.locator(`text=${text}`).first()).toBeVisible({ timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-source-behaviors.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 0,
+      "evidence": [
+        {
+          "script": "scripts/browser-source-behaviors.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\source-behaviors-results.json",
+          "case": [
+            "0,1,58,59: every supported sidebar link has branding, href, live route navigation, active class and page heading"
+          ],
+          "required_case_fragment": "0,1,58,59:",
+          "executed": true,
+          "equivalence": "All 25 supported sidebar destinations use live semantic links with branding, href and active state. The 6 detail patterns and 2 public routes are reached separately; no unsupported Policy Data route is invented."
+        }
+      ]
+    },
+    {
+      "suite": "admin-scenarios.spec.ts",
+      "line": 112,
+      "test": "Admin navigates all Pasion identity provider pages",
+      "assertions": [
+        {
+          "line": 117,
+          "source": "await expect(page.locator(\"text=Local Accounts\").first()).toBeVisible({ timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 118,
+          "source": "await expect(page.locator('input[placeholder=\"Search username...\"]')).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 119,
+          "source": "await expect(page.getByRole(\"button\", { name: \"Create Account\" })).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 122,
+          "source": "await expect(accountsTable.or(accountsRetry)).toBeVisible({ timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 126,
+          "source": "await expect(page.locator(\"text=OAuth2 Sessions\").first()).toBeVisible({ timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 128,
+          "source": "await expect(page.locator('input[placeholder=\"Filter by user ID...\"]')).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 129,
+          "source": "await expect(page.getByRole(\"button\", { name: \"Refresh\" })).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 133,
+          "source": "await expect(oauth2Table.or(oauth2Retry)).toBeVisible({ timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 137,
+          "source": "await expect(page.locator(\"text=Personal Access Tokens\").first()).toBeVisible({ timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 138,
+          "source": "await expect(page.getByRole(\"button\", { name: \"Create Token\" })).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 142,
+          "source": "await expect(page.locator(\"text=Audit Log\").first()).toBeVisible({ timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 143,
+          "source": "await expect(page.locator('input[placeholder=\"Filter by operation...\"]')).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 147,
+          "source": "await expect(auditTable.or(auditRetry)).toBeVisible({ timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 151,
+          "source": "await expect(page.locator(\"text=Upstream OAuth Providers\").first()).toBeVisible({ timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 155,
+          "source": "await expect(providersTable.or(providersRetry)).toBeVisible({ timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 159,
+          "source": "await expect(page.locator(\"text=Connector Health\").first()).toBeVisible({ timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 160,
+          "source": "await expect(page.getByRole(\"button\", { name: \"Refresh\" })).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 164,
+          "source": "await expect(page.locator(\"text=Policy Data\").first()).toBeVisible({ timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-source-behaviors.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 1,
+      "evidence": [
+        {
+          "script": "scripts/browser-source-behaviors.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\source-behaviors-results.json",
+          "case": [
+            "0,1,58,59: every supported sidebar link has branding, href, live route navigation, active class and page heading"
+          ],
+          "required_case_fragment": "0,1,58,59:",
+          "executed": true,
+          "equivalence": "All 25 supported sidebar destinations use live semantic links with branding, href and active state. The 6 detail patterns and 2 public routes are reached separately; no unsupported Policy Data route is invented."
+        }
+      ]
+    },
+    {
+      "suite": "admin-scenarios.spec.ts",
+      "line": 169,
+      "test": "Admin creates, views, deactivates, and reactivates a user",
+      "assertions": [
+        {
+          "line": 179,
+          "source": "await expect(page.locator(\"text=Create New User\")).toBeVisible({ timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 184,
+          "source": "await expect(page).toHaveURL(/\\/users$/, { timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 187,
+          "source": "await expect(page.locator(\"table\")).toBeVisible({ timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 190,
+          "source": "await expect(userRow).toBeVisible({ timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 194,
+          "source": "await expect(page.getByText(testUserId, { exact: true }).first()).toBeVisible({",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 200,
+          "source": "await expect(page.locator(\"table\")).toBeVisible({ timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 203,
+          "source": "await expect(rowToDeactivate).toBeVisible({ timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 205,
+          "source": "await expect(page.locator(\"text=User deactivated\")).toBeVisible({ timeout: 10_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 210,
+          "source": "await expect(deactivatedRow.getByRole(\"button\", { name: \"Reactivate\" })).toBeVisible({",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 216,
+          "source": "await expect(page.locator(\"text=User reactivated\")).toBeVisible({ timeout: 10_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 221,
+          "source": "await expect(reactivatedRow.getByRole(\"button\", { name: \"Deactivate\" })).toBeVisible({",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-real-matrix.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 2,
+      "evidence": [
+        {
+          "script": "scripts/browser-real-matrix.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\browser-real-matrix-results.json",
+          "case": [
+            "Actual user creation, rate-limit set/reset, identifier add/remove, Pasion-owned deactivate/reactivate and fresh state"
+          ],
+          "required_case_fragment": "Actual user creation, rate-limit",
+          "executed": true,
+          "equivalence": "Real user creation, identity detail and server-reloaded deactivate/reactivate replace list/table-specific source selectors."
+        }
+      ]
+    },
+    {
+      "suite": "admin-scenarios.spec.ts",
+      "line": 228,
+      "test": "Admin creates, manages, and deletes registration tokens",
+      "assertions": [
+        {
+          "line": 232,
+          "source": "await expect(page.locator(\"text=Registration Tokens\").first()).toBeVisible({ timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 237,
+          "source": "await expect(page.getByRole(\"heading\", { name: \"Create Token\" })).toBeVisible({ timeout: 10_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 244,
+          "source": "await expect(page.locator(\"table\")).toBeVisible({ timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 246,
+          "source": "await expect(tokenRows.first()).toBeVisible({ timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-real-operations.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 3,
+      "evidence": [
+        {
+          "script": "scripts/browser-real-operations.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\real-operation-results.json",
+          "case": [
+            "Actual PKCE SHA256 verifier/challenge, password login, consent, token exchange, whoami and dual admin verdict",
+            "Actual Palpo registration token create/filter/delete with persisted server response",
+            "Actual Palpo appservice import/create/get/URL CAS update/immutable credentials/tokens/disable/enable/delete"
+          ],
+          "required_case_fragment": "token",
+          "executed": true,
+          "equivalence": "Actual typed token list/create/delete and visible rows cover source token table or empty-state semantics."
+        }
+      ]
+    },
+    {
+      "suite": "admin-scenarios.spec.ts",
+      "line": 251,
+      "test": "Admin reviews OAuth2 sessions and filters by user",
+      "assertions": [
+        {
+          "line": 255,
+          "source": "await expect(page.locator(\"text=OAuth2 Sessions\").first()).toBeVisible({ timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 260,
+          "source": "await expect(table.or(retry)).toBeVisible({ timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 265,
+          "source": "await expect(headers.filter({ hasText: \"Client\" }).first()).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 266,
+          "source": "await expect(headers.filter({ hasText: \"Status\" }).first()).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 270,
+          "source": "expect(rowCount).toBeGreaterThan(0);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 273,
+          "source": "await expect(activeBadge).toBeVisible({ timeout: 10_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 282,
+          "source": "expect(filteredCount).toBeGreaterThan(0);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 286,
+          "source": "await expect(page.locator(\"table\")).toBeVisible({ timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-real-source.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 4,
+      "evidence": [
+        {
+          "script": "scripts/browser-real-source.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\real-source-results.json",
+          "case": [
+            "4: actual active OAuth client/session fields, user filter retains matching records, clear-filter refresh"
+          ],
+          "required_case_fragment": "4:",
+          "executed": true,
+          "equivalence": "Actual active OAuth session contains client/state and stable user identity; filter[user] returns only that identity, then clear filter refresh returns live rows."
+        }
+      ]
+    },
+    {
+      "suite": "admin-scenarios.spec.ts",
+      "line": 292,
+      "test": "Admin views personal access tokens page",
+      "assertions": [
+        {
+          "line": 296,
+          "source": "await expect(page.locator(\"text=Personal Access Tokens\").first()).toBeVisible({ timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 297,
+          "source": "await expect(page.getByRole(\"button\", { name: \"Create Token\" })).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 302,
+          "source": "await expect(table.or(retryBtn)).toBeVisible({ timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-real-domains.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 5,
+      "evidence": [
+        {
+          "script": "scripts/browser-real-domains.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\real-pasion-domain-results.json",
+          "case": [
+            "Real personal token create/regenerate/revoke and dismiss"
+          ],
+          "required_case_fragment": "personal token",
+          "executed": true,
+          "equivalence": "Personal sessions are backed by real account identity and actual create/regenerate/revoke responses; token presentation is one-time."
+        }
+      ]
+    },
+    {
+      "suite": "admin-scenarios.spec.ts",
+      "line": 307,
+      "test": "Admin sends a server notice to a specific user",
+      "assertions": [
+        {
+          "line": 313,
+          "source": "await expect(page.locator(\"text=Server Notices\").first()).toBeVisible({ timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 316,
+          "source": "await expect(page.locator(\"text=Single User\").first()).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 317,
+          "source": "await expect(page.locator(\"text=Broadcast to All\").first()).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 321,
+          "source": "await expect(userIdInput).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 331,
+          "source": "await expect(page.locator(\"text=Server notice sent\")).toBeVisible({ timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 334,
+          "source": "await expect(page.locator(\"text=Notice History\").first()).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 335,
+          "source": "await expect(",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 337,
+          "source": ").toBeVisible({ timeout: 10_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-real-operations.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 6,
+      "evidence": [
+        {
+          "script": "scripts/browser-real-operations.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\real-operation-results.json",
+          "case": [
+            "Actual Palpo server notice accepted and returned a Matrix event ID"
+          ],
+          "required_case_fragment": "server notice",
+          "executed": true,
+          "equivalence": "Real notice submission validates recipient/body and returns an actual Matrix event ID."
+        }
+      ]
+    },
+    {
+      "suite": "admin-scenarios.spec.ts",
+      "line": 342,
+      "test": "Admin reviews audit log entries and uses filter",
+      "assertions": [
+        {
+          "line": 346,
+          "source": "await expect(page.locator(\"text=Audit Log\").first()).toBeVisible({ timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 351,
+          "source": "await expect(table.or(retryBtn)).toBeVisible({ timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 356,
+          "source": "await expect(headers.filter({ hasText: \"Timestamp\" }).first()).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 357,
+          "source": "await expect(headers.filter({ hasText: \"Operation\" }).first()).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 358,
+          "source": "await expect(headers.filter({ hasText: \"Admin\" }).first()).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 363,
+          "source": "expect(entryCount).toBeGreaterThan(0);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 374,
+          "source": "expect(isEmpty || filteredCount === 1).toBeTruthy(); // 1 = empty row",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 380,
+          "source": "expect(restoredCount).toBeGreaterThan(0);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-domains.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 7,
+      "evidence": [
+        {
+          "script": "scripts/browser-domains.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\browser-domains-results.json",
+          "case": [
+            "Source audit operation filter selects matching loaded records"
+          ],
+          "required_case_fragment": "audit",
+          "executed": true,
+          "equivalence": "Audit record fields and operation filtering are asserted after actual UI events; source generic table/header selectors map to finite typed records."
+        }
+      ]
+    },
+    {
+      "suite": "admin-scenarios.spec.ts",
+      "line": 385,
+      "test": "Admin views rooms list and inspects room details",
+      "assertions": [
+        {
+          "line": 396,
+          "source": "await expect(page.locator(\"text=Room\").first()).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 402,
+          "source": "await expect(searchInput).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 416,
+          "source": "await expect(page).toHaveURL(/\\/rooms\\//, { timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 420,
+          "source": "await expect(page.locator(`text=${roomName}`).first()).toBeVisible({ timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-real-matrix.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 8,
+      "evidence": [
+        {
+          "script": "scripts/browser-real-matrix.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\browser-real-matrix-results.json",
+          "case": [
+            "Actual create-room and name/topic state writes followed by fresh detail"
+          ],
+          "required_case_fragment": "Actual create-room",
+          "executed": true,
+          "equivalence": "Actual room creation, list-to-detail navigation, names, topic, state and metadata readbacks cover room-list field semantics. The new view uses finite semantic records rather than source table markup."
+        }
+      ]
+    },
+    {
+      "suite": "admin-scenarios.spec.ts",
+      "line": 428,
+      "test": "Admin verifies dashboard statistics and server health",
+      "assertions": [
+        {
+          "line": 434,
+          "source": "await expect(page.getByRole(\"heading\", { name: \"Dashboard\" })).toBeVisible({ timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 438,
+          "source": "await expect(serverVersion).toBeVisible({ timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 444,
+          "source": "expect(versionText).not.toContain(\"Loading\");",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 447,
+          "source": "await expect(page.locator(\"text=Total Users\").first()).toBeVisible({ timeout: 10_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 448,
+          "source": "await expect(page.locator(\"text=Total Rooms\").first()).toBeVisible({ timeout: 10_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/native-nginx-acceptance.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 9,
+      "evidence": [
+        {
+          "script": "scripts/browser-source-behaviors.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\source-behaviors-results.json",
+          "case": [
+            "23,24,25,26: Dashboard greeting identity, non-loading server version, supported Matrix versions and actual API counts"
+          ],
+          "required_case_fragment": "23,24,25,26:",
+          "executed": true,
+          "equivalence": "Dashboard welcome/heading, non-loading server version, supported versions/features and user/room counts are asserted against known API data."
+        },
+        {
+          "script": "scripts/native-nginx-acceptance.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\native-nginx-results.json",
+          "case": [
+            "root: real D: WASM/JS via nginx, PKCE password+consent+whoami/admin, users read, deep refresh/fresh OAuth, room navigation, strict404 and mount redirect"
+          ],
+          "required_case_fragment": "root:",
+          "executed": true,
+          "equivalence": "The actual nginx-served WASM reads real Palpo version 0.4.0 after actual OAuth and dual administrator verdicts."
+        }
+      ]
+    },
+    {
+      "suite": "admin-scenarios.spec.ts",
+      "line": 453,
+      "test": "Admin views upstream OAuth providers configured in Pasion",
+      "assertions": [
+        {
+          "line": 457,
+          "source": "await expect(page.locator(\"text=Upstream OAuth Providers\").first()).toBeVisible({ timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 462,
+          "source": "await expect(table.or(retry)).toBeVisible({ timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 468,
+          "source": "await expect(githubRow.locator(\"text=github\").first()).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-real-domains.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 10,
+      "evidence": [
+        {
+          "script": "scripts/browser-real-domains.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\real-pasion-domain-results.json",
+          "case": [
+            "Real upstream provider create/changed-only update and disable"
+          ],
+          "required_case_fragment": "upstream provider create",
+          "executed": true,
+          "equivalence": "Real provider list/detail values, create/edit and enable state replace original table row markup."
+        }
+      ]
+    },
+    {
+      "suite": "admin-scenarios.spec.ts",
+      "line": 475,
+      "test": "Admin creates multiple users and verifies them in the list",
+      "assertions": [
+        {
+          "line": 494,
+          "source": "await expect(page.locator(\"text=Create New User\")).toBeVisible({ timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 499,
+          "source": "await expect(page).toHaveURL(/\\/users$/, { timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 505,
+          "source": "await expect(page.locator(\"table\")).toBeVisible({ timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 508,
+          "source": "await expect(row).toBeVisible({ timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-real-matrix.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 11,
+      "evidence": [
+        {
+          "script": "scripts/browser-real-matrix.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\browser-real-matrix-results.json",
+          "case": [
+            "Two independently created users are each found through actual server-backed list searches"
+          ],
+          "required_case_fragment": "Two independently created users",
+          "executed": true,
+          "equivalence": "Two actual independent create-user submissions are followed by server-backed list searches for each identity, covering the source multi-user workflow rather than a fixture-only row."
+        }
+      ]
+    },
+    {
+      "suite": "admin-scenarios.spec.ts",
+      "line": 514,
+      "test": "Admin checks connector health status",
+      "assertions": [
+        {
+          "line": 516,
+          "source": "await expect(page.locator(\"text=Connector Health\").first()).toBeVisible({ timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 520,
+          "source": "await expect(refreshBtn).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 525,
+          "source": "await expect(page.locator(\"text=Connector Health\").first()).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-real-source.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 12,
+      "evidence": [
+        {
+          "script": "scripts/browser-real-source.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\real-source-results.json",
+          "case": [
+            "12: actual connector health collection and explicit second successful Refresh preserve the live page"
+          ],
+          "required_case_fragment": "12:",
+          "executed": true,
+          "equivalence": "Actual connector collection is read and the explicit Refresh control issues a second successful request while its heading remains live."
+        }
+      ]
+    },
+    {
+      "suite": "admin-scenarios.spec.ts",
+      "line": 530,
+      "test": "Admin views current policy data",
+      "assertions": [
+        {
+          "line": 532,
+          "source": "await expect(page.locator(\"text=Policy Data\").first()).toBeVisible({ timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 542,
+          "source": "expect(hasUpload || hasPolicy).toBeTruthy();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": null,
+      "backend_required": false,
+      "status": "obsolete-source-baseline-assertion",
+      "id": 13,
+      "evidence": [],
+      "reason": "Original admin-scenarios requests /pasion/policy-data, but the source router and source Pasion page tree contain no such route or implementation, and the authorized 33-route plan excludes it.",
+      "source_evidence": [
+        "D:/Works/meldry/padmin/src/router.rs",
+        "docs/source-baseline.json",
+        "docs/domain-completion-review.md"
+      ]
+    },
+    {
+      "suite": "admin-scenarios.spec.ts",
+      "line": 547,
+      "test": "Admin checks media and reports pages load correctly",
+      "assertions": [
+        {
+          "line": 552,
+          "source": "await expect(page.locator(\"text=Media\").first()).toBeVisible({ timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 556,
+          "source": "await expect(page.locator(\"text=Reports\").first()).toBeVisible({ timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-real-operations.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 14,
+      "evidence": [
+        {
+          "script": "scripts/browser-real-operations.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\real-operation-results.json",
+          "case": [
+            "Actual Palpo media statistics, bounded no-match local cleanup and remote cache purge with write-after-read refresh"
+          ],
+          "required_case_fragment": "media statistics",
+          "executed": true,
+          "equivalence": "Actual media collection and no-match bulk cleanup/individual upload-delete preserve statistics and meaningful empty-state behavior."
+        }
+      ]
+    },
+    {
+      "suite": "admin-scenarios.spec.ts",
+      "line": 561,
+      "test": "Admin views federation destinations",
+      "assertions": [
+        {
+          "line": 563,
+          "source": "await expect(page.locator(\"text=Federation\").first()).toBeVisible({ timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 573,
+          "source": "expect(headerCount).toBeGreaterThan(0);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-real-operations.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 15,
+      "evidence": [
+        {
+          "script": "scripts/browser-real-operations.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\real-operation-results.json",
+          "case": [
+            "Actual Palpo federation collection; fixture contains no existing federation target"
+          ],
+          "required_case_fragment": "federation collection",
+          "executed": true,
+          "equivalence": "A real empty federation collection is a valid original empty state. Encoded destination detail/reset is separately covered by stateful fixtures."
+        }
+      ]
+    },
+    {
+      "suite": "admin-scenarios.spec.ts",
+      "line": 583,
+      "test": "Admin can re-login with fresh OIDC token and access dashboard",
+      "assertions": [
+        {
+          "line": 606,
+          "source": "await expect(page.getByRole(\"heading\", { name: \"Palpo Admin\" })).toBeVisible({",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 623,
+          "source": "await expect(page.locator(\"aside\")).toBeVisible({ timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 624,
+          "source": "await expect(page.getByRole(\"heading\", { name: \"Dashboard\" })).toBeVisible({ timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 628,
+          "source": "await expect(page.locator(\"table\")).toBeVisible({ timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/native-nginx-acceptance.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 16,
+      "evidence": [
+        {
+          "script": "scripts/native-nginx-acceptance.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\native-nginx-results.json",
+          "case": [
+            "root: real D: WASM/JS via nginx, PKCE password+consent+whoami/admin, users read, deep refresh/fresh OAuth, room navigation, strict404 and mount redirect"
+          ],
+          "required_case_fragment": "root:",
+          "executed": true,
+          "equivalence": "Reload discards application secrets, then fresh real OAuth and server verdicts restore the dashboard. No storage-token injection is used."
+        }
+      ]
+    },
+    {
+      "suite": "appservices.spec.ts",
+      "line": 22,
+      "test": "import → install → expand → edit → delete",
+      "assertions": [
+        {
+          "line": 47,
+          "source": "await expect(page.getByRole(\"heading\", { name: /Install Custom Appservice/i })).toBeVisible({",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 57,
+          "source": "await expect(page.getByPlaceholder(\"wechat-bridge\")).toHaveValue(id);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 58,
+          "source": "await expect(page.getByPlaceholder(\"bot\")).toHaveValue(\"e2eimportbot\");",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 59,
+          "source": "await expect(page.getByPlaceholder(\"http://localhost:29335\")).toHaveValue(",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 66,
+          "source": "await expect(row).toBeVisible({ timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 67,
+          "source": "await expect(row).toContainText(\"Enabled\");",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 71,
+          "source": "await expect(page.getByText(asToken)).toBeVisible({ timeout: 10_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 72,
+          "source": "await expect(page.getByRole(\"button\", { name: \"Download\" })).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 73,
+          "source": "await expect(page.getByRole(\"button\", { name: /Copy YAML/i })).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 77,
+          "source": "await expect(page.getByRole(\"heading\", { name: new RegExp(`Edit ${id}`) })).toBeVisible({",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 81,
+          "source": "await expect(page.getByPlaceholder(\"wechat-bridge\")).toBeDisabled();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 87,
+          "source": "await expect(page.locator(\"tr\", { hasText: id }).first()).toContainText(",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 95,
+          "source": "await expect(page.locator(\"tr\", { hasText: id }).first()).toContainText(\"Disabled\", {",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 103,
+          "source": "await expect(page.locator(\"tr\", { hasText: id }).first()).toContainText(\"Enabled\", {",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 110,
+          "source": "await expect(page.locator(\"tr\", { hasText: id })).toHaveCount(0, { timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-real-operations.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 17,
+      "evidence": [
+        {
+          "script": "scripts/browser-real-operations.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\real-operation-results.json",
+          "case": [
+            "Actual Palpo appservice import/create/get/URL CAS update/immutable credentials/tokens/disable/enable/delete"
+          ],
+          "required_case_fragment": "appservice import",
+          "executed": true,
+          "equivalence": "Real import/register/detail/URL compare-and-set/immutable credentials/enable-disable/delete. Download/clipboard rejection and strict YAML are separately asserted in operational fixtures."
+        }
+      ]
+    },
+    {
+      "suite": "appservices.spec.ts",
+      "line": 113,
+      "test": "namespace conflict is rejected",
+      "assertions": [
+        {
+          "line": 133,
+          "source": "await expect(page.getByRole(\"heading\", { name: /Install Custom Appservice/i })).toBeVisible({",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 142,
+          "source": "await expect(page.locator(\"tr\", { hasText: `${base}-a` }).first()).toBeVisible({",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 148,
+          "source": "await expect(page.getByText(/Namespace conflict/i)).toBeVisible({ timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-real-operations.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 18,
+      "evidence": [
+        {
+          "script": "scripts/browser-real-operations.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\real-operation-results.json",
+          "case": [
+            "Application exact exclusive namespace precheck against actual Palpo registrations rejects the second claim; original remains and no second POST is sent"
+          ],
+          "required_case_fragment": "Application exact exclusive namespace precheck",
+          "executed": true,
+          "equivalence": "The application checks live registrations and rejects the second exact same-class regex when either claim is exclusive, preserving the first and sending no second POST. Actual Palpo alone permits both; no fabricated server409 and no claim of arbitrary regex-overlap or atomic cross-client rejection."
+        }
+      ]
+    },
+    {
+      "suite": "compose-full-flow.spec.ts",
+      "line": 232,
+      "test": "Pasion browser session flow completes end to end",
+      "assertions": [
+        {
+          "line": 265,
+          "source": "await expect(page.getByRole(\"heading\", { name: \"Account\" })).toBeVisible({",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 268,
+          "source": "await expect(page.getByText(activePrimaryUser.userId, { exact: true }).first()).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 280,
+          "source": "expect(logoutResponse.status).toBe(200);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 281,
+          "source": "expect(logoutResponse.body).toEqual({ status: \"success\" });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 286,
+          "source": "await expect(page.getByText(activePrimaryUser.userId, { exact: true }).first()).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-real-stack.cjs",
+      "backend_required": true,
+      "status": "executed-semantic-equivalent",
+      "id": 19,
+      "evidence": [
+        {
+          "script": "scripts/browser-real-stack.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\browser-real-stack-results.json",
+          "case": [
+            "Two real Matrix clients create/invite/join/send/sync messages and report the real event"
+          ],
+          "required_case_fragment": "Two real Matrix clients",
+          "executed": true,
+          "equivalence": "Actual browser registration verifies a server-issued email code, finishes registration, logs out/in, obtains actual device grants for two users, then creates/invites/joins/sends/syncs a room which Padmin reads."
+        },
+        {
+          "script": "scripts/browser-real-stack.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\browser-real-stack-results.json",
+          "case": [
+            "Original pasion-registration browser: actual account form reaches email verification"
+          ],
+          "required_case_fragment": "actual account form reaches email verification",
+          "executed": true,
+          "equivalence": "Actual upstream frontend registration heading, complete credentials/contact form and email-verification step are asserted. Current upstream /register/steps route spelling replaces old URL spelling."
+        }
+      ]
+    },
+    {
+      "suite": "compose-full-flow.spec.ts",
+      "line": 292,
+      "test": "Padmin admin flow manages users, activation state, and registration tokens",
+      "assertions": [
+        {
+          "line": 304,
+          "source": "await expect(primaryRow).toBeVisible({ timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 306,
+          "source": "await expect(page).toHaveURL(",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 309,
+          "source": "await expect(page.getByText(activePrimaryUser.userId, { exact: true }).first()).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 312,
+          "source": "await expect(page.locator(\"text=Create New User\")).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 318,
+          "source": "await expect(page).toHaveURL(/\\/users$/);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 320,
+          "source": "await expect(managedRow).toBeVisible({ timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 322,
+          "source": "await expect(page.getByText(managedUserId, { exact: true }).first()).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 326,
+          "source": "await expect(page.locator(\"text=User deactivated\")).toBeVisible({ timeout: 10_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 329,
+          "source": "await expect(",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 331,
+          "source": ").toBeVisible({ timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 333,
+          "source": "await expect(page.locator(\"text=User reactivated\")).toBeVisible({ timeout: 10_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 336,
+          "source": "await expect(",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 338,
+          "source": ").toBeVisible({ timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 343,
+          "source": "await expect(tokenCode).toBeVisible({ timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 345,
+          "source": "expect(createdToken).not.toBe(\"\");",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 350,
+          "source": "await expect(page.locator(\"code\").filter({ hasText: createdToken })).toHaveCount(0, {",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-real-matrix.cjs",
+      "backend_required": true,
+      "status": "executed-semantic-equivalent",
+      "id": 20,
+      "evidence": [
+        {
+          "script": "scripts/browser-real-matrix.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\browser-real-matrix-results.json",
+          "case": [
+            "Actual user creation, rate-limit set/reset, identifier add/remove, Pasion-owned deactivate/reactivate and fresh state"
+          ],
+          "required_case_fragment": "Actual user creation, rate-limit",
+          "executed": true,
+          "equivalence": "Real user creation, identity detail and server-reloaded deactivate/reactivate replace list/table-specific source selectors."
+        }
+      ]
+    },
+    {
+      "suite": "compose-full-flow.spec.ts",
+      "line": 359,
+      "test": "Registered users can exchange messages and the room appears in padmin",
+      "assertions": [
+        {
+          "line": 400,
+          "source": "await expect(page.locator(\"table\")).toBeVisible({ timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 404,
+          "source": "await expect(roomRow).toBeVisible({ timeout: 30_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 407,
+          "source": "await expect(page.locator(`text=${roomName}`)).toBeVisible({ timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 408,
+          "source": "await expect(page.getByText(room.room_id, { exact: true }).first()).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 409,
+          "source": "await expect(page.locator(\"text=Playwright compose stack verification\")).toBeVisible({",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 412,
+          "source": "await expect(page.locator(\"text=Members\").locator(\"..\")).toContainText(\"2\");",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-real-stack.cjs",
+      "backend_required": true,
+      "status": "executed-semantic-equivalent",
+      "id": 21,
+      "evidence": [
+        {
+          "script": "scripts/browser-real-stack.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\browser-real-stack-results.json",
+          "case": [
+            "Two real Matrix clients create/invite/join/send/sync messages and report the real event"
+          ],
+          "required_case_fragment": "Two real Matrix clients",
+          "executed": true,
+          "equivalence": "Actual browser registration verifies a server-issued email code, finishes registration, logs out/in, obtains actual device grants for two users, then creates/invites/joins/sends/syncs a room which Padmin reads."
+        }
+      ]
+    },
+    {
+      "suite": "compose-full-flow.spec.ts",
+      "line": 418,
+      "test": "Padmin logout redirects back to login",
+      "assertions": [
+        {
+          "line": 435,
+          "source": "await expect(page.getByRole(\"heading\", { name: \"Palpo Admin\" })).toBeVisible({",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 438,
+          "source": "await expect(page).toHaveURL(/\\/login/);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-source-behaviors.cjs",
+      "backend_required": true,
+      "status": "executed-semantic-equivalent",
+      "id": 22,
+      "evidence": [
+        {
+          "script": "scripts/browser-source-behaviors.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\source-behaviors-results.json",
+          "case": [
+            "22,60: logout navigates to login and leaves no stored token"
+          ],
+          "required_case_fragment": "22,60:",
+          "executed": true,
+          "equivalence": "Sign out replaces the management view with login and leaves no persisted access token; actual application session retirement is also covered by auth race tests."
+        }
+      ]
+    },
+    {
+      "suite": "dashboard.spec.ts",
+      "line": 9,
+      "test": "shows dashboard heading and welcome message",
+      "assertions": [
+        {
+          "line": 10,
+          "source": "await expect(page.locator(\"h1\")).toContainText(\"Dashboard\");",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 11,
+          "source": "await expect(page.locator(\"text=Welcome to Palpo Admin\")).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-source-behaviors.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 23,
+      "evidence": [
+        {
+          "script": "scripts/browser-source-behaviors.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\source-behaviors-results.json",
+          "case": [
+            "23,24,25,26: Dashboard greeting identity, non-loading server version, supported Matrix versions and actual API counts"
+          ],
+          "required_case_fragment": "23,24,25,26:",
+          "executed": true,
+          "equivalence": "Dashboard welcome/heading, non-loading server version, supported versions/features and user/room counts are asserted against known API data."
+        }
+      ]
+    },
+    {
+      "suite": "dashboard.spec.ts",
+      "line": 14,
+      "test": "shows server version stat card with real data",
+      "assertions": [
+        {
+          "line": 16,
+          "source": "await expect(versionCard).toBeVisible({ timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 19,
+          "source": "await expect(card).not.toContainText(\"Loading\");",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/native-nginx-acceptance.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 24,
+      "evidence": [
+        {
+          "script": "scripts/browser-source-behaviors.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\source-behaviors-results.json",
+          "case": [
+            "23,24,25,26: Dashboard greeting identity, non-loading server version, supported Matrix versions and actual API counts"
+          ],
+          "required_case_fragment": "23,24,25,26:",
+          "executed": true,
+          "equivalence": "Dashboard welcome/heading, non-loading server version, supported versions/features and user/room counts are asserted against known API data."
+        },
+        {
+          "script": "scripts/native-nginx-acceptance.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\native-nginx-results.json",
+          "case": [
+            "root: real D: WASM/JS via nginx, PKCE password+consent+whoami/admin, users read, deep refresh/fresh OAuth, room navigation, strict404 and mount redirect"
+          ],
+          "required_case_fragment": "root:",
+          "executed": true,
+          "equivalence": "The actual nginx-served WASM reads real Palpo version 0.4.0 after actual OAuth and dual administrator verdicts."
+        }
+      ]
+    },
+    {
+      "suite": "dashboard.spec.ts",
+      "line": 22,
+      "test": "shows server features section",
+      "assertions": [
+        {
+          "line": 23,
+          "source": "await expect(",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 25,
+          "source": ").toBeVisible({ timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-source-behaviors.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 25,
+      "evidence": [
+        {
+          "script": "scripts/browser-source-behaviors.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\source-behaviors-results.json",
+          "case": [
+            "23,24,25,26: Dashboard greeting identity, non-loading server version, supported Matrix versions and actual API counts"
+          ],
+          "required_case_fragment": "23,24,25,26:",
+          "executed": true,
+          "equivalence": "Dashboard welcome/heading, non-loading server version, supported versions/features and user/room counts are asserted against known API data."
+        }
+      ]
+    },
+    {
+      "suite": "dashboard.spec.ts",
+      "line": 28,
+      "test": "shows user and room statistics",
+      "assertions": [
+        {
+          "line": 29,
+          "source": "await expect(page.getByRole(\"heading\", { name: \"Users\" })).toBeVisible({",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 32,
+          "source": "await expect(page.getByRole(\"heading\", { name: \"Rooms\" })).toBeVisible({",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-source-behaviors.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 26,
+      "evidence": [
+        {
+          "script": "scripts/browser-source-behaviors.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\source-behaviors-results.json",
+          "case": [
+            "23,24,25,26: Dashboard greeting identity, non-loading server version, supported Matrix versions and actual API counts"
+          ],
+          "required_case_fragment": "23,24,25,26:",
+          "executed": true,
+          "equivalence": "Dashboard welcome/heading, non-loading server version, supported versions/features and user/room counts are asserted against known API data."
+        }
+      ]
+    },
+    {
+      "suite": "federation.spec.ts",
+      "line": 9,
+      "test": "shows destinations page",
+      "assertions": [
+        {
+          "line": 10,
+          "source": "await expect(page.getByRole(\"heading\", { name: \"Federation\" })).toBeVisible({",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-real-operations.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 27,
+      "evidence": [
+        {
+          "script": "scripts/browser-real-operations.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\real-operation-results.json",
+          "case": [
+            "Actual Palpo federation collection; fixture contains no existing federation target"
+          ],
+          "required_case_fragment": "federation collection",
+          "executed": true,
+          "equivalence": "A real empty federation collection is a valid original empty state. Encoded destination detail/reset is separately covered by stateful fixtures."
+        }
+      ]
+    },
+    {
+      "suite": "federation.spec.ts",
+      "line": 15,
+      "test": "shows destinations table or empty state",
+      "assertions": [
+        {
+          "line": 16,
+          "source": "await expect(page.locator(\"table\")).toBeVisible({ timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-real-operations.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 28,
+      "evidence": [
+        {
+          "script": "scripts/browser-real-operations.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\real-operation-results.json",
+          "case": [
+            "Actual Palpo federation collection; fixture contains no existing federation target"
+          ],
+          "required_case_fragment": "federation collection",
+          "executed": true,
+          "equivalence": "A real empty federation collection is a valid original empty state. Encoded destination detail/reset is separately covered by stateful fixtures."
+        }
+      ]
+    },
+    {
+      "suite": "login.spec.ts",
+      "line": 8,
+      "test": "shows login page with sign-in button",
+      "assertions": [
+        {
+          "line": 10,
+          "source": "await expect(",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 12,
+          "source": ").toBeVisible({ timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 13,
+          "source": "await expect(page.getByRole(\"button\", { name: \"Sign In\" })).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-source-behaviors.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 29,
+      "evidence": [
+        {
+          "script": "scripts/browser-source-behaviors.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\source-behaviors-results.json",
+          "case": [
+            "29: login contains application heading and enabled Sign in control"
+          ],
+          "required_case_fragment": "29:",
+          "executed": true,
+          "equivalence": "The application identity is Padmin; login heading and enabled Sign in replace old capitalized button text."
+        }
+      ]
+    },
+    {
+      "suite": "login.spec.ts",
+      "line": 16,
+      "test": "sign-in button redirects to Pasion authorize",
+      "assertions": [
+        {
+          "line": 18,
+          "source": "await expect(",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 20,
+          "source": ").toBeVisible({ timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 26,
+          "source": "await expect(page).toHaveURL(/login/, { timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 28,
+          "source": "await expect(",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 32,
+          "source": ").toBeVisible({ timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-real-stack.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 30,
+      "evidence": [
+        {
+          "script": "scripts/browser-real-stack.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\browser-real-stack-results.json",
+          "case": [
+            "Actual newly registered account browser logout and password relogin"
+          ],
+          "required_case_fragment": "Actual newly registered account browser logout",
+          "executed": true,
+          "equivalence": "Actual password form plus OAuth authorize is exercised by real-browser-harness in every real workflow; upstream frontend wording changes do not replace protocol checks."
+        }
+      ]
+    },
+    {
+      "suite": "login.spec.ts",
+      "line": 35,
+      "test": "delegated-auth homeserver advertises SSO-only login",
+      "assertions": [
+        {
+          "line": 39,
+          "source": "expect(resp.ok()).toBe(true);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 41,
+          "source": "expect(body.flows).toEqual([{ type: \"m.login.sso\" }]);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/real-backend-acceptance.cjs",
+      "backend_required": false,
+      "status": "executed-current-backend-contract",
+      "id": 31,
+      "evidence": [
+        {
+          "script": "scripts/real-backend-acceptance.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\real-backend-results.json",
+          "case": [
+            "login: delegated Matrix advertises usable SSO and forbids local password exchange (application-service/token flows remain valid)"
+          ],
+          "required_case_fragment": "delegated Matrix advertises",
+          "executed": true,
+          "equivalence": "The current Palpo source intentionally advertises application-service and login-token alongside configured SSO. Retain the actual security requirement: SSO exists and local password exchange is absent; do not assert the obsolete singleton array."
+        }
+      ],
+      "contract_change": "The current Palpo source intentionally advertises application-service and login-token alongside configured SSO. Retain the actual security requirement: SSO exists and local password exchange is absent; do not assert the obsolete singleton array."
+    },
+    {
+      "suite": "login.spec.ts",
+      "line": 44,
+      "test": "redirects unauthenticated users to login",
+      "assertions": [
+        {
+          "line": 46,
+          "source": "await expect(",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 48,
+          "source": ").toBeVisible({ timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 49,
+          "source": "await expect(page).toHaveURL(/\\/login/);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-auth.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 32,
+      "evidence": [
+        {
+          "script": "scripts/browser-auth.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\browser-auth-results.json",
+          "case": [
+            "Logout revokes publication immediately; a late refresh cannot restore authentication"
+          ],
+          "required_case_fragment": "Logout revokes publication",
+          "executed": true,
+          "equivalence": "Protected routes show Sign in required and explicit login navigation; management content is unavailable without a live server-authorized session. This replaces automatic redirect presentation."
+        }
+      ]
+    },
+    {
+      "suite": "media.spec.ts",
+      "line": 9,
+      "test": "shows media management page",
+      "assertions": [
+        {
+          "line": 10,
+          "source": "await expect(page.getByRole(\"heading\", { name: \"Media\" })).toBeVisible({",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-real-operations.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 33,
+      "evidence": [
+        {
+          "script": "scripts/browser-real-operations.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\real-operation-results.json",
+          "case": [
+            "Actual Palpo media statistics, bounded no-match local cleanup and remote cache purge with write-after-read refresh"
+          ],
+          "required_case_fragment": "media statistics",
+          "executed": true,
+          "equivalence": "Actual media collection and no-match bulk cleanup/individual upload-delete preserve statistics and meaningful empty-state behavior."
+        }
+      ]
+    },
+    {
+      "suite": "media.spec.ts",
+      "line": 15,
+      "test": "shows media table or empty state",
+      "assertions": [
+        {
+          "line": 16,
+          "source": "await expect(page.locator(\"table\")).toBeVisible({ timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-real-operations.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 34,
+      "evidence": [
+        {
+          "script": "scripts/browser-real-operations.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\real-operation-results.json",
+          "case": [
+            "Actual Palpo media statistics, bounded no-match local cleanup and remote cache purge with write-after-read refresh"
+          ],
+          "required_case_fragment": "media statistics",
+          "executed": true,
+          "equivalence": "Actual media collection and no-match bulk cleanup/individual upload-delete preserve statistics and meaningful empty-state behavior."
+        }
+      ]
+    },
+    {
+      "suite": "not-found.spec.ts",
+      "line": 4,
+      "test": "shows 404 page for unknown routes",
+      "assertions": [
+        {
+          "line": 6,
+          "source": "await expect(page.locator(\"text=404\")).toBeVisible({ timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 7,
+          "source": "await expect(page.locator(\"text=Page not found\")).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 8,
+          "source": "await expect(page.locator(\"text=Go to Dashboard\")).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-source-behaviors.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 35,
+      "evidence": [
+        {
+          "script": "scripts/browser-source-behaviors.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\source-behaviors-results.json",
+          "case": [
+            "35,36: unknown route shows explicit404 with dashboard recovery preserving live session"
+          ],
+          "required_case_fragment": "35,36:",
+          "executed": true,
+          "equivalence": "Unknown route shows Page not found, explicit 404 and Go to Dashboard; live navigation preserves the current authenticated Owner."
+        }
+      ]
+    },
+    {
+      "suite": "not-found.spec.ts",
+      "line": 11,
+      "test": "can navigate back to dashboard from 404",
+      "assertions": [
+        {
+          "line": 13,
+          "source": "await expect(page.locator(\"text=404\")).toBeVisible({ timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 15,
+          "source": "await expect(page.locator(\"h1\")).toContainText(\"Dashboard\");",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 16,
+          "source": "await expect(page).toHaveURL(\"/\");",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-source-behaviors.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 36,
+      "evidence": [
+        {
+          "script": "scripts/browser-source-behaviors.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\source-behaviors-results.json",
+          "case": [
+            "35,36: unknown route shows explicit404 with dashboard recovery preserving live session"
+          ],
+          "required_case_fragment": "35,36:",
+          "executed": true,
+          "equivalence": "Unknown route shows Page not found, explicit 404 and Go to Dashboard; live navigation preserves the current authenticated Owner."
+        }
+      ]
+    },
+    {
+      "suite": "oidc-flow.spec.ts",
+      "line": 9,
+      "test": "Palpo exposes valid OIDC auth metadata",
+      "assertions": [
+        {
+          "line": 11,
+          "source": "expect(metadata).not.toBeNull();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 12,
+          "source": "expect(metadata!.issuer).toBe(`${PASION_URL}/`);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 13,
+          "source": "expect(metadata!.authorization_endpoint).toContain(PASION_URL);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 14,
+          "source": "expect(metadata!.token_endpoint).toContain(PASION_URL);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 15,
+          "source": "expect(metadata!.jwks_uri).toContain(PASION_URL);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/real-backend-acceptance.cjs",
+      "backend_required": true,
+      "status": "executed-semantic-equivalent",
+      "id": 37,
+      "evidence": [
+        {
+          "script": "scripts/real-backend-acceptance.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\real-backend-results.json",
+          "case": [
+            "oidc-flow: actual Palpo metadata carries real Pasion issuer/authorization/token/JWKS URLs"
+          ],
+          "required_case_fragment": "actual Palpo metadata",
+          "executed": true,
+          "equivalence": "Real metadata issuer/authorization/token/JWKS endpoints are asserted against configured Pasion, including a transparent local relay needed by the isolated Docker network."
+        }
+      ]
+    },
+    {
+      "suite": "oidc-flow.spec.ts",
+      "line": 18,
+      "test": "Pasion JWKS endpoint returns signing keys",
+      "assertions": [
+        {
+          "line": 20,
+          "source": "expect(resp.ok()).toBe(true);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 22,
+          "source": "expect(body.keys).toBeDefined();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 23,
+          "source": "expect(body.keys.length).toBeGreaterThan(0);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/real-backend-acceptance.cjs",
+      "backend_required": true,
+      "status": "executed-semantic-equivalent",
+      "id": 38,
+      "evidence": [
+        {
+          "script": "scripts/real-backend-acceptance.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\real-backend-results.json",
+          "case": [
+            "oidc-flow: real nonempty JWKS"
+          ],
+          "required_case_fragment": "real nonempty JWKS",
+          "executed": true,
+          "equivalence": "Signing key discovery returns actual public keys, never the private generated key."
+        }
+      ]
+    },
+    {
+      "suite": "oidc-flow.spec.ts",
+      "line": 26,
+      "test": "Pasion OIDC discovery is accessible",
+      "assertions": [
+        {
+          "line": 28,
+          "source": "expect(resp.ok()).toBe(true);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 30,
+          "source": "expect(body.issuer).toBe(`${PASION_URL}/`);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 31,
+          "source": "expect(body.authorization_endpoint).toBeTruthy();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 32,
+          "source": "expect(body.token_endpoint).toBeTruthy();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 33,
+          "source": "expect(body.registration_endpoint).toBeTruthy();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 34,
+          "source": "expect(body.id_token_signing_alg_values_supported.length).toBeGreaterThan(0);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/real-backend-acceptance.cjs",
+      "backend_required": true,
+      "status": "executed-semantic-equivalent",
+      "id": 39,
+      "evidence": [
+        {
+          "script": "scripts/real-backend-acceptance.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\real-backend-results.json",
+          "case": [
+            "oidc-flow: Pasion discovery issuer/endpoints/algorithms"
+          ],
+          "required_case_fragment": "Pasion discovery issuer",
+          "executed": true,
+          "equivalence": "Real HTTP status, exact issuer, authorization/token/registration endpoints and advertised algorithms are asserted."
+        }
+      ]
+    },
+    {
+      "suite": "oidc-flow.spec.ts",
+      "line": 37,
+      "test": "Pasion login page renders correctly",
+      "assertions": [
+        {
+          "line": 40,
+          "source": "await expect(",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 43,
+          "source": ").toBeVisible({ timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 44,
+          "source": "await expect(",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 46,
+          "source": ").toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 47,
+          "source": "await expect(",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 50,
+          "source": ").toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-real-stack.cjs",
+      "backend_required": true,
+      "status": "executed-semantic-equivalent",
+      "id": 40,
+      "evidence": [
+        {
+          "script": "scripts/browser-real-stack.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\browser-real-stack-results.json",
+          "case": [
+            "Actual newly registered account browser logout and password relogin"
+          ],
+          "required_case_fragment": "Actual newly registered account browser logout",
+          "executed": true,
+          "equivalence": "Actual password form plus OAuth authorize is exercised by real-browser-harness in every real workflow; upstream frontend wording changes do not replace protocol checks."
+        }
+      ]
+    },
+    {
+      "suite": "oidc-flow.spec.ts",
+      "line": 53,
+      "test": "Pasion registration page renders correctly",
+      "assertions": [
+        {
+          "line": 55,
+          "source": "await expect(page.getByRole(\"heading\", { name: \"Create account\" })).toBeVisible({",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 58,
+          "source": "await expect(page.locator('input[placeholder=\"Choose a username\"]')).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-real-stack.cjs",
+      "backend_required": true,
+      "status": "executed-semantic-equivalent",
+      "id": 41,
+      "evidence": [
+        {
+          "script": "scripts/browser-real-stack.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\browser-real-stack-results.json",
+          "case": [
+            "Original pasion-registration browser: actual account form reaches email verification"
+          ],
+          "required_case_fragment": "actual account form reaches email verification",
+          "executed": true,
+          "equivalence": "Actual upstream frontend registration heading, complete credentials/contact form and email-verification step are asserted. Current upstream /register/steps route spelling replaces old URL spelling."
+        }
+      ]
+    },
+    {
+      "suite": "oidc-flow.spec.ts",
+      "line": 61,
+      "test": "Pasion dynamic client registration works for HTTP",
+      "assertions": [
+        {
+          "line": 73,
+          "source": "expect(resp.ok()).toBe(true);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 75,
+          "source": "expect(body.client_id).toBeTruthy();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 76,
+          "source": "expect(body.redirect_uris).toContain(\"http://localhost:9999/callback\");",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/real-backend-acceptance.cjs",
+      "backend_required": true,
+      "status": "executed-current-backend-contract",
+      "id": 42,
+      "evidence": [
+        {
+          "script": "scripts/real-backend-acceptance.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\real-backend-results.json",
+          "case": [
+            "oidc-flow: valid HTTPS dynamic client registration succeeds with actual client ID/redirect"
+          ],
+          "required_case_fragment": "valid HTTPS dynamic",
+          "executed": true,
+          "equivalence": "Current Pasion unconditionally rejects explicit-port HTTP native loopback redirects. Assert that exact400 and separately assert successful201 registration of a valid HTTPS client with actual ID and redirect URI; no successful response is fabricated."
+        }
+      ],
+      "contract_change": "Current Pasion unconditionally rejects explicit-port HTTP native loopback redirects. Assert that exact400 and separately assert successful201 registration of a valid HTTPS client with actual ID and redirect URI; no successful response is fabricated."
+    },
+    {
+      "suite": "oidc-flow.spec.ts",
+      "line": 79,
+      "test": "Pasion site config reports correct features",
+      "assertions": [
+        {
+          "line": 81,
+          "source": "expect(resp.ok()).toBe(true);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 83,
+          "source": "expect(body.passwordLoginEnabled).toBe(true);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 84,
+          "source": "expect(body.passwordRegistrationEnabled).toBe(true);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/real-backend-acceptance.cjs",
+      "backend_required": true,
+      "status": "executed-semantic-equivalent",
+      "id": 43,
+      "evidence": [
+        {
+          "script": "scripts/real-backend-acceptance.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\real-backend-results.json",
+          "case": [
+            "oidc-flow: actual login/registration feature flags"
+          ],
+          "required_case_fragment": "actual login/registration feature flags",
+          "executed": true,
+          "equivalence": "Current Pasion returns password_login_enabled/password_registration_enabled. Both actual values must be true; old camelCase field assertions are migrated to current wire names."
+        }
+      ]
+    },
+    {
+      "suite": "pasion-registration.spec.ts",
+      "line": 9,
+      "test": "rejects registration without email or phone",
+      "assertions": [
+        {
+          "line": 18,
+          "source": "expect(body.status).toBe(\"error\");",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 19,
+          "source": "expect(body.error).toBe(\"email_or_phone_required\");",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/real-backend-acceptance.cjs",
+      "backend_required": true,
+      "status": "executed-semantic-equivalent",
+      "id": 44,
+      "evidence": [
+        {
+          "script": "scripts/real-backend-acceptance.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\real-backend-results.json",
+          "case": [
+            "pasion-registration: missing contact rejected by real service"
+          ],
+          "required_case_fragment": "missing contact",
+          "executed": true,
+          "equivalence": "Exact real status=error and email_or_phone_required are retained."
+        }
+      ]
+    },
+    {
+      "suite": "pasion-registration.spec.ts",
+      "line": 22,
+      "test": "rejects registration with invalid email",
+      "assertions": [
+        {
+          "line": 32,
+          "source": "expect(body.status).toBe(\"error\");",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 33,
+          "source": "expect(body.error).toBe(\"email_invalid\");",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/real-backend-acceptance.cjs",
+      "backend_required": true,
+      "status": "executed-semantic-equivalent",
+      "id": 45,
+      "evidence": [
+        {
+          "script": "scripts/real-backend-acceptance.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\real-backend-results.json",
+          "case": [
+            "pasion-registration: invalid email rejected by real service"
+          ],
+          "required_case_fragment": "invalid email",
+          "executed": true,
+          "equivalence": "Exact real status=error and email_invalid are retained."
+        }
+      ]
+    },
+    {
+      "suite": "pasion-registration.spec.ts",
+      "line": 36,
+      "test": "rejects weak passwords",
+      "assertions": [
+        {
+          "line": 46,
+          "source": "expect(body.status).toBe(\"error\");",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/real-backend-acceptance.cjs",
+      "backend_required": true,
+      "status": "executed-semantic-equivalent",
+      "id": 46,
+      "evidence": [
+        {
+          "script": "scripts/real-backend-acceptance.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\real-backend-results.json",
+          "case": [
+            "pasion-registration: weak password rejected by real service"
+          ],
+          "required_case_fragment": "weak password",
+          "executed": true,
+          "equivalence": "A weak password is rejected by the actual configured password policy."
+        }
+      ]
+    },
+    {
+      "suite": "pasion-registration.spec.ts",
+      "line": 49,
+      "test": "rejects duplicate email",
+      "assertions": [
+        {
+          "line": 64,
+          "source": "expect(body.errors.some((e: string) => e.includes(\"email\"))).toBe(true);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/real-backend-acceptance.cjs",
+      "backend_required": true,
+      "status": "executed-semantic-equivalent",
+      "id": 47,
+      "evidence": [
+        {
+          "script": "scripts/real-backend-acceptance.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\real-backend-results.json",
+          "case": [
+            "pasion-registration: actual existing email is rejected"
+          ],
+          "required_case_fragment": "actual existing email",
+          "executed": true,
+          "equivalence": "The replacement is stricter than the old conditional: actual existing fixture email must produce email_in_use."
+        }
+      ]
+    },
+    {
+      "suite": "pasion-registration.spec.ts",
+      "line": 68,
+      "test": "registration with email creates a pending verification",
+      "assertions": [
+        {
+          "line": 85,
+          "source": "expect(body.status).toBe(\"success\");",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 86,
+          "source": "expect(body.id).toBeTruthy();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 87,
+          "source": "expect(body.next_step).toBe(\"verify_email\");",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 94,
+          "source": "expect(status.id).toBe(body.id);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 95,
+          "source": "expect(status.email_pending).toBe(true);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/real-backend-acceptance.cjs",
+      "backend_required": true,
+      "status": "executed-semantic-equivalent",
+      "id": 48,
+      "evidence": [
+        {
+          "script": "scripts/real-backend-acceptance.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\real-backend-results.json",
+          "case": [
+            "pasion-registration: actual email registration creates pending verification and status identity"
+          ],
+          "required_case_fragment": "actual email registration creates",
+          "executed": true,
+          "equivalence": "Successful registration must produce stable id, verify_email step, then matching status id and email_pending=true."
+        }
+      ]
+    },
+    {
+      "suite": "pasion-registration.spec.ts",
+      "line": 98,
+      "test": "browser registration flow shows email verification step",
+      "assertions": [
+        {
+          "line": 101,
+          "source": "await expect(page.getByRole(\"heading\", { name: \"Create account\" })).toBeVisible({",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 104,
+          "source": "await expect(page.locator('input[placeholder=\"Choose a username\"]')).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 129,
+          "source": "await expect(page.getByRole(\"heading\", { name: \"Verify your email\" })).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-real-stack.cjs",
+      "backend_required": true,
+      "status": "executed-semantic-equivalent",
+      "id": 49,
+      "evidence": [
+        {
+          "script": "scripts/browser-real-stack.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\browser-real-stack-results.json",
+          "case": [
+            "Original pasion-registration browser: actual account form reaches email verification"
+          ],
+          "required_case_fragment": "actual account form reaches email verification",
+          "executed": true,
+          "equivalence": "Actual upstream frontend registration heading, complete credentials/contact form and email-verification step are asserted. Current upstream /register/steps route spelling replaces old URL spelling."
+        }
+      ]
+    },
+    {
+      "suite": "registration-tokens.spec.ts",
+      "line": 9,
+      "test": "shows registration tokens page",
+      "assertions": [
+        {
+          "line": 10,
+          "source": "await expect(page.getByRole(\"heading\", { name: \"Registration Tokens\" })).toBeVisible({",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-real-operations.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 50,
+      "evidence": [
+        {
+          "script": "scripts/browser-real-operations.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\real-operation-results.json",
+          "case": [
+            "Actual PKCE SHA256 verifier/challenge, password login, consent, token exchange, whoami and dual admin verdict",
+            "Actual Palpo registration token create/filter/delete with persisted server response",
+            "Actual Palpo appservice import/create/get/URL CAS update/immutable credentials/tokens/disable/enable/delete"
+          ],
+          "required_case_fragment": "token",
+          "executed": true,
+          "equivalence": "Actual typed token list/create/delete and visible rows cover source token table or empty-state semantics."
+        }
+      ]
+    },
+    {
+      "suite": "registration-tokens.spec.ts",
+      "line": 15,
+      "test": "shows tokens table or empty state",
+      "assertions": [
+        {
+          "line": 16,
+          "source": "await expect(page.locator(\"table\")).toBeVisible({ timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-real-operations.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 51,
+      "evidence": [
+        {
+          "script": "scripts/browser-real-operations.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\real-operation-results.json",
+          "case": [
+            "Actual PKCE SHA256 verifier/challenge, password login, consent, token exchange, whoami and dual admin verdict",
+            "Actual Palpo registration token create/filter/delete with persisted server response",
+            "Actual Palpo appservice import/create/get/URL CAS update/immutable credentials/tokens/disable/enable/delete"
+          ],
+          "required_case_fragment": "token",
+          "executed": true,
+          "equivalence": "Actual typed token list/create/delete and visible rows cover source token table or empty-state semantics."
+        }
+      ]
+    },
+    {
+      "suite": "reports.spec.ts",
+      "line": 20,
+      "test": "shows reports page",
+      "assertions": [
+        {
+          "line": 21,
+          "source": "await expect(page.getByRole(\"heading\", { name: \"Reports\" })).toBeVisible({",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-real-operations.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 52,
+      "evidence": [
+        {
+          "script": "scripts/browser-real-operations.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\real-operation-results.json",
+          "case": [
+            "Actual Matrix room/message/report creation followed by Palpo report detail, redact event, block room, all three review statuses, delete and list refresh"
+          ],
+          "required_case_fragment": "actual Matrix room/message/report",
+          "executed": true,
+          "equivalence": "A report is created from an actual room/message; the finite record displays its reason and opens the typed detail. Empty-only mounting cannot satisfy this evidence."
+        }
+      ]
+    },
+    {
+      "suite": "reports.spec.ts",
+      "line": 26,
+      "test": "shows reports table or empty state",
+      "assertions": [
+        {
+          "line": 27,
+          "source": "await expect(page.locator(\"table\")).toBeVisible({ timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-real-operations.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 53,
+      "evidence": [
+        {
+          "script": "scripts/browser-real-operations.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\real-operation-results.json",
+          "case": [
+            "Actual Matrix room/message/report creation followed by Palpo report detail, redact event, block room, all three review statuses, delete and list refresh"
+          ],
+          "required_case_fragment": "actual Matrix room/message/report",
+          "executed": true,
+          "equivalence": "A report is created from an actual room/message; the finite record displays its reason and opens the typed detail. Empty-only mounting cannot satisfy this evidence."
+        }
+      ]
+    },
+    {
+      "suite": "reports.spec.ts",
+      "line": 30,
+      "test": "status persists after refresh",
+      "assertions": [
+        {
+          "line": 61,
+          "source": "await expect(page.locator(\"table\")).toBeVisible({ timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 64,
+          "source": "await expect(reportRow).toBeVisible({ timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 67,
+          "source": "await expect(page).toHaveURL(/\\/reports\\/\\d+$/, { timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 70,
+          "source": "await expect(statusSelect).toHaveValue(\"new\", { timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 73,
+          "source": "await expect(page.locator(\"text=Status updated\")).toBeVisible({ timeout: 10_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 74,
+          "source": "await expect(statusSelect).toHaveValue(\"resolved\", { timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 77,
+          "source": "await expect(page.getByRole(\"combobox\").first()).toHaveValue(\"resolved\", {",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 83,
+          "source": "await expect(resolvedRow).toContainText(\"Resolved\", { timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-real-stack.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 54,
+      "evidence": [
+        {
+          "script": "scripts/browser-real-stack.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\browser-real-stack-results.json",
+          "case": [
+            "Actual report status write survives browser reload and fresh OAuth login"
+          ],
+          "required_case_fragment": "Actual report status write survives",
+          "executed": true,
+          "equivalence": "A real event report becomes resolved in the UI; a full browser reload and fresh real OAuth then re-read the persisted resolved value."
+        }
+      ]
+    },
+    {
+      "suite": "rooms.spec.ts",
+      "line": 9,
+      "test": "shows rooms page with table or empty state",
+      "assertions": [
+        {
+          "line": 10,
+          "source": "await expect(",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 13,
+          "source": ").toBeVisible({ timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-real-matrix.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 55,
+      "evidence": [
+        {
+          "script": "scripts/browser-real-matrix.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\browser-real-matrix-results.json",
+          "case": [
+            "Actual create-room and name/topic state writes followed by fresh detail"
+          ],
+          "required_case_fragment": "Actual create-room",
+          "executed": true,
+          "equivalence": "Actual room creation, list-to-detail navigation, names, topic, state and metadata readbacks cover room-list field semantics. The new view uses finite semantic records rather than source table markup."
+        }
+      ]
+    },
+    {
+      "suite": "rooms.spec.ts",
+      "line": 16,
+      "test": "shows search/filter input",
+      "assertions": [
+        {
+          "line": 17,
+          "source": "await expect(",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 21,
+          "source": ").toBeVisible({ timeout: 10_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-real-matrix.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 56,
+      "evidence": [
+        {
+          "script": "scripts/browser-real-matrix.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\browser-real-matrix-results.json",
+          "case": [
+            "Actual create-room and name/topic state writes followed by fresh detail"
+          ],
+          "required_case_fragment": "Actual create-room",
+          "executed": true,
+          "equivalence": "Actual room creation, list-to-detail navigation, names, topic, state and metadata readbacks cover room-list field semantics. The new view uses finite semantic records rather than source table markup."
+        }
+      ]
+    },
+    {
+      "suite": "rooms.spec.ts",
+      "line": 24,
+      "test": "rooms table has expected columns",
+      "assertions": [
+        {
+          "line": 34,
+          "source": "await expect(headers.first()).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-real-matrix.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 57,
+      "evidence": [
+        {
+          "script": "scripts/browser-real-matrix.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\browser-real-matrix-results.json",
+          "case": [
+            "Actual create-room and name/topic state writes followed by fresh detail"
+          ],
+          "required_case_fragment": "Actual create-room",
+          "executed": true,
+          "equivalence": "Actual room creation, list-to-detail navigation, names, topic, state and metadata readbacks cover room-list field semantics. The new view uses finite semantic records rather than source table markup."
+        }
+      ]
+    },
+    {
+      "suite": "sidebar.spec.ts",
+      "line": 16,
+      "test": "shows all navigation items with branding",
+      "assertions": [
+        {
+          "line": 18,
+          "source": "await expect(sidebar.locator(\"text=Palpo Admin\")).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 19,
+          "source": "await expect(sidebar.locator(\"text=Management\")).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 23,
+          "source": "await expect(sidebar.locator(\"button\", { hasText: item })).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 26,
+          "source": "await expect(page.locator(\"header\").getByRole(\"button\", { name: \"Logout\" })).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-source-behaviors.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 58,
+      "evidence": [
+        {
+          "script": "scripts/browser-source-behaviors.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\source-behaviors-results.json",
+          "case": [
+            "0,1,58,59: every supported sidebar link has branding, href, live route navigation, active class and page heading"
+          ],
+          "required_case_fragment": "0,1,58,59:",
+          "executed": true,
+          "equivalence": "All 25 supported sidebar destinations use live semantic links with branding, href and active state. The 6 detail patterns and 2 public routes are reached separately; no unsupported Policy Data route is invented."
+        }
+      ]
+    },
+    {
+      "suite": "sidebar.spec.ts",
+      "line": 29,
+      "test": "navigates to each section and highlights active item",
+      "assertions": [
+        {
+          "line": 43,
+          "source": "await expect(page).toHaveURL(route.url, { timeout: 10_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 45,
+          "source": "await expect(btn).toHaveClass(/bg-sidebar-accent/);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-source-behaviors.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 59,
+      "evidence": [
+        {
+          "script": "scripts/browser-source-behaviors.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\source-behaviors-results.json",
+          "case": [
+            "0,1,58,59: every supported sidebar link has branding, href, live route navigation, active class and page heading"
+          ],
+          "required_case_fragment": "0,1,58,59:",
+          "executed": true,
+          "equivalence": "All 25 supported sidebar destinations use live semantic links with branding, href and active state. The 6 detail patterns and 2 public routes are reached separately; no unsupported Policy Data route is invented."
+        }
+      ]
+    },
+    {
+      "suite": "sidebar.spec.ts",
+      "line": 49,
+      "test": "logout clears auth and redirects to login",
+      "assertions": [
+        {
+          "line": 66,
+          "source": "await expect(page.getByRole(\"heading\", { name: \"Palpo Admin\" })).toBeVisible({ timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 76,
+          "source": "await expect(page.locator(\"aside\")).toBeVisible({ timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 79,
+          "source": "await expect(",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 81,
+          "source": ").toBeVisible({ timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 82,
+          "source": "await expect(page).toHaveURL(/\\/login/);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 85,
+          "source": "expect(hasToken).toBeNull();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 97,
+          "source": "await expect(page.locator(\"h1\")).toContainText(\"Dashboard\", { timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-source-behaviors.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 60,
+      "evidence": [
+        {
+          "script": "scripts/browser-source-behaviors.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\source-behaviors-results.json",
+          "case": [
+            "22,60: logout navigates to login and leaves no stored token"
+          ],
+          "required_case_fragment": "22,60:",
+          "executed": true,
+          "equivalence": "Sign out replaces the management view with login and leaves no persisted access token; actual application session retirement is also covered by auth race tests."
+        }
+      ]
+    },
+    {
+      "suite": "sidebar.spec.ts",
+      "line": 100,
+      "test": "opens as a drawer and closes after navigation",
+      "assertions": [
+        {
+          "line": 105,
+          "source": "await expect(drawer).not.toHaveClass(/sidebar-open/);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 106,
+          "source": "await expect(backdrop).not.toHaveClass(/sidebar-backdrop-open/);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 110,
+          "source": "await expect(drawer).toHaveClass(/sidebar-open/);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 111,
+          "source": "await expect(backdrop).toHaveClass(/sidebar-backdrop-open/);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 115,
+          "source": "await expect(page).toHaveURL(/\\/users/, { timeout: 10_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 116,
+          "source": "await expect(drawer).not.toHaveClass(/sidebar-open/);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 117,
+          "source": "await expect(backdrop).not.toHaveClass(/sidebar-backdrop-open/);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-source-behaviors.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 61,
+      "evidence": [
+        {
+          "script": "scripts/browser-source-behaviors.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\source-behaviors-results.json",
+          "case": [
+            "61,62: mobile navigation drawer opens, closes on navigation and backdrop click"
+          ],
+          "required_case_fragment": "61,62:",
+          "executed": true,
+          "equivalence": "At width390, hidden navigation opens as a drawer, closes on destination selection and closes on backdrop click. Source CSS class names are replaced by .sidebar.open."
+        }
+      ]
+    },
+    {
+      "suite": "sidebar.spec.ts",
+      "line": 120,
+      "test": "backdrop dismisses the drawer",
+      "assertions": [
+        {
+          "line": 126,
+          "source": "await expect(drawer).toHaveClass(/sidebar-open/);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 130,
+          "source": "await expect(drawer).not.toHaveClass(/sidebar-open/);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 131,
+          "source": "await expect(backdrop).not.toHaveClass(/sidebar-backdrop-open/);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-source-behaviors.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 62,
+      "evidence": [
+        {
+          "script": "scripts/browser-source-behaviors.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\source-behaviors-results.json",
+          "case": [
+            "61,62: mobile navigation drawer opens, closes on navigation and backdrop click"
+          ],
+          "required_case_fragment": "61,62:",
+          "executed": true,
+          "equivalence": "At width390, hidden navigation opens as a drawer, closes on destination selection and closes on backdrop click. Source CSS class names are replaced by .sidebar.open."
+        }
+      ]
+    },
+    {
+      "suite": "single-origin.spec.ts",
+      "line": 13,
+      "test": "mounted dashboard loads JS/WASM and refreshes deep links",
+      "assertions": [
+        {
+          "line": 23,
+          "source": "await expect(page.getByRole(\"heading\", { name: \"Palpo Admin\" })).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 24,
+          "source": "await expect(page.getByRole(\"button\", { name: \"Sign In\", exact: true })).toBeEnabled();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 26,
+          "source": "expect(resources.some(url => url.includes(`${adminPath}/assets/`) && url.endsWith(\".wasm\"))).toBeTruthy();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 27,
+          "source": "if (adminPath) expect(resources.some(url => new URL(url).pathname.startsWith(\"/assets/\"))).toBeFalsy();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 28,
+          "source": "expect(resources.some(url => url.endsWith(`${adminPath}/config.json`))).toBeTruthy();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 30,
+          "source": "await expect(page).toHaveURL(new RegExp(`${adminPath}/login$`));",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 32,
+          "source": "await expect(page.getByRole(\"heading\", { name: \"Palpo Admin\" })).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 33,
+          "source": "expect(failed).toEqual([]);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 34,
+          "source": "expect(errors).toEqual([]);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 35,
+          "source": "expect((await request.get(`${adminPath}/assets/missing.wasm`)).status()).toBe(404);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 38,
+          "source": "expect(redirect.status()).toBe(308);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 39,
+          "source": "expect(redirect.headers().location).toContain(`${adminPath}/?test=1`);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/native-nginx-acceptance.cjs",
+      "backend_required": true,
+      "status": "executed-semantic-equivalent",
+      "id": 63,
+      "evidence": [
+        {
+          "script": "scripts/native-nginx-acceptance.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\native-nginx-results.json",
+          "case": [
+            "/admin: real D: WASM/JS via nginx, PKCE password+consent+whoami/admin, users read, deep refresh/fresh OAuth, room navigation, strict404 and mount redirect"
+          ],
+          "required_case_fragment": "/admin:",
+          "executed": true,
+          "equivalence": "Real nginx serves D: JS/WASM under app prefixes, strict missing .wasm404, query-preserving308 and deep refresh followed by fresh OAuth; /pkg replaces old generated /assets naming."
+        }
+      ]
+    },
+    {
+      "suite": "single-origin.spec.ts",
+      "line": 43,
+      "test": "OAuth uses the auth mount and admin callback",
+      "assertions": [
+        {
+          "line": 48,
+          "source": "expect(url.searchParams.get(\"redirect_uri\")).toBe(`${new URL(process.env.PADMIN_MOUNT_TEST_URL!).origin}${adminPath}/oauth/callback`);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 49,
+          "source": "expect(url.searchParams.get(\"code_challenge_method\")).toBe(\"S256\");",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/native-nginx-acceptance.cjs",
+      "backend_required": true,
+      "status": "executed-semantic-equivalent",
+      "id": 64,
+      "evidence": [
+        {
+          "script": "scripts/native-nginx-acceptance.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\same-origin-nginx-results.json",
+          "case": [
+            "/admin: real D: WASM/JS via nginx, PKCE password+consent+whoami/admin, users read, deep refresh/fresh OAuth, room navigation, strict404 and mount redirect"
+          ],
+          "required_case_fragment": "/admin:",
+          "executed": true,
+          "equivalence": "Same-origin Pasion /auth assets/authorize/consent/token/admin probe and app callback retain their configured mounts. Actual password login and server verdicts are required."
+        }
+      ]
+    },
+    {
+      "suite": "single-origin.spec.ts",
+      "line": 52,
+      "test": "Pasion assets and token exchange retain their mount",
+      "assertions": [
+        {
+          "line": 72,
+          "source": "expect(new URL(token.url()).pathname).toBe(`${authPath}/oauth2/token`);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 73,
+          "source": "expect(token.status()).toBe(200);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 74,
+          "source": "await expect(page).toHaveURL(`${new URL(token.url()).origin}${adminPath}/`);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 75,
+          "source": "expect((await adminProbe).status()).toBe(200);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 76,
+          "source": "await expect(page.getByText(\"Welcome to Palpo Admin\", { exact: true })).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 77,
+          "source": "expect(assetFailures).toEqual([]);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/native-nginx-acceptance.cjs",
+      "backend_required": true,
+      "status": "executed-semantic-equivalent",
+      "id": 65,
+      "evidence": [
+        {
+          "script": "scripts/native-nginx-acceptance.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\same-origin-nginx-results.json",
+          "case": [
+            "/admin: real D: WASM/JS via nginx, PKCE password+consent+whoami/admin, users read, deep refresh/fresh OAuth, room navigation, strict404 and mount redirect"
+          ],
+          "required_case_fragment": "/admin:",
+          "executed": true,
+          "equivalence": "Same-origin Pasion /auth assets/authorize/consent/token/admin probe and app callback retain their configured mounts. Actual password login and server verdicts are required."
+        }
+      ]
+    },
+    {
+      "suite": "theme.spec.ts",
+      "line": 12,
+      "test": "applies stored dark and light themes on the login page",
+      "assertions": [
+        {
+          "line": 14,
+          "source": "await expect(page.getByRole(\"heading\", { name: \"Palpo Admin\" })).toBeVisible({ timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 18,
+          "source": "await expect(page.locator(\"html\")).toHaveClass(/dark/);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 23,
+          "source": "await expect(page.locator(\"html\")).not.toHaveClass(/dark/);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-source-behaviors.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 66,
+      "evidence": [
+        {
+          "script": "scripts/browser-source-behaviors.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\source-behaviors-results.json",
+          "case": [
+            "66: stored dark/light preferences apply to new login application roots"
+          ],
+          "required_case_fragment": "66:",
+          "executed": true,
+          "equivalence": "Stored dark/light selections apply to new login application roots. Styling belongs to .padmin theme classes rather than a global html class."
+        }
+      ]
+    },
+    {
+      "suite": "theme.spec.ts",
+      "line": 28,
+      "test": "switches between light and dark modes and persists after reload",
+      "assertions": [
+        {
+          "line": 30,
+          "source": "await expect(page.locator(\"aside\")).toBeVisible({ timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 34,
+          "source": "await expect(page.locator(\"aside\")).toBeVisible({ timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 35,
+          "source": "await expect(page.locator(\"html\")).not.toHaveClass(/dark/);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 38,
+          "source": "await expect(page.locator(\"html\")).toHaveClass(/dark/);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 41,
+          "source": "await expect(page.locator(\"html\")).toHaveClass(/dark/);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 44,
+          "source": "await expect(page.locator(\"html\")).not.toHaveClass(/dark/);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-shell.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 67,
+      "evidence": [
+        {
+          "script": "scripts/browser-shell.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\browser-shell-results.json",
+          "case": [
+            "Theme, contrast, keyboard chords and editing-target exclusion"
+          ],
+          "required_case_fragment": "Theme, contrast",
+          "executed": true,
+          "equivalence": "Theme controls change actual root classes and persist stored preferences; the source-behavior login reload case independently checks new-root application of both values."
+        }
+      ]
+    },
+    {
+      "suite": "users.spec.ts",
+      "line": 11,
+      "test": "shows user management page",
+      "assertions": [
+        {
+          "line": 12,
+          "source": "await expect(page.locator(\"text=Manage Matrix users\")).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 13,
+          "source": "await expect(page.locator(\"a\", { hasText: \"Create User\" })).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-domains.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 68,
+      "evidence": [
+        {
+          "script": "scripts/browser-domains.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\browser-domains-results.json",
+          "case": [
+            "Users: finite page size, encoded search, next page, filter/page/column restore"
+          ],
+          "required_case_fragment": "Users: finite page size",
+          "executed": true,
+          "equivalence": "Live records, accessible search, exact encoded query, finite mounted row count, sorting/paging and navigation restore replace generic source table selectors."
+        }
+      ]
+    },
+    {
+      "suite": "users.spec.ts",
+      "line": 16,
+      "test": "loads and displays users in table",
+      "assertions": [
+        {
+          "line": 18,
+          "source": "await expect(page.locator(\"table\")).toBeVisible({ timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 20,
+          "source": "await expect(page.locator(\"table tbody tr\").first()).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-domains.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 69,
+      "evidence": [
+        {
+          "script": "scripts/browser-domains.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\browser-domains-results.json",
+          "case": [
+            "Users: finite page size, encoded search, next page, filter/page/column restore"
+          ],
+          "required_case_fragment": "Users: finite page size",
+          "executed": true,
+          "equivalence": "Live records, accessible search, exact encoded query, finite mounted row count, sorting/paging and navigation restore replace generic source table selectors."
+        }
+      ]
+    },
+    {
+      "suite": "users.spec.ts",
+      "line": 23,
+      "test": "search filters users",
+      "assertions": [
+        {
+          "line": 24,
+          "source": "await expect(page.locator(\"table\")).toBeVisible({ timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 28,
+          "source": "await expect(page.locator(\"table tbody tr\").first()).toBeVisible({ timeout: 10_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-domains.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 70,
+      "evidence": [
+        {
+          "script": "scripts/browser-domains.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\browser-domains-results.json",
+          "case": [
+            "Users: finite page size, encoded search, next page, filter/page/column restore"
+          ],
+          "required_case_fragment": "Users: finite page size",
+          "executed": true,
+          "equivalence": "Live records, accessible search, exact encoded query, finite mounted row count, sorting/paging and navigation restore replace generic source table selectors."
+        }
+      ]
+    },
+    {
+      "suite": "users.spec.ts",
+      "line": 31,
+      "test": "can navigate to Create User page",
+      "assertions": [
+        {
+          "line": 33,
+          "source": "await expect(page).toHaveURL(/\\/users\\/create/);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 34,
+          "source": "await expect(page.locator(\"text=Create New User\")).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 41,
+          "source": "await expect(page.locator(\"aside\")).toBeVisible({ timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-source-behaviors.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 71,
+      "evidence": [
+        {
+          "script": "scripts/browser-source-behaviors.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\source-behaviors-results.json",
+          "case": [
+            "71,72,73,75: Create user navigation, complete form fields, empty validation and Cancel returns list"
+          ],
+          "required_case_fragment": "71,72,73,75:",
+          "executed": true,
+          "equivalence": "Create user is reachable, all five source form fields exist, empty input yields Username is required, and Cancel returns to the list."
+        }
+      ]
+    },
+    {
+      "suite": "users.spec.ts",
+      "line": 44,
+      "test": "shows create user form with all fields",
+      "assertions": [
+        {
+          "line": 45,
+          "source": "await expect(page.locator(\"text=Create New User\")).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 46,
+          "source": "await expect(page.locator('input[placeholder=\"username\"]')).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 47,
+          "source": "await expect(page.locator('input[placeholder=\"Display Name\"]')).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 48,
+          "source": "await expect(page.locator('input[placeholder=\"Password\"]')).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 49,
+          "source": "await expect(page.locator(\"text=Admin privileges\")).toBeVisible();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-source-behaviors.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 72,
+      "evidence": [
+        {
+          "script": "scripts/browser-source-behaviors.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\source-behaviors-results.json",
+          "case": [
+            "71,72,73,75: Create user navigation, complete form fields, empty validation and Cancel returns list"
+          ],
+          "required_case_fragment": "71,72,73,75:",
+          "executed": true,
+          "equivalence": "Create user is reachable, all five source form fields exist, empty input yields Username is required, and Cancel returns to the list."
+        }
+      ]
+    },
+    {
+      "suite": "users.spec.ts",
+      "line": 52,
+      "test": "shows validation error for empty fields",
+      "assertions": [
+        {
+          "line": 54,
+          "source": "await expect(",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 56,
+          "source": ").toBeVisible({ timeout: 5_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-source-behaviors.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 73,
+      "evidence": [
+        {
+          "script": "scripts/browser-source-behaviors.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\source-behaviors-results.json",
+          "case": [
+            "71,72,73,75: Create user navigation, complete form fields, empty validation and Cancel returns list"
+          ],
+          "required_case_fragment": "71,72,73,75:",
+          "executed": true,
+          "equivalence": "Create user is reachable, all five source form fields exist, empty input yields Username is required, and Cancel returns to the list."
+        }
+      ]
+    },
+    {
+      "suite": "users.spec.ts",
+      "line": 59,
+      "test": "can create a new user and see them in the list",
+      "assertions": [
+        {
+          "line": 68,
+          "source": "await expect(page).toHaveURL(/\\/users/, { timeout: 15_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 71,
+          "source": "await expect(page.locator(\"table\")).toBeVisible({ timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 74,
+          "source": "await expect(",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 76,
+          "source": ").toBeVisible({ timeout: 10_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-real-matrix.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 74,
+      "evidence": [
+        {
+          "script": "scripts/browser-real-matrix.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\browser-real-matrix-results.json",
+          "case": [
+            "Actual user search, encoded identity detail and profile update"
+          ],
+          "required_case_fragment": "Actual user search",
+          "executed": true,
+          "equivalence": "Real identity rows open encoded detail; actual user creation and subsequent list readbacks are linked separately. The redesigned create flow opens detail rather than automatically returning to list."
+        }
+      ]
+    },
+    {
+      "suite": "users.spec.ts",
+      "line": 79,
+      "test": "Cancel navigates back to user list",
+      "assertions": [
+        {
+          "line": 81,
+          "source": "await expect(page).toHaveURL(/\\/users$/);",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-source-behaviors.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 75,
+      "evidence": [
+        {
+          "script": "scripts/browser-source-behaviors.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\source-behaviors-results.json",
+          "case": [
+            "71,72,73,75: Create user navigation, complete form fields, empty validation and Cancel returns list"
+          ],
+          "required_case_fragment": "71,72,73,75:",
+          "executed": true,
+          "equivalence": "Create user is reachable, all five source form fields exist, empty input yields Username is required, and Cancel returns to the list."
+        }
+      ]
+    },
+    {
+      "suite": "users.spec.ts",
+      "line": 86,
+      "test": "can click on a user to view details",
+      "assertions": [
+        {
+          "line": 88,
+          "source": "await expect(page.locator(\"table\")).toBeVisible({ timeout: 20_000 });",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 95,
+          "source": "expect(href).toBeTruthy();",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        },
+        {
+          "line": 96,
+          "source": "await expect(page).toHaveURL(new RegExp(href!.replace(/[.*+?^${}()|[\\]\\\\]/g, \"\\\\$&\")));",
+          "migration": "See this scenario evidence/equivalence; the old assertion text is retained as source evidence, not reported as executed against old DOM."
+        }
+      ],
+      "target": "scripts/browser-real-matrix.cjs",
+      "backend_required": false,
+      "status": "executed-semantic-equivalent",
+      "id": 76,
+      "evidence": [
+        {
+          "script": "scripts/browser-real-matrix.cjs",
+          "artifact": "D:\\BuildCache\\padmin-glory\\browser-real-matrix-results.json",
+          "case": [
+            "Actual user search, encoded identity detail and profile update"
+          ],
+          "required_case_fragment": "Actual user search",
+          "executed": true,
+          "equivalence": "Real identity rows open encoded detail; actual user creation and subsequent list readbacks are linked separately. The redesigned create flow opens detail rather than automatically returning to list."
+        }
+      ]
+    }
+  ],
+  "reviewed_scenario_count": 77,
+  "status_counts": {
+    "executed-current-backend-contract": 2,
+    "executed-semantic-equivalent": 74,
+    "obsolete-source-baseline-assertion": 1
+  },
+  "pending_scenarios": []
+}

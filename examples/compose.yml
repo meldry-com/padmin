@@ -86,11 +86,11 @@ services:
 
   padmin:
     build:
-      context: ..
+      context: "${PADMIN_BUILD_CONTEXT:-D:/BuildCache/padmin-glory-branch/container}"
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:
-      - "7060:80"
+      - "7060:8080"
     extra_hosts:
       - "localhost:host-gateway"
     environment:
@@ -103,7 +103,7 @@ services:
       pasion:
         condition: service_started
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost/healthz"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/healthz"]
       interval: 30s
       timeout: 5s
       retries: 3

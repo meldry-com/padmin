@@ -16,6 +16,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  PADMIN_REMOTE_BUILD: '1'
+  PADMIN_BUILD_ROOT: ${{ github.workspace }}/build-cache/padmin-glory
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
   DOCKERHUB_IMAGE: docker.io/meldry/padmin
@@ -29,6 +31,42 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: meldry/padmin
+
+      - name: Check out Glory
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: glory-rs/glory
+          ref: aecbe360bd0731f118af31e653f6df2b26ef7576
+          path: glory-rs/glory
+
+      - name: Check out Sapid
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: sapid-ui/sapid
+          ref: fd64d78edf9f91f9dc63bfa2be6e59ec1f739a58
+          path: glory-rs/sapid
+
+      - name: Build Glory and Sapid WASM on remote runner
+        working-directory: meldry/padmin
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$PADMIN_BUILD_ROOT/tmp" "$PADMIN_BUILD_ROOT/cargo"
+          export CARGO_HOME="$PADMIN_BUILD_ROOT/cargo"
+          export CARGO_TARGET_DIR="$PADMIN_BUILD_ROOT/target"
+          export TMPDIR="$PADMIN_BUILD_ROOT/tmp"
+          rustup toolchain install stable --profile minimal --target wasm32-unknown-unknown
+          rustup default stable
+          cargo install wasm-bindgen-cli --version 0.2.129 --locked --root "$PADMIN_BUILD_ROOT/tools"
+          export WASM_BINDGEN="$PADMIN_BUILD_ROOT/tools/bin/wasm-bindgen"
+          python3 scripts/glory.py check
+          python3 scripts/glory.py test
+          python3 scripts/glory.py build
+          mkdir -p "$PADMIN_BUILD_ROOT/container"
+          cp -R "$PADMIN_BUILD_ROOT/dist" "$PADMIN_BUILD_ROOT/container/dist"
+          cp Dockerfile docker-entrypoint.sh "$PADMIN_BUILD_ROOT/container/"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
@@ -37,7 +75,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          docker buildx build --load --tag padmin-smoke .
+          docker buildx build --load --tag padmin-smoke "$PADMIN_BUILD_ROOT/container"
 
           run_case() {
             local name="$1"
@@ -57,11 +95,11 @@ jobs:
 
             case "$name" in
               padmin-no-pasion)
-                docker exec "$cid" sh -c "! grep -q 'location /auth/' /etc/nginx/conf.d/default.conf"
+                docker exec "$cid" sh -c "! grep -Fq 'location ^~ /auth/' /etc/nginx/conf.d/default.conf"
                 ;;
               padmin-with-pasion)
                 docker exec "$cid" grep -q 'https://auth.example.com' /usr/share/nginx/html/config.json
-                docker exec "$cid" grep -q 'location /auth/' /etc/nginx/conf.d/default.conf
+                docker exec "$cid" grep -Fq 'location ^~ /auth/' /etc/nginx/conf.d/default.conf
                 ;;
             esac
 
@@ -86,6 +124,42 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: meldry/padmin
+
+      - name: Check out Glory
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: glory-rs/glory
+          ref: aecbe360bd0731f118af31e653f6df2b26ef7576
+          path: glory-rs/glory
+
+      - name: Check out Sapid
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: sapid-ui/sapid
+          ref: fd64d78edf9f91f9dc63bfa2be6e59ec1f739a58
+          path: glory-rs/sapid
+
+      - name: Build Glory and Sapid WASM on remote runner
+        working-directory: meldry/padmin
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$PADMIN_BUILD_ROOT/tmp" "$PADMIN_BUILD_ROOT/cargo"
+          export CARGO_HOME="$PADMIN_BUILD_ROOT/cargo"
+          export CARGO_TARGET_DIR="$PADMIN_BUILD_ROOT/target"
+          export TMPDIR="$PADMIN_BUILD_ROOT/tmp"
+          rustup toolchain install stable --profile minimal --target wasm32-unknown-unknown
+          rustup default stable
+          cargo install wasm-bindgen-cli --version 0.2.129 --locked --root "$PADMIN_BUILD_ROOT/tools"
+          export WASM_BINDGEN="$PADMIN_BUILD_ROOT/tools/bin/wasm-bindgen"
+          python3 scripts/glory.py check
+          python3 scripts/glory.py test
+          python3 scripts/glory.py build
+          mkdir -p "$PADMIN_BUILD_ROOT/container"
+          cp -R "$PADMIN_BUILD_ROOT/dist" "$PADMIN_BUILD_ROOT/container/dist"
+          cp Dockerfile docker-entrypoint.sh "$PADMIN_BUILD_ROOT/container/"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4.2.0
@@ -143,8 +217,8 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         with:
-          context: .
-          file: ./Dockerfile
+          context: ${{ env.PADMIN_BUILD_ROOT }}/container
+          file: ${{ env.PADMIN_BUILD_ROOT }}/container/Dockerfile
           platforms: linux/amd64,linux/arm64
           pull: true
           push: ${{ github.event_name != 'pull_request' }}

@@ -1,0 +1,602 @@
+{
+  "scope": "18 domain routes: dashboard, users/known, rooms, Pasion; independent source read audit",
+  "source_files": [
+    {
+      "source": "migration/source-ui/pages/users/create.rs",
+      "calls": [
+        {
+          "api": "check_username_available",
+          "active": "check_username_available",
+          "mapped": true
+        },
+        {
+          "api": "create_user",
+          "active": "create_user",
+          "mapped": true
+        }
+      ]
+    },
+    {
+      "source": "migration/source-ui/pages/users/known.rs",
+      "calls": [
+        {
+          "api": "get_known_users",
+          "active": "get_known_users",
+          "mapped": true
+        }
+      ]
+    },
+    {
+      "source": "migration/source-ui/pages/users/known_show.rs",
+      "calls": [
+        {
+          "api": "get_known_user",
+          "active": "get_known_user",
+          "mapped": true
+        }
+      ]
+    },
+    {
+      "source": "migration/source-ui/pages/users/list.rs",
+      "calls": [
+        {
+          "api": "deactivate_account",
+          "active": "deactivate_account",
+          "mapped": true
+        },
+        {
+          "api": "get_all_users_for_export",
+          "active": "get_all_users_for_export",
+          "mapped": true
+        },
+        {
+          "api": "get_users_cached",
+          "active": "get_users (explicit refresh plus app-scoped service cache remains available)",
+          "mapped": true
+        },
+        {
+          "api": "pasion_get_user_by_username",
+          "active": "pasion_get_user_by_username",
+          "mapped": true
+        },
+        {
+          "api": "pasion_update_user",
+          "active": "pasion_update_user",
+          "mapped": true
+        },
+        {
+          "api": "reactivate_account",
+          "active": "reactivate_account",
+          "mapped": true
+        },
+        {
+          "api": "update_user",
+          "active": "update_user",
+          "mapped": true
+        }
+      ]
+    },
+    {
+      "source": "migration/source-ui/pages/users/mod.rs",
+      "calls": []
+    },
+    {
+      "source": "migration/source-ui/pages/users/show.rs",
+      "calls": [
+        {
+          "api": "deactivate_account",
+          "active": "deactivate_account",
+          "mapped": true
+        },
+        {
+          "api": "delete_all_user_devices",
+          "active": "delete_devices_exact: bounded repeat-first-page deletion; typed failure instead of silently counting partial errors",
+          "mapped": true
+        },
+        {
+          "api": "delete_user_device",
+          "active": "delete_user_device",
+          "mapped": true
+        },
+        {
+          "api": "delete_user_threepid",
+          "active": "delete_user_threepid",
+          "mapped": true
+        },
+        {
+          "api": "get_user",
+          "active": "get_user",
+          "mapped": true
+        },
+        {
+          "api": "get_user_devices",
+          "active": "get_user_devices",
+          "mapped": true
+        },
+        {
+          "api": "get_user_joined_rooms",
+          "active": "get_user_joined_rooms",
+          "mapped": true
+        },
+        {
+          "api": "pasion_get_user_by_username",
+          "active": "pasion_get_user_by_username",
+          "mapped": true
+        },
+        {
+          "api": "reactivate_account",
+          "active": "reactivate_account",
+          "mapped": true
+        },
+        {
+          "api": "reset_password",
+          "active": "reset_password",
+          "mapped": true
+        },
+        {
+          "api": "update_user",
+          "active": "update_user",
+          "mapped": true
+        },
+        {
+          "api": "whois_user",
+          "active": "whois_user",
+          "mapped": true
+        }
+      ]
+    },
+    {
+      "source": "migration/source-ui/pages/users/tabs.rs",
+      "calls": []
+    },
+    {
+      "source": "migration/source-ui/pages/rooms/list.rs",
+      "calls": [
+        {
+          "api": "block_room",
+          "active": "block_room",
+          "mapped": true
+        },
+        {
+          "api": "create_room",
+          "active": "create_room",
+          "mapped": true
+        },
+        {
+          "api": "delete_room",
+          "active": "delete_room",
+          "mapped": true
+        },
+        {
+          "api": "get_rooms_cached",
+          "active": "get_rooms (explicit refresh plus app-scoped service cache remains available)",
+          "mapped": true
+        }
+      ]
+    },
+    {
+      "source": "migration/source-ui/pages/rooms/mod.rs",
+      "calls": []
+    },
+    {
+      "source": "migration/source-ui/pages/rooms/show.rs",
+      "calls": [
+        {
+          "api": "ban_user",
+          "active": "ban_user",
+          "mapped": true
+        },
+        {
+          "api": "block_room",
+          "active": "block_room",
+          "mapped": true
+        },
+        {
+          "api": "delete_room",
+          "active": "delete_room",
+          "mapped": true
+        },
+        {
+          "api": "delete_room_alias",
+          "active": "delete_room_alias",
+          "mapped": true
+        },
+        {
+          "api": "fetch_event",
+          "active": "fetch_event",
+          "mapped": true
+        },
+        {
+          "api": "get_forward_extremities",
+          "active": "get_forward_extremities",
+          "mapped": true
+        },
+        {
+          "api": "get_room",
+          "active": "get_room",
+          "mapped": true
+        },
+        {
+          "api": "get_room_directory_visibility",
+          "active": "get_room_directory_visibility",
+          "mapped": true
+        },
+        {
+          "api": "get_room_hierarchy",
+          "active": "get_room_hierarchy",
+          "mapped": true
+        },
+        {
+          "api": "get_room_members",
+          "active": "get_room_members",
+          "mapped": true
+        },
+        {
+          "api": "get_room_messages",
+          "active": "get_room_messages",
+          "mapped": true
+        },
+        {
+          "api": "get_room_state",
+          "active": "get_room_state",
+          "mapped": true
+        },
+        {
+          "api": "invite_user",
+          "active": "invite_user",
+          "mapped": true
+        },
+        {
+          "api": "kick_user",
+          "active": "kick_user",
+          "mapped": true
+        },
+        {
+          "api": "make_room_admin",
+          "active": "make_room_admin",
+          "mapped": true
+        },
+        {
+          "api": "purge_history",
+          "active": "purge_history",
+          "mapped": true
+        },
+        {
+          "api": "put_room_alias",
+          "active": "put_room_alias",
+          "mapped": true
+        },
+        {
+          "api": "set_room_directory_visibility",
+          "active": "set_room_directory_visibility",
+          "mapped": true
+        },
+        {
+          "api": "set_room_history_visibility",
+          "active": "set_room_history_visibility",
+          "mapped": true
+        },
+        {
+          "api": "set_room_join_rules",
+          "active": "set_room_join_rules",
+          "mapped": true
+        },
+        {
+          "api": "set_room_name",
+          "active": "set_room_name",
+          "mapped": true
+        },
+        {
+          "api": "set_room_topic",
+          "active": "set_room_topic",
+          "mapped": true
+        }
+      ]
+    },
+    {
+      "source": "migration/source-ui/pages/pasion/accounts.rs",
+      "calls": [
+        {
+          "api": "pasion_create_user",
+          "active": "pasion_create_user",
+          "mapped": true
+        },
+        {
+          "api": "pasion_get_users",
+          "active": "pasion_get_users",
+          "mapped": true
+        },
+        {
+          "api": "pasion_set_password",
+          "active": "pasion_set_password",
+          "mapped": true
+        },
+        {
+          "api": "pasion_update_user",
+          "active": "pasion_update_user",
+          "mapped": true
+        }
+      ]
+    },
+    {
+      "source": "migration/source-ui/pages/pasion/account_show.rs",
+      "calls": [
+        {
+          "api": "pasion_add_user_email",
+          "active": "pasion_add_user_email",
+          "mapped": true
+        },
+        {
+          "api": "pasion_delete_user_email",
+          "active": "pasion_delete_user_email",
+          "mapped": true
+        },
+        {
+          "api": "pasion_finish_browser_session",
+          "active": "pasion_finish_browser_session",
+          "mapped": true
+        },
+        {
+          "api": "pasion_finish_oauth2_session",
+          "active": "pasion_finish_oauth2_session",
+          "mapped": true
+        },
+        {
+          "api": "pasion_get_active_oauth2_sessions_for_user",
+          "active": "pasion_get_active_oauth2_sessions_for_user",
+          "mapped": true
+        },
+        {
+          "api": "pasion_get_browser_sessions",
+          "active": "pasion_get_browser_sessions",
+          "mapped": true
+        },
+        {
+          "api": "pasion_get_user",
+          "active": "pasion_get_user",
+          "mapped": true
+        },
+        {
+          "api": "pasion_get_user_emails",
+          "active": "pasion_get_user_emails",
+          "mapped": true
+        },
+        {
+          "api": "pasion_risk_action",
+          "active": "pasion_risk_action",
+          "mapped": true
+        },
+        {
+          "api": "pasion_set_password",
+          "active": "pasion_set_password",
+          "mapped": true
+        },
+        {
+          "api": "pasion_update_user",
+          "active": "pasion_update_user",
+          "mapped": true
+        }
+      ]
+    },
+    {
+      "source": "migration/source-ui/pages/pasion/audit_log.rs",
+      "calls": [
+        {
+          "api": "pasion_get_audit_feed",
+          "active": "pasion_get_audit_feed",
+          "mapped": true
+        }
+      ]
+    },
+    {
+      "source": "migration/source-ui/pages/pasion/connector_health.rs",
+      "calls": [
+        {
+          "api": "pasion_get_connector_health",
+          "active": "pasion_get_connector_health",
+          "mapped": true
+        }
+      ]
+    },
+    {
+      "source": "migration/source-ui/pages/pasion/mod.rs",
+      "calls": []
+    },
+    {
+      "source": "migration/source-ui/pages/pasion/notification_channels.rs",
+      "calls": [
+        {
+          "api": "pasion_get_notification_channels",
+          "active": "pasion_get_notification_channels",
+          "mapped": true
+        }
+      ]
+    },
+    {
+      "source": "migration/source-ui/pages/pasion/notification_templates.rs",
+      "calls": [
+        {
+          "api": "pasion_get_notification_templates",
+          "active": "pasion_get_notification_templates",
+          "mapped": true
+        },
+        {
+          "api": "pasion_publish_template",
+          "active": "pasion_publish_template",
+          "mapped": true
+        }
+      ]
+    },
+    {
+      "source": "migration/source-ui/pages/pasion/oauth2_sessions.rs",
+      "calls": [
+        {
+          "api": "pasion_finish_oauth2_session",
+          "active": "pasion_finish_oauth2_session",
+          "mapped": true
+        },
+        {
+          "api": "pasion_get_oauth2_sessions",
+          "active": "pasion_get_oauth2_sessions",
+          "mapped": true
+        }
+      ]
+    },
+    {
+      "source": "migration/source-ui/pages/pasion/personal_sessions.rs",
+      "calls": [
+        {
+          "api": "pasion_create_personal_session",
+          "active": "pasion_create_personal_session",
+          "mapped": true
+        },
+        {
+          "api": "pasion_get_personal_sessions",
+          "active": "pasion_get_personal_sessions",
+          "mapped": true
+        },
+        {
+          "api": "pasion_regenerate_personal_session",
+          "active": "pasion_regenerate_personal_session",
+          "mapped": true
+        },
+        {
+          "api": "pasion_revoke_personal_session",
+          "active": "pasion_revoke_personal_session",
+          "mapped": true
+        }
+      ]
+    },
+    {
+      "source": "migration/source-ui/pages/pasion/upstream_links.rs",
+      "calls": [
+        {
+          "api": "pasion_create_upstream_link",
+          "active": "pasion_create_upstream_link",
+          "mapped": true
+        },
+        {
+          "api": "pasion_delete_upstream_link",
+          "active": "pasion_delete_upstream_link",
+          "mapped": true
+        },
+        {
+          "api": "pasion_get_upstream_links",
+          "active": "pasion_get_upstream_links",
+          "mapped": true
+        }
+      ]
+    },
+    {
+      "source": "migration/source-ui/pages/pasion/upstream_providers.rs",
+      "calls": [
+        {
+          "api": "pasion_create_upstream_provider",
+          "active": "pasion_create_upstream_provider",
+          "mapped": true
+        },
+        {
+          "api": "pasion_delete_upstream_provider",
+          "active": "pasion_delete_upstream_provider",
+          "mapped": true
+        },
+        {
+          "api": "pasion_disable_upstream_provider",
+          "active": "pasion_disable_upstream_provider",
+          "mapped": true
+        },
+        {
+          "api": "pasion_enable_upstream_provider",
+          "active": "pasion_enable_upstream_provider",
+          "mapped": true
+        },
+        {
+          "api": "pasion_get_upstream_provider",
+          "active": "pasion_get_upstream_provider",
+          "mapped": true
+        },
+        {
+          "api": "pasion_get_upstream_providers",
+          "active": "pasion_get_upstream_providers",
+          "mapped": true
+        },
+        {
+          "api": "pasion_update_upstream_provider",
+          "active": "pasion_update_upstream_provider",
+          "mapped": true
+        }
+      ]
+    },
+    {
+      "source": "migration/source-ui/pages/dashboard.rs",
+      "calls": [
+        {
+          "api": "get_active_user_count",
+          "active": "get_active_user_count",
+          "mapped": true
+        },
+        {
+          "api": "get_report_count",
+          "active": "get_report_count",
+          "mapped": true
+        },
+        {
+          "api": "get_room_count",
+          "active": "get_room_count",
+          "mapped": true
+        },
+        {
+          "api": "get_server_version",
+          "active": "get_server_version",
+          "mapped": true
+        },
+        {
+          "api": "get_supported_features",
+          "active": "get_supported_features",
+          "mapped": true
+        },
+        {
+          "api": "get_user_count",
+          "active": "get_user_count",
+          "mapped": true
+        }
+      ]
+    },
+    {
+      "source": "migration/source-ui/components/deactivate_user_dialog.rs",
+      "calls": []
+    },
+    {
+      "source": "migration/source-ui/components/user_account_data.rs",
+      "calls": []
+    },
+    {
+      "source": "migration/source-ui/components/user_rate_limits.rs",
+      "calls": []
+    },
+    {
+      "source": "migration/source-ui/components/experimental_features.rs",
+      "calls": []
+    },
+    {
+      "source": "migration/source-ui/components/server_notices.rs",
+      "calls": [
+        {
+          "api": "send_server_notice",
+          "active": "send_server_notice",
+          "mapped": true
+        }
+      ]
+    },
+    {
+      "source": "migration/source-ui/components/user_import.rs",
+      "calls": [
+        {
+          "api": "create_user",
+          "active": "create_user",
+          "mapped": true
+        }
+      ]
+    }
+  ]
+}

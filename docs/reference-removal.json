@@ -1,0 +1,356 @@
+{
+  "deleted_directory": "D:\\Works\\glory-rs\\padmin-glory\\migration\\source-ui",
+  "deleted_at": "2026-10-23T12:23:59.8823148Z",
+  "source_baseline": "D:/Works/meldry/padmin",
+  "reason": "Source reviews cleared and final release acceptance passed",
+  "wasm_sha256": "258938a5bb72b5f13a344fdfa92c1df53303cfddaf5217d0dacf9752c3e5f3f1",
+  "source_sha256": "57cb486530aa9aecdbab8fffb2ebe599775fee897a83a93347560abbd76b3e8c",
+  "file_count": 69,
+  "files": [
+    {
+      "path": "migration/source-ui/components/deactivate_user_dialog.rs",
+      "sha256": "74198c2b19f540c2b6d373a14273c68b96c81f29851351b0dfe2712edba32733",
+      "bytes": 3802
+    },
+    {
+      "path": "migration/source-ui/components/experimental_features.rs",
+      "sha256": "f84845bdbbcc3ab418e05b38aec84ba5578c308deb45fee98e49083b5cac1e69",
+      "bytes": 6283
+    },
+    {
+      "path": "migration/source-ui/components/header.rs",
+      "sha256": "2c9f6ca721817e379f1a19985aa499690cab2e7bd38ad3c23bcbf818fa34a397",
+      "bytes": 13322
+    },
+    {
+      "path": "migration/source-ui/components/keyboard_shortcuts.rs",
+      "sha256": "ce899c2e43c8e9d19bcb180c78aa3442ca752116b3b669d104f1ab017dba79a8",
+      "bytes": 6801
+    },
+    {
+      "path": "migration/source-ui/components/layout.rs",
+      "sha256": "351dba28e1c29b413141581c002ebec35f556234f59a67eacffb20dbdcedb2ae",
+      "bytes": 2731
+    },
+    {
+      "path": "migration/source-ui/components/media_ops.rs",
+      "sha256": "0164b375468fdf59e521a5936b17b6e1c10821af5cafee813fd496fbb3981c4c",
+      "bytes": 6546
+    },
+    {
+      "path": "migration/source-ui/components/mod.rs",
+      "sha256": "85c18caddb9ee49a2cda92f617cf3ef2c563b4dcb5ed40c64d1592d26fab7669",
+      "bytes": 312
+    },
+    {
+      "path": "migration/source-ui/components/scheduled_commands.rs",
+      "sha256": "29de4701a5c9a18458dd52f69dd6f1722d2cf3543f80946aeb093b7fd26740fa",
+      "bytes": 18871
+    },
+    {
+      "path": "migration/source-ui/components/server_notices.rs",
+      "sha256": "08d8ff5a1608266dd7642876343c41fb1877cabab0d1bc9595d5466b5f8f5a35",
+      "bytes": 2577
+    },
+    {
+      "path": "migration/source-ui/components/sidebar.rs",
+      "sha256": "32ea57c5d5152f604ec6fd65f659a1719bc962b88746104057b1c1034860e4ab",
+      "bytes": 11970
+    },
+    {
+      "path": "migration/source-ui/components/theme.rs",
+      "sha256": "318d60a9b8fe44cab01c1b67c426fd6192fac373295d0995a73bf3ab98a05ec5",
+      "bytes": 2579
+    },
+    {
+      "path": "migration/source-ui/components/ui/badge.rs",
+      "sha256": "87d4832d1f96ee6e16f25e881e991b0a4046ea52d8675b8881b88cd1fc3dcdf9",
+      "bytes": 1122
+    },
+    {
+      "path": "migration/source-ui/components/ui/button.rs",
+      "sha256": "23df96864826e4f6ddf121588571b8acfcb1363b9fd1effe64e798c8de2749f0",
+      "bytes": 2018
+    },
+    {
+      "path": "migration/source-ui/components/ui/card.rs",
+      "sha256": "2da634069f6c6e9d33b96c430eed6f5cd45a4d690768bc16b33012ac7628602b",
+      "bytes": 1386
+    },
+    {
+      "path": "migration/source-ui/components/ui/dialog.rs",
+      "sha256": "5f2d8c6ab84d1fecd3b42a684d2433e975523789c79fe991c3bc436a703dfb06",
+      "bytes": 5044
+    },
+    {
+      "path": "migration/source-ui/components/ui/empty_state.rs",
+      "sha256": "61e5021581b6a7e1a9cd7c1e2c9db7645791f4bba4edad16ae12bccd824f3876",
+      "bytes": 1037
+    },
+    {
+      "path": "migration/source-ui/components/ui/error_banner.rs",
+      "sha256": "087c0525b82915ac3a0a27b815e8ae25ec28d1379b0a6fa1808439914120c7b2",
+      "bytes": 1195
+    },
+    {
+      "path": "migration/source-ui/components/ui/icons.rs",
+      "sha256": "039fdbc7018f8a64668bcb17f7e301c1075eb1e227ab4fec83618534ca14392b",
+      "bytes": 30554
+    },
+    {
+      "path": "migration/source-ui/components/ui/input.rs",
+      "sha256": "837a11d26701fa9bfec8560d14378064eee88e805f3dc0c83b1ddaab4f8b7faa",
+      "bytes": 5246
+    },
+    {
+      "path": "migration/source-ui/components/ui/loading.rs",
+      "sha256": "a9a9e308b206a2d400cfba04743c43c6934cb03a1a96612af0ea43a0499a32d7",
+      "bytes": 3058
+    },
+    {
+      "path": "migration/source-ui/components/ui/mod.rs",
+      "sha256": "0d24d7055d8ab7c385a6155f61dde100a7d837a565e426465508e9096d09c490",
+      "bytes": 268
+    },
+    {
+      "path": "migration/source-ui/components/ui/notifications.rs",
+      "sha256": "20b6620c8fc2d4a9329ef1f0ad17db6a0bcd816323806724b2f03eb1871942f2",
+      "bytes": 2045
+    },
+    {
+      "path": "migration/source-ui/components/ui/page_header.rs",
+      "sha256": "6122bae172295a5fd1e8dce2b07284ad82f7d37bcbed23636db125097367944a",
+      "bytes": 1592
+    },
+    {
+      "path": "migration/source-ui/components/ui/pagination.rs",
+      "sha256": "1b559cf3b4c446357f92cb067455c5970dfef4e667a7d3bf2ba98837c0bd0b5e",
+      "bytes": 1461
+    },
+    {
+      "path": "migration/source-ui/components/ui/relative_time.rs",
+      "sha256": "68bebbff95bf1a854e14b4d8528377509cd784052097987a84f4479d486c90e7",
+      "bytes": 573
+    },
+    {
+      "path": "migration/source-ui/components/ui/table.rs",
+      "sha256": "7ee58674a90fcf11327df285aadc82cdbc1c49f739f4d37f0624394c93b0bc26",
+      "bytes": 2177
+    },
+    {
+      "path": "migration/source-ui/components/ui/toast.rs",
+      "sha256": "8e451cab8d53edcd18dc5b45976dc1e8426ea60ef3a52e9ead74b70a9037cd72",
+      "bytes": 4020
+    },
+    {
+      "path": "migration/source-ui/components/user_account_data.rs",
+      "sha256": "48bcd2d5b4be4564136fcf73126c0aaed8688e04e9fe9407b39b7000bef23b68",
+      "bytes": 1772
+    },
+    {
+      "path": "migration/source-ui/components/user_import.rs",
+      "sha256": "da58159ff543cb0a9d6325611899c1497ec20a2d88eda90006e3269f52874bc6",
+      "bytes": 10576
+    },
+    {
+      "path": "migration/source-ui/components/user_rate_limits.rs",
+      "sha256": "471730f5f94a1d39a173509a744413e4361044e7ec896355fece68ea7a5cb963",
+      "bytes": 4849
+    },
+    {
+      "path": "migration/source-ui/main.rs",
+      "sha256": "3325e422e58e05fb22482cd98a6659109fbab477f2a0ba73f507f63eb8cde40e",
+      "bytes": 2035
+    },
+    {
+      "path": "migration/source-ui/pages/appservices.rs",
+      "sha256": "bf176ff30d4b3bd21d65d3175945651fd2e3f41449a48dc95b98c2b6d7dc0f1b",
+      "bytes": 55735
+    },
+    {
+      "path": "migration/source-ui/pages/auth_status.rs",
+      "sha256": "49c3c8df26dbd1b613d731c14c1db63511f5e87c3414a0efdc7a8579f9f71701",
+      "bytes": 32420
+    },
+    {
+      "path": "migration/source-ui/pages/dashboard.rs",
+      "sha256": "44e74ab0c36cb1e6fd686a7e7443838ed89ab47f202467092ef35148195edaf8",
+      "bytes": 12868
+    },
+    {
+      "path": "migration/source-ui/pages/destinations.rs",
+      "sha256": "8513ee386f82db0600131f0a57ab5e4309b06c651202ce0340a7ab6d58d9792f",
+      "bytes": 16546
+    },
+    {
+      "path": "migration/source-ui/pages/login.rs",
+      "sha256": "168aa3cdab99f24a245d3716f796177898093452abb93386b10348d365a7097e",
+      "bytes": 3312
+    },
+    {
+      "path": "migration/source-ui/pages/media.rs",
+      "sha256": "a9e1b4d5ac89c6805671ca770c04d3b3f74fbcd56ad5a80add5ad0268ee26319",
+      "bytes": 7612
+    },
+    {
+      "path": "migration/source-ui/pages/mod.rs",
+      "sha256": "adaa2e911003f85e776450c80fbc6cd443e6986ec08f8c83ce15629456fbf7d4",
+      "bytes": 388
+    },
+    {
+      "path": "migration/source-ui/pages/not_authorized.rs",
+      "sha256": "6610b63391988832ad4fe2e7e94d6adf37a4d689e3088df9306a0846a4307ce3",
+      "bytes": 2788
+    },
+    {
+      "path": "migration/source-ui/pages/notification_preferences.rs",
+      "sha256": "d0c5c2fdfe4e8ed3d80de56401a05b92eb09546e8b7684443c7677f15f76413a",
+      "bytes": 7952
+    },
+    {
+      "path": "migration/source-ui/pages/oauth_callback.rs",
+      "sha256": "68e43472df4322fb2568be89083a2ebc2e8109812e60164c30583e6a7f9b48a5",
+      "bytes": 3596
+    },
+    {
+      "path": "migration/source-ui/pages/pasion/account_show.rs",
+      "sha256": "8a8524e4d78400e421bd7f48907bdebc7ec3ca273cc41f40ddb5c6ab56dd1d8c",
+      "bytes": 42182
+    },
+    {
+      "path": "migration/source-ui/pages/pasion/accounts.rs",
+      "sha256": "5ea5ae9a512e38d09cbbbce6ac9284da7aaa372e1d4f4a3061cc064e23a007d7",
+      "bytes": 17303
+    },
+    {
+      "path": "migration/source-ui/pages/pasion/audit_log.rs",
+      "sha256": "0167adbcca514408d50fd9a4a93d706d8d4d3f483dbbfdec76a7e07da54ed916",
+      "bytes": 8738
+    },
+    {
+      "path": "migration/source-ui/pages/pasion/connector_health.rs",
+      "sha256": "801d1ff039597235f7c855d4011fc5d72b4340849c73406ad0e31a4c7a8ecae6",
+      "bytes": 4893
+    },
+    {
+      "path": "migration/source-ui/pages/pasion/mod.rs",
+      "sha256": "1e6808d5ec6700ecdb9f0c2959313dd182bed46dbd9938632a43687ad88d6194",
+      "bytes": 252
+    },
+    {
+      "path": "migration/source-ui/pages/pasion/notification_channels.rs",
+      "sha256": "206c35d02344f36a1cc30343ab359d384a8f1fd87d2fffc86bc0005e80cccab3",
+      "bytes": 3640
+    },
+    {
+      "path": "migration/source-ui/pages/pasion/notification_templates.rs",
+      "sha256": "92f4311b50e2fcf74df1e460844effac9a3c5389200f7cc4b5f00172929a264f",
+      "bytes": 11496
+    },
+    {
+      "path": "migration/source-ui/pages/pasion/oauth2_sessions.rs",
+      "sha256": "f250c3a0f208e60b80ea5510d2cfd96b8c3df7cb03b5d7545ed5566fb17de4d0",
+      "bytes": 9180
+    },
+    {
+      "path": "migration/source-ui/pages/pasion/personal_sessions.rs",
+      "sha256": "d73fb44427fd818c0845949e6bec306181895d5f7f782271a866a60142056ffb",
+      "bytes": 16239
+    },
+    {
+      "path": "migration/source-ui/pages/pasion/upstream_links.rs",
+      "sha256": "1bcf698d1651f0d24f061035a0186036075c2d57febfc614f3e3be388bc98095",
+      "bytes": 14899
+    },
+    {
+      "path": "migration/source-ui/pages/pasion/upstream_providers.rs",
+      "sha256": "a61f2399f9abf587b97a73b58c5f92fba40a8bae04c599c65313ca2a7bd169cb",
+      "bytes": 53305
+    },
+    {
+      "path": "migration/source-ui/pages/registration_tokens.rs",
+      "sha256": "398ae5d2b0c466d1e516f0c4abe11852f04887f9b45a2e786f64c5b98f16c07e",
+      "bytes": 20767
+    },
+    {
+      "path": "migration/source-ui/pages/reports.rs",
+      "sha256": "4cbbfda584b38120c4e98b2bbc6dc7184e2ed1f6f79f344ece644ebd3c15cd3e",
+      "bytes": 25930
+    },
+    {
+      "path": "migration/source-ui/pages/rooms/list.rs",
+      "sha256": "479f2adf9891eb345e530f474d426053dfa70d33f271c74509a6af771a7bd4d8",
+      "bytes": 28565
+    },
+    {
+      "path": "migration/source-ui/pages/rooms/mod.rs",
+      "sha256": "095bf7fdfc1a3618167205ae0f21bbc484824955d91d1fa622998176a3afe2c6",
+      "bytes": 28
+    },
+    {
+      "path": "migration/source-ui/pages/rooms/show.rs",
+      "sha256": "629007397127875a2127b28cfd72c389206be8b2f5c84e26e683fcd67ee9bbc2",
+      "bytes": 71964
+    },
+    {
+      "path": "migration/source-ui/pages/server_actions.rs",
+      "sha256": "f933c1d09d8bf3242fdaa646e006acb3a5718afccccf2e08d411c38088ced857",
+      "bytes": 6434
+    },
+    {
+      "path": "migration/source-ui/pages/server_notices.rs",
+      "sha256": "893e8defdde547e6c016634a3c46cc39aa0fa243addfce5ce6c6fd5dc1a8c15c",
+      "bytes": 15319
+    },
+    {
+      "path": "migration/source-ui/pages/server_notifications.rs",
+      "sha256": "5280a771ad891e641e56b7ef3a16185f85d8d461bf994f703bfdc19d44ae4013",
+      "bytes": 4627
+    },
+    {
+      "path": "migration/source-ui/pages/server_status.rs",
+      "sha256": "6387c84415f93d7d218cbca28899bbc280961e34b4e1c3df3d9da62aff1c8937",
+      "bytes": 7047
+    },
+    {
+      "path": "migration/source-ui/pages/users/create.rs",
+      "sha256": "97847fa5deaefb6aea0f26cbc409f4aecc6b502142cca59e65e6656f00e2b87c",
+      "bytes": 19996
+    },
+    {
+      "path": "migration/source-ui/pages/users/known_show.rs",
+      "sha256": "47a66d5c4899faa466226c88abd97762f1cd314a393629398235f3ce7b477921",
+      "bytes": 8208
+    },
+    {
+      "path": "migration/source-ui/pages/users/known.rs",
+      "sha256": "db726a7138070d6270adc99818f77350dd734136f8ba462960d6956f6ac24ba3",
+      "bytes": 15493
+    },
+    {
+      "path": "migration/source-ui/pages/users/list.rs",
+      "sha256": "6e2666b25226bfdb36f94e75eb818d39df8de2e1850bc66ebb6999d099f19105",
+      "bytes": 38577
+    },
+    {
+      "path": "migration/source-ui/pages/users/mod.rs",
+      "sha256": "cab3de8926a925176a7d404150ac2ab04b47283a5b53a4d4296d55cb57f1bab1",
+      "bytes": 93
+    },
+    {
+      "path": "migration/source-ui/pages/users/show.rs",
+      "sha256": "28fd0396108f664084155e78d2d91f5db68f93080c809aa37ce90de09d023a3b",
+      "bytes": 56178
+    },
+    {
+      "path": "migration/source-ui/pages/users/tabs.rs",
+      "sha256": "35704f4b8755c6d1824a95eb6ea81aa9d2b411eb0398aed1ea4817150840c878",
+      "bytes": 1177
+    },
+    {
+      "path": "migration/source-ui/router.rs",
+      "sha256": "0ca5baec3e2712c8ee99d0bcb328951fdcc3041626a3d8fc57f95d17c6c1fc7d",
+      "bytes": 12329
+    }
+  ]
+}

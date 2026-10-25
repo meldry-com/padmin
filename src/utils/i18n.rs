@@ -1,7 +1,5 @@
 use std::collections::HashMap;
 
-use dioxus::prelude::*;
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Language {
     En,
@@ -264,20 +262,36 @@ impl I18n {
         m.insert("users.subtitle".into(), "Manage Matrix users".into());
         m.insert("users.tab_accounts".into(), "Local accounts".into());
         m.insert("users.tab_known".into(), "Seen users".into());
-        m.insert("users.known_subtitle".into(), "Every user this server has seen in its rooms, local or remote".into());
+        m.insert(
+            "users.known_subtitle".into(),
+            "Every user this server has seen in its rooms, local or remote".into(),
+        );
         m.insert("users.origin_all".into(), "All users".into());
         m.insert("users.origin_local".into(), "Local".into());
         m.insert("users.origin_remote".into(), "Remote".into());
         m.insert("users.server".into(), "Server".into());
-        m.insert("users.filter_by_server".into(), "Show only users from this server".into());
+        m.insert(
+            "users.filter_by_server".into(),
+            "Show only users from this server".into(),
+        );
         m.insert("users.all_rooms".into(), "All rooms".into());
-        m.insert("users.last_membership_change".into(), "Last membership change".into());
+        m.insert(
+            "users.last_membership_change".into(),
+            "Last membership change".into(),
+        );
         m.insert("users.banned".into(), "banned".into());
-        m.insert("users.known_empty".into(), "No users match these filters".into());
+        m.insert(
+            "users.known_empty".into(),
+            "No users match these filters".into(),
+        );
         m.insert("users.open_account".into(), "Open local account".into());
         m.insert("users.remote_note".into(), "This account lives on another homeserver and can only be managed there. Here you can only ban it from individual rooms on this server.".into());
         m.insert("users.seen_in_rooms".into(), "Rooms".into());
-        m.insert("users.seen_in_rooms_desc".into(), "Rooms where this server has recorded a membership for the user, most recent first".into());
+        m.insert(
+            "users.seen_in_rooms_desc".into(),
+            "Rooms where this server has recorded a membership for the user, most recent first"
+                .into(),
+        );
         m.insert("users.room".into(), "Room".into());
         m.insert("users.membership".into(), "Membership".into());
         m.insert("users.membership_sender".into(), "Changed by".into());
@@ -1013,39 +1027,87 @@ impl I18n {
         m.insert("server_notices.event_id".into(), "Event ID".into());
 
         // Scheduled / recurring commands
-        m.insert("commands.scheduled_title".into(), "Scheduled Commands".into());
-        m.insert("commands.recurring_title".into(), "Recurring Commands".into());
+        m.insert(
+            "commands.scheduled_title".into(),
+            "Scheduled Commands".into(),
+        );
+        m.insert(
+            "commands.recurring_title".into(),
+            "Recurring Commands".into(),
+        );
         m.insert("commands.create".into(), "Create".into());
         m.insert("commands.edit".into(), "Edit".into());
         m.insert("commands.delete".into(), "Delete".into());
         m.insert("commands.cancel".into(), "Cancel".into());
         m.insert("commands.save".into(), "Save".into());
         m.insert("commands.retry".into(), "Retry".into());
-        m.insert("commands.none_scheduled".into(), "No scheduled commands.".into());
-        m.insert("commands.none_recurring".into(), "No recurring commands.".into());
-        m.insert("commands.load_failed".into(), "Failed to load commands.".into());
+        m.insert(
+            "commands.none_scheduled".into(),
+            "No scheduled commands.".into(),
+        );
+        m.insert(
+            "commands.none_recurring".into(),
+            "No recurring commands.".into(),
+        );
+        m.insert(
+            "commands.load_failed".into(),
+            "Failed to load commands.".into(),
+        );
         m.insert("commands.col_command".into(), "Command".into());
         m.insert("commands.col_arguments".into(), "Arguments".into());
         m.insert("commands.col_scheduled_at".into(), "Scheduled At".into());
         m.insert("commands.col_time".into(), "Time (UTC)".into());
         m.insert("commands.col_actions".into(), "Actions".into());
         m.insert("commands.field_command".into(), "Command".into());
-        m.insert("commands.field_command_placeholder".into(), "Command name".into());
-        m.insert("commands.field_arguments".into(), "Arguments (optional)".into());
-        m.insert("commands.field_arguments_placeholder".into(), "Arguments".into());
-        m.insert("commands.scheduled_at_label".into(), "Scheduled At (ISO 8601)".into());
-        m.insert("commands.scheduled_at_placeholder".into(), "2025-01-15T10:00:00Z".into());
-        m.insert("commands.time_label".into(), "Time (UTC, e.g. 03:00)".into());
+        m.insert(
+            "commands.field_command_placeholder".into(),
+            "Command name".into(),
+        );
+        m.insert(
+            "commands.field_arguments".into(),
+            "Arguments (optional)".into(),
+        );
+        m.insert(
+            "commands.field_arguments_placeholder".into(),
+            "Arguments".into(),
+        );
+        m.insert(
+            "commands.scheduled_at_label".into(),
+            "Scheduled At (ISO 8601)".into(),
+        );
+        m.insert(
+            "commands.scheduled_at_placeholder".into(),
+            "2025-01-15T10:00:00Z".into(),
+        );
+        m.insert(
+            "commands.time_label".into(),
+            "Time (UTC, e.g. 03:00)".into(),
+        );
         m.insert("commands.time_placeholder".into(), "HH:MM".into());
-        m.insert("commands.dialog_edit_scheduled".into(), "Edit Scheduled Command".into());
+        m.insert(
+            "commands.dialog_edit_scheduled".into(),
+            "Edit Scheduled Command".into(),
+        );
         m.insert("commands.dialog_schedule".into(), "Schedule Command".into());
-        m.insert("commands.dialog_edit_recurring".into(), "Edit Recurring Command".into());
-        m.insert("commands.dialog_create_recurring".into(), "Create Recurring Command".into());
+        m.insert(
+            "commands.dialog_edit_recurring".into(),
+            "Edit Recurring Command".into(),
+        );
+        m.insert(
+            "commands.dialog_create_recurring".into(),
+            "Create Recurring Command".into(),
+        );
         m.insert("commands.submit_schedule".into(), "Schedule".into());
         m.insert("commands.submit_create".into(), "Create".into());
         m.insert("commands.submit_save".into(), "Save".into());
-        m.insert("commands.delete_scheduled_title".into(), "Delete Scheduled Command".into());
-        m.insert("commands.delete_recurring_title".into(), "Delete Recurring Command".into());
+        m.insert(
+            "commands.delete_scheduled_title".into(),
+            "Delete Scheduled Command".into(),
+        );
+        m.insert(
+            "commands.delete_recurring_title".into(),
+            "Delete Recurring Command".into(),
+        );
         m.insert(
             "commands.delete_scheduled_desc".into(),
             "Are you sure you want to delete this scheduled command?".into(),
@@ -1063,10 +1125,19 @@ impl I18n {
             "Command and time are required".into(),
         );
         m.insert("commands.toast_deleted".into(), "Deleted".into());
-        m.insert("commands.toast_scheduled".into(), "Command scheduled".into());
+        m.insert(
+            "commands.toast_scheduled".into(),
+            "Command scheduled".into(),
+        );
         m.insert("commands.toast_updated".into(), "Command updated".into());
-        m.insert("commands.toast_recurring_created".into(), "Recurring command created".into());
-        m.insert("commands.toast_recurring_updated".into(), "Recurring command updated".into());
+        m.insert(
+            "commands.toast_recurring_created".into(),
+            "Recurring command created".into(),
+        );
+        m.insert(
+            "commands.toast_recurring_updated".into(),
+            "Recurring command updated".into(),
+        );
 
         // Not Found
         m.insert("not_found.title".into(), "404".into());
@@ -1378,21 +1449,13 @@ impl I18n {
             "users.origin_all".into(),
             "\u{5168}\u{90e8}\u{7528}\u{6237}".into(),
         );
-        m.insert(
-            "users.origin_local".into(),
-            "\u{672c}\u{5730}".into(),
-        );
-        m.insert(
-            "users.origin_remote".into(),
-            "\u{8fdc}\u{7a0b}".into(),
-        );
-        m.insert(
-            "users.server".into(),
-            "\u{670d}\u{52a1}\u{5668}".into(),
-        );
+        m.insert("users.origin_local".into(), "\u{672c}\u{5730}".into());
+        m.insert("users.origin_remote".into(), "\u{8fdc}\u{7a0b}".into());
+        m.insert("users.server".into(), "\u{670d}\u{52a1}\u{5668}".into());
         m.insert(
             "users.filter_by_server".into(),
-            "\u{53ea}\u{663e}\u{793a}\u{8be5}\u{670d}\u{52a1}\u{5668}\u{7684}\u{7528}\u{6237}".into(),
+            "\u{53ea}\u{663e}\u{793a}\u{8be5}\u{670d}\u{52a1}\u{5668}\u{7684}\u{7528}\u{6237}"
+                .into(),
         );
         m.insert(
             "users.all_rooms".into(),
@@ -1402,10 +1465,7 @@ impl I18n {
             "users.last_membership_change".into(),
             "\u{6700}\u{8fd1}\u{6210}\u{5458}\u{53d8}\u{66f4}".into(),
         );
-        m.insert(
-            "users.banned".into(),
-            "\u{5df2}\u{5c01}\u{7981}".into(),
-        );
+        m.insert("users.banned".into(), "\u{5df2}\u{5c01}\u{7981}".into());
         m.insert(
             "users.known_empty".into(),
             "\u{6ca1}\u{6709}\u{7b26}\u{5408}\u{7b5b}\u{9009}\u{6761}\u{4ef6}\u{7684}\u{7528}\u{6237}".into(),
@@ -1418,18 +1478,12 @@ impl I18n {
             "users.remote_note".into(),
             "\u{8be5}\u{8d26}\u{53f7}\u{5c5e}\u{4e8e}\u{5176}\u{4ed6}\u{670d}\u{52a1}\u{5668}\u{ff0c}\u{53ea}\u{80fd}\u{7531}\u{90a3}\u{53f0}\u{670d}\u{52a1}\u{5668}\u{7ba1}\u{7406}\u{3002}\u{5728}\u{8fd9}\u{91cc}\u{53ea}\u{80fd}\u{5728}\u{672c}\u{670d}\u{52a1}\u{5668}\u{7684}\u{5404}\u{4e2a}\u{623f}\u{95f4}\u{4e2d}\u{5c01}\u{7981}\u{8be5}\u{7528}\u{6237}\u{3002}".into(),
         );
-        m.insert(
-            "users.seen_in_rooms".into(),
-            "\u{623f}\u{95f4}".into(),
-        );
+        m.insert("users.seen_in_rooms".into(), "\u{623f}\u{95f4}".into());
         m.insert(
             "users.seen_in_rooms_desc".into(),
             "\u{672c}\u{670d}\u{52a1}\u{5668}\u{8bb0}\u{5f55}\u{8fc7}\u{8be5}\u{7528}\u{6237}\u{6210}\u{5458}\u{5173}\u{7cfb}\u{7684}\u{623f}\u{95f4}\u{ff0c}\u{6309}\u{6700}\u{8fd1}\u{53d8}\u{66f4}\u{6392}\u{5e8f}".into(),
         );
-        m.insert(
-            "users.room".into(),
-            "\u{623f}\u{95f4}".into(),
-        );
+        m.insert("users.room".into(), "\u{623f}\u{95f4}".into());
         m.insert(
             "users.membership".into(),
             "\u{6210}\u{5458}\u{72b6}\u{6001}".into(),
@@ -2585,8 +2639,14 @@ impl I18n {
         );
 
         // Scheduled / recurring commands
-        m.insert("commands.scheduled_title".into(), "\u{8ba1}\u{5212}\u{547d}\u{4ee4}".into());
-        m.insert("commands.recurring_title".into(), "\u{5468}\u{671f}\u{547d}\u{4ee4}".into());
+        m.insert(
+            "commands.scheduled_title".into(),
+            "\u{8ba1}\u{5212}\u{547d}\u{4ee4}".into(),
+        );
+        m.insert(
+            "commands.recurring_title".into(),
+            "\u{5468}\u{671f}\u{547d}\u{4ee4}".into(),
+        );
         m.insert("commands.create".into(), "\u{521b}\u{5efa}".into());
         m.insert("commands.edit".into(), "\u{7f16}\u{8f91}".into());
         m.insert("commands.delete".into(), "\u{5220}\u{9664}".into());
@@ -2607,7 +2667,10 @@ impl I18n {
         );
         m.insert("commands.col_command".into(), "\u{547d}\u{4ee4}".into());
         m.insert("commands.col_arguments".into(), "\u{53c2}\u{6570}".into());
-        m.insert("commands.col_scheduled_at".into(), "\u{8ba1}\u{5212}\u{65f6}\u{95f4}".into());
+        m.insert(
+            "commands.col_scheduled_at".into(),
+            "\u{8ba1}\u{5212}\u{65f6}\u{95f4}".into(),
+        );
         m.insert("commands.col_time".into(), "\u{65f6}\u{95f4}（UTC）".into());
         m.insert("commands.col_actions".into(), "\u{64cd}\u{4f5c}".into());
         m.insert("commands.field_command".into(), "\u{547d}\u{4ee4}".into());
@@ -2619,12 +2682,18 @@ impl I18n {
             "commands.field_arguments".into(),
             "\u{53c2}\u{6570}（\u{53ef}\u{9009}）".into(),
         );
-        m.insert("commands.field_arguments_placeholder".into(), "\u{53c2}\u{6570}".into());
+        m.insert(
+            "commands.field_arguments_placeholder".into(),
+            "\u{53c2}\u{6570}".into(),
+        );
         m.insert(
             "commands.scheduled_at_label".into(),
             "\u{8ba1}\u{5212}\u{65f6}\u{95f4}（ISO 8601）".into(),
         );
-        m.insert("commands.scheduled_at_placeholder".into(), "2025-01-15T10:00:00Z".into());
+        m.insert(
+            "commands.scheduled_at_placeholder".into(),
+            "2025-01-15T10:00:00Z".into(),
+        );
         m.insert(
             "commands.time_label".into(),
             "\u{65f6}\u{95f4}（UTC，\u{4f8b}\u{5982} 03:00）".into(),
@@ -2634,7 +2703,10 @@ impl I18n {
             "commands.dialog_edit_scheduled".into(),
             "\u{7f16}\u{8f91}\u{8ba1}\u{5212}\u{547d}\u{4ee4}".into(),
         );
-        m.insert("commands.dialog_schedule".into(), "\u{8ba1}\u{5212}\u{547d}\u{4ee4}".into());
+        m.insert(
+            "commands.dialog_schedule".into(),
+            "\u{8ba1}\u{5212}\u{547d}\u{4ee4}".into(),
+        );
         m.insert(
             "commands.dialog_edit_recurring".into(),
             "\u{7f16}\u{8f91}\u{5468}\u{671f}\u{547d}\u{4ee4}".into(),
@@ -2670,7 +2742,10 @@ impl I18n {
             "commands.validation_recurring".into(),
             "\u{547d}\u{4ee4}\u{548c}\u{65f6}\u{95f4}\u{4e3a}\u{5fc5}\u{586b}\u{9879}".into(),
         );
-        m.insert("commands.toast_deleted".into(), "\u{5df2}\u{5220}\u{9664}".into());
+        m.insert(
+            "commands.toast_deleted".into(),
+            "\u{5df2}\u{5220}\u{9664}".into(),
+        );
         m.insert(
             "commands.toast_scheduled".into(),
             "\u{547d}\u{4ee4}\u{5df2}\u{8ba1}\u{5212}".into(),
@@ -2726,27 +2801,50 @@ thread_local! {
     static I18N: I18n = I18n::new();
 }
 
-static CURRENT_LANG: GlobalSignal<Language> = GlobalSignal::new(|| {
+pub fn t(key: &str) -> String {
+    I18N.with(|i| i.t(key, current_language()))
+}
+pub fn t_with(key: &str, params: &[(&str, &str)]) -> String {
+    I18N.with(|i| i.t_with(key, current_language(), params))
+}
+pub fn set_language(lang: Language) {
+    crate::utils::storage::set_item("language", lang.code());
+}
+pub fn current_language() -> Language {
     crate::utils::storage::get_item("language")
         .and_then(|s| Language::from_code(&s))
         .unwrap_or(Language::En)
-});
-
-pub fn t(key: &str) -> String {
-    let lang = *CURRENT_LANG.read();
-    I18N.with(|i18n| i18n.t(key, lang))
 }
 
-pub fn t_with(key: &str, params: &[(&str, &str)]) -> String {
-    let lang = *CURRENT_LANG.read();
-    I18N.with(|i18n| i18n.t_with(key, lang, params))
+/// Translate UI copy, without touching business values or rebuilding controls.
+pub fn translate_text(value: &str, language: Language) -> String {
+    if language == Language::En {
+        return value.to_owned();
+    }
+    I18N.with(|i| {
+        let en = i.translations.get(&Language::En).unwrap();
+        let zh = i.translations.get(&Language::ZhCn).unwrap();
+        if let Some((key, _)) = en.iter().find(|(_, v)| v.eq_ignore_ascii_case(value)) {
+            return zh.get(key).cloned().unwrap_or_else(|| value.into());
+        }
+        EXTRA.with(|extra| {
+            if let Some(text) = extra.get(value) {
+                return text.clone();
+            }
+            if value.contains(" · ") {
+                return value
+                    .split(" · ")
+                    .map(|part| extra.get(part).cloned().unwrap_or_else(|| part.into()))
+                    .collect::<Vec<_>>()
+                    .join(" · ");
+            }
+            if let Some((caption, data)) = value.split_once(": ") {
+                if let Some(text) = extra.get(caption) {
+                    return format!("{text}: {data}");
+                }
+            }
+            value.into()
+        })
+    })
 }
-
-pub fn set_language(lang: Language) {
-    crate::utils::storage::set_item("language", lang.code());
-    *CURRENT_LANG.write() = lang;
-}
-
-pub fn current_language() -> Language {
-    *CURRENT_LANG.read()
-}
+thread_local! {static EXTRA:HashMap<String,String>=serde_json::from_str(include_str!("../../locales/zh-CN.json")).expect("valid application translations");}

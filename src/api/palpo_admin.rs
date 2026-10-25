@@ -88,8 +88,13 @@ pub async fn update_scheduled_command(
 }
 
 pub async fn delete_scheduled_command(palpo_admin_url: &str, id: &str) -> Result<(), HttpError> {
-    let _: serde_json::Value =
-        palpo_admin_fetch(palpo_admin_url, &format!("/schedules/{id}"), "DELETE", None).await?;
+    let _: serde_json::Value = palpo_admin_fetch(
+        palpo_admin_url,
+        &format!("/schedules/{}", urlencoding::encode(id)),
+        "DELETE",
+        None,
+    )
+    .await?;
     Ok(())
 }
 
@@ -118,7 +123,7 @@ pub async fn update_recurring_command(
 pub async fn delete_recurring_command(palpo_admin_url: &str, id: &str) -> Result<(), HttpError> {
     let _: serde_json::Value = palpo_admin_fetch(
         palpo_admin_url,
-        &format!("/recurrings/{id}"),
+        &format!("/recurrings/{}", urlencoding::encode(id)),
         "DELETE",
         None,
     )

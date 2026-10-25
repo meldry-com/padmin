@@ -45,7 +45,7 @@ pub struct PasionUser {
 }
 
 /// One page of a cursor-paginated Pasion list.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
 pub struct PasionPage<T> {
     pub data: Vec<T>,
     pub count: Option<u64>,
@@ -119,13 +119,13 @@ pub struct PasionOAuth2Session {
 pub struct PasionPersonalSession {
     #[serde(default)]
     pub id: String,
-    #[serde(default)]
+    #[serde(default, rename = "actor_user_id")]
     pub user_id: Option<String>,
-    #[serde(default)]
+    #[serde(default, rename = "owner_client_id")]
     pub client_id: Option<String>,
     #[serde(default)]
     pub scope: String,
-    #[serde(default)]
+    #[serde(default, rename = "human_name")]
     pub name: Option<String>,
     #[serde(default)]
     pub created_at: String,
@@ -133,7 +133,7 @@ pub struct PasionPersonalSession {
     pub last_active_at: Option<String>,
     #[serde(default)]
     pub revoked_at: Option<String>,
-    #[serde(default)]
+    #[serde(default, rename = "access_token")]
     pub token: Option<String>, // only returned on create/regenerate
 }
 

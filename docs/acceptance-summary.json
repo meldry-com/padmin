@@ -1,0 +1,403 @@
+{
+  "completed_at": "2026-10-23T12:24:38.508231+00:00",
+  "build": {
+    "source_sha256": "57cb486530aa9aecdbab8fffb2ebe599775fee897a83a93347560abbd76b3e8c",
+    "source_files": [
+      "bootstrap.js",
+      "Cargo.lock",
+      "Cargo.toml",
+      "index.html",
+      "locales/domains-zh-CN.json",
+      "locales/operations-zh-CN.json",
+      "locales/zh-CN.json",
+      "pasion-config.js",
+      "src/api/appservices.rs",
+      "src/api/auth.rs",
+      "src/api/client.rs",
+      "src/api/destinations.rs",
+      "src/api/diagnostics.rs",
+      "src/api/known_users.rs",
+      "src/api/media.rs",
+      "src/api/mod.rs",
+      "src/api/palpo_admin.rs",
+      "src/api/pasion.rs",
+      "src/api/registration_tokens.rs",
+      "src/api/reports.rs",
+      "src/api/rooms.rs",
+      "src/api/server_info.rs",
+      "src/api/user_extras.rs",
+      "src/api/users.rs",
+      "src/lib.rs",
+      "src/router.rs",
+      "src/style.css",
+      "src/types/api.rs",
+      "src/types/appservices.rs",
+      "src/types/mod.rs",
+      "src/types/pasion.rs",
+      "src/ui/context.rs",
+      "src/ui/mod.rs",
+      "src/ui/pages/appservices.rs",
+      "src/ui/pages/dashboard.rs",
+      "src/ui/pages/mod.rs",
+      "src/ui/pages/operations.rs",
+      "src/ui/pages/pasion/account.rs",
+      "src/ui/pages/pasion/provider.rs",
+      "src/ui/pages/pasion.rs",
+      "src/ui/pages/rooms.rs",
+      "src/ui/pages/users.rs",
+      "src/ui/widgets.rs",
+      "src/utils/cache.rs",
+      "src/utils/config.rs",
+      "src/utils/date.rs",
+      "src/utils/error.rs",
+      "src/utils/i18n.rs",
+      "src/utils/instance_config.rs",
+      "src/utils/mod.rs",
+      "src/utils/mxid.rs",
+      "src/utils/password.rs",
+      "src/utils/perf.rs",
+      "src/utils/storage.rs",
+      "src/web.rs"
+    ],
+    "wasm_sha256": "258938a5bb72b5f13a344fdfa92c1df53303cfddaf5217d0dacf9752c3e5f3f1",
+    "profile": "release"
+  },
+  "rust": {
+    "check_native_all_targets": 0,
+    "check_wasm32": 0,
+    "fmt_check": 0,
+    "unit_tests_passed": 25,
+    "unit_tests_failed": 0,
+    "dependency_audit": "D:/BuildCache/padmin-glory/dependency-audit.txt",
+    "old_framework_dependency_matches": 0
+  },
+  "acceptance": {
+    "wasm_sha256": "258938a5bb72b5f13a344fdfa92c1df53303cfddaf5217d0dacf9752c3e5f3f1",
+    "source_sha256": "57cb486530aa9aecdbab8fffb2ebe599775fee897a83a93347560abbd76b3e8c",
+    "real": {
+      "base": "http://127.0.0.1:28789",
+      "wasm_sha256": "258938a5bb72b5f13a344fdfa92c1df53303cfddaf5217d0dacf9752c3e5f3f1",
+      "source_sha256": "57cb486530aa9aecdbab8fffb2ebe599775fee897a83a93347560abbd76b3e8c",
+      "suites": [
+        {
+          "suite": "real-backend-acceptance.cjs",
+          "exit_code": 0,
+          "evidence": "D:/BuildCache/padmin-glory/real-backend-results.json",
+          "started_at": "2026-10-23T12:16:39.570Z",
+          "case_count": 12,
+          "cases": [
+            "oidc-flow: Pasion discovery issuer/endpoints/algorithms",
+            "oidc-flow: real nonempty JWKS",
+            "oidc-flow: actual login/registration feature flags",
+            "pasion-registration: missing contact rejected by real service",
+            "pasion-registration: invalid email rejected by real service",
+            "pasion-registration: weak password rejected by real service",
+            "oidc-flow: actual Palpo metadata carries real Pasion issuer/authorization/token/JWKS URLs",
+            "login: delegated Matrix advertises usable SSO and forbids local password exchange (application-service/token flows remain valid)",
+            "oidc-flow: current backend rejects explicit-port HTTP loopback dynamic clients",
+            "oidc-flow: valid HTTPS dynamic client registration succeeds with actual client ID/redirect",
+            "pasion-registration: actual email registration creates pending verification and status identity",
+            "pasion-registration: actual existing email is rejected"
+          ]
+        },
+        {
+          "suite": "browser-real-matrix.cjs",
+          "exit_code": 0,
+          "evidence": "D:/BuildCache/padmin-glory/browser-real-matrix-results.json",
+          "started_at": "2026-10-23T12:16:39.859Z",
+          "case_count": 16,
+          "cases": [
+            "Actual PKCE SHA256 verifier/challenge, password login, consent, token exchange, whoami and dual admin verdict",
+            "Real user panel: Load account data",
+            "Real user panel: Load rate limits",
+            "Real user panel: Load / refresh joined rooms",
+            "Real user panel: Load / refresh devices",
+            "Real user panel: Load / refresh sessions",
+            "Unsupported experimental features returns actual typed404 rather than success",
+            "Actual user search, encoded identity detail and profile update",
+            "Actual user creation, rate-limit set/reset, identifier add/remove, Pasion-owned deactivate/reactivate and fresh state",
+            "Two independently created users are each found through actual server-backed list searches",
+            "Actual create-room and name/topic state writes followed by fresh detail",
+            "Actual room directory/join-rule/history visibility writes",
+            "Actual alias add/remove",
+            "Actual invite/kick/ban/unban and block/unblock changes",
+            "Actual known-user membership detail",
+            "Actual logout clears private application session"
+          ]
+        },
+        {
+          "suite": "browser-real-domains.cjs",
+          "exit_code": 0,
+          "evidence": "D:/BuildCache/padmin-glory/real-pasion-domain-results.json",
+          "started_at": "2026-10-23T12:16:57.519Z",
+          "case_count": 10,
+          "cases": [
+            "Actual PKCE SHA256 verifier/challenge, password login, consent, token exchange, whoami and dual admin verdict",
+            "Real Pasion create username returns stable resource ID and opens loaded account",
+            "Real account profile/admin grant/revoke/lock/unlock persists through server reloads",
+            "Real email add/remove, set-password and session termination risk action",
+            "Real upstream provider create/changed-only update and disable",
+            "Real upstream account identity binding and unbinding",
+            "Real personal token create/regenerate/revoke and dismiss",
+            "Real acceptance provider deleted after unlinking",
+            "Real deactivation/reactivation keeps account identity",
+            "Real audit/OAuth/connector/channel/template reads and isolated template version publication"
+          ]
+        },
+        {
+          "suite": "browser-real-operations.cjs",
+          "exit_code": 0,
+          "evidence": "D:/BuildCache/padmin-glory/real-operation-results.json",
+          "started_at": "2026-10-23T12:17:10.888Z",
+          "case_count": 11,
+          "cases": [
+            "Actual PKCE SHA256 verifier/challenge, password login, consent, token exchange, whoami and dual admin verdict",
+            "Actual Palpo registration token create/filter/delete with persisted server response",
+            "Application exact exclusive namespace precheck against actual Palpo registrations rejects the second claim; original remains and no second POST is sent",
+            "Actual Palpo appservice import/create/get/URL CAS update/immutable credentials/tokens/disable/enable/delete",
+            "Actual Palpo media statistics, bounded no-match local cleanup and remote cache purge with write-after-read refresh",
+            "Actual Matrix text upload then Glory individual media delete; subsequent server metadata returns 404",
+            "Actual Palpo quarantine/protect unsupported responses are exposed as failures, with no success state",
+            "Actual Matrix room/message/report creation followed by Palpo report detail, redact event, block room, all three review statuses, delete and list refresh",
+            "Actual Palpo federation collection; fixture contains no existing federation target",
+            "Actual Palpo server notice accepted and returned a Matrix event ID",
+            "Actual Palpo all-user notice broadcast with bounded concurrency, result counts, persisted history and explicit local-history clear"
+          ]
+        },
+        {
+          "suite": "browser-real-stack.cjs",
+          "exit_code": 0,
+          "evidence": "D:/BuildCache/padmin-glory/browser-real-stack-results.json",
+          "started_at": "2026-10-23T12:17:26.717Z",
+          "case_count": 7,
+          "cases": [
+            "Original pasion-registration browser: actual account form reaches email verification",
+            "Actual email code verification, display name, registration finish and browser account session",
+            "Actual newly registered account browser logout and password relogin",
+            "Two real registered accounts obtain OAuth device tokens through session + consent",
+            "Two real Matrix clients create/invite/join/send/sync messages and report the real event",
+            "Padmin real room list observes the room created through actual user messaging",
+            "Actual report status write survives browser reload and fresh OAuth login"
+          ]
+        },
+        {
+          "suite": "browser-real-source.cjs",
+          "exit_code": 0,
+          "evidence": "D:/BuildCache/padmin-glory/real-source-results.json",
+          "started_at": "2026-10-23T12:17:39.295Z",
+          "case_count": 3,
+          "cases": [
+            "Actual PKCE SHA256 verifier/challenge, password login, consent, token exchange, whoami and dual admin verdict",
+            "4: actual active OAuth client/session fields, user filter retains matching records, clear-filter refresh",
+            "12: actual connector health collection and explicit second successful Refresh preserve the live page"
+          ]
+        }
+      ]
+    },
+    "fixtures": {
+      "base": "http://127.0.0.1:8789",
+      "wasm_sha256": "258938a5bb72b5f13a344fdfa92c1df53303cfddaf5217d0dacf9752c3e5f3f1",
+      "source_sha256": "57cb486530aa9aecdbab8fffb2ebe599775fee897a83a93347560abbd76b3e8c",
+      "suites": [
+        {
+          "suite": "browser-fixture.cjs",
+          "exit_code": 0,
+          "evidence": "D:/BuildCache/padmin-glory/browser-results.json",
+          "started_at": "2026-10-23T12:20:53.962Z",
+          "case_count": 8,
+          "cases": [
+            "Unauthenticated route blocked",
+            "PKCE redirect, one-shot state, token exchange, whoami and admin probes",
+            "Token absent from persistent storage",
+            "Users route mounted",
+            "Browser back restores route",
+            "21 additional dedicated route mounts without browser exceptions (responses are fixtures, not backend acceptance)",
+            "Callback replay rejected before exchange",
+            "Server 403 cannot grant administrator access"
+          ]
+        },
+        {
+          "suite": "browser-auth.cjs",
+          "exit_code": 0,
+          "evidence": "D:/BuildCache/padmin-glory/browser-auth-results.json",
+          "started_at": "2026-10-23T12:21:02.066Z",
+          "case_count": 12,
+          "cases": [
+            "Configuration failure blocks login and supports explicit successful retry",
+            "Failed whoami never publishes an administrator session",
+            "Mismatched state consumes one-shot verifier and rejects token exchange/replay",
+            "Slow profile and concurrent administrator probes cannot remount/replay OAuth callback",
+            "Concurrent 401s coalesce into one refresh and retry using the rotated access token",
+            "A later forbidden response rechecks server permission and removes protected UI",
+            "Rejected refresh retires the session and removes the management page",
+            "Logout revokes publication immediately; a late refresh cannot restore authentication",
+            "A failed administrator probe grants nothing; explicit retry reuses the live session without replaying OAuth",
+            "The actual periodic heartbeat detects server-side revocation without a foreground request",
+            "Unavailable persistent storage does not crash the app or prevent runtime-config OAuth",
+            "An actual storage event from another tab retires this app session without sharing tokens"
+          ]
+        },
+        {
+          "suite": "browser-shell.cjs",
+          "exit_code": 0,
+          "evidence": "D:/BuildCache/padmin-glory/browser-shell-results.json",
+          "started_at": "2026-10-23T12:22:04.581Z",
+          "case_count": 6,
+          "cases": [
+            "Language bindings update existing controls, preserving identity, value and UTF-16 selection",
+            "Theme, contrast, keyboard chords and editing-target exclusion",
+            "Repeated route disposal restores bounded live task/handler/Owner/node counts",
+            "Notification preferences act immediately; application history stays at 50 entries",
+            "Mobile drawer closes after navigation/backdrop; modified links open a separate tab without changing the current route",
+            "Narrow layout has no page overflow; unmount removes state and remount requires real authentication"
+          ]
+        },
+        {
+          "suite": "browser-source-behaviors.cjs",
+          "exit_code": 0,
+          "evidence": "D:/BuildCache/padmin-glory/source-behaviors-results.json",
+          "started_at": "2026-10-23T12:22:29.613Z",
+          "case_count": 8,
+          "cases": [
+            "29: login contains application heading and enabled Sign in control",
+            "23,24,25,26: Dashboard greeting identity, non-loading server version, supported Matrix versions and actual API counts",
+            "0,1,58,59: every supported sidebar link has branding, href, live route navigation, active class and page heading",
+            "71,72,73,75: Create user navigation, complete form fields, empty validation and Cancel returns list",
+            "35,36: unknown route shows explicit404 with dashboard recovery preserving live session",
+            "61,62: mobile navigation drawer opens, closes on navigation and backdrop click",
+            "22,60: logout navigates to login and leaves no stored token",
+            "66: stored dark/light preferences apply to new login application roots"
+          ]
+        },
+        {
+          "suite": "browser-domains.cjs",
+          "exit_code": 0,
+          "evidence": "D:/BuildCache/padmin-glory/browser-domains-results.json",
+          "started_at": "2026-10-23T12:22:36.106Z",
+          "case_count": 10,
+          "cases": [
+            "Source dashboard enabled unstable features and supported versions",
+            "Users: finite page size, encoded search, next page, filter/page/column restore",
+            "Rooms: search and page survive navigation",
+            "Room: name state event payload and block action refresh summary",
+            "Known users: remote read-only, filter/page restore, bounded relationship pagination",
+            "Pasion: accepted cursor/filter/history restore and failed-page retry",
+            "Pasion account: profile PATCH payload, cancellation sends no mutation, lock updates live state and reloads associations",
+            "Provider: server detail loads all editable values; PATCH sends only changed field",
+            "Personal sessions: create protocol, one-time token display/dismiss, revoke protocol",
+            "Source audit operation filter selects matching loaded records"
+          ]
+        },
+        {
+          "suite": "browser-domains-writes.cjs",
+          "exit_code": 0,
+          "evidence": "D:/BuildCache/padmin-glory/browser-domains-writes-results.json",
+          "started_at": "2026-10-23T12:22:44.990Z",
+          "case_count": 10,
+          "cases": [
+            "User profile, password logout_devices, arbitrary device ID encoded and removed with requery",
+            "Source read-only whois devices/sessions/connections and account-data GET rendering",
+            "User threepid, validated rate overrides/default DELETE, feature toggle and notice bodies",
+            "CSV rejects invalid boolean before writes; actual browser download has expected header and data",
+            "Pasion emails add/delete, browser/OAuth finish, password and risk action payloads",
+            "Upstream identity create/delete protocol",
+            "Template publication payload with locale/channel/subject/body",
+            "CSV import reports real partial fixture failure with one created and one failed; no all-success",
+            "Create user debounce availability, invalid email blocks writes, correct profile/phone/email payload and success navigation",
+            "Create user Cancel returns to Users without mutation"
+          ]
+        },
+        {
+          "suite": "browser-rooms-writes.cjs",
+          "exit_code": 0,
+          "evidence": "D:/BuildCache/padmin-glory/browser-rooms-writes-results.json",
+          "started_at": "2026-10-23T12:22:55.430Z",
+          "case_count": 5,
+          "cases": [
+            "Source room-type chips, state-events sort, selected-page bulk block partial failure and bulk delete",
+            "Room creation visibility/preset, topic, directory, validated join/history rules",
+            "Alias create/canonical/remove method/path/body and confirmation",
+            "Invite/kick/ban/unban/room-admin requests and membership refresh after every action",
+            "Encoded redaction ID, block/unblock, zero-purge validation, purge body and confirmed deletion/navigation"
+          ]
+        },
+        {
+          "suite": "browser-operations.cjs",
+          "exit_code": 0,
+          "evidence": "D:/BuildCache/padmin-glory/operations-results.json",
+          "started_at": "2026-10-23T12:23:02.776Z",
+          "case_count": 9,
+          "cases": [
+            "Media filter/sort/page restore",
+            "All five media writes; cancel, invalid input, error, fresh statistics",
+            "Report details/all statuses/redact+ban+block/linked identities/delete/cancel/list restoration",
+            "Encoded destination detail/reset/refreshed state/back",
+            "Token active/exhausted/expired/search/validation/specified+generated/delete",
+            "Template search/category/secure token/file import/register/URL CAS update+409 recovery/exact namespace precheck+failed-read rejection/immutable credentials/flags/toggle/download/clipboard rejection/delete/invalid YAML",
+            "Sidecar status/command confirmation/typed args/one-time+recurring create/edit/delete",
+            "Notice validation/send/event id/broadcast partial failure+cancel/history persistence+clear/server notifications clear/preferences persistence",
+            "Discovery/login/OIDC/site config/endpoint probes retain HTTP 500 error"
+          ]
+        }
+      ]
+    }
+  },
+  "deployment": {
+    "wasm_sha256": "258938a5bb72b5f13a344fdfa92c1df53303cfddaf5217d0dacf9752c3e5f3f1",
+    "source_sha256": "57cb486530aa9aecdbab8fffb2ebe599775fee897a83a93347560abbd76b3e8c",
+    "suites": [
+      {
+        "suite": "native-nginx-acceptance.cjs",
+        "exit_code": 0,
+        "evidence": "D:\\BuildCache\\padmin-glory\\native-nginx-results.json"
+      },
+      {
+        "suite": "native-nginx-acceptance.cjs --same-origin",
+        "exit_code": 0,
+        "evidence": "D:\\BuildCache\\padmin-glory\\same-origin-nginx-results.json"
+      },
+      {
+        "suite": "nginx-acceptance.cjs",
+        "exit_code": 0,
+        "evidence": "D:\\BuildCache\\padmin-glory\\nginx-acceptance-results.json"
+      },
+      {
+        "suite": "config-serving-acceptance.py",
+        "exit_code": 0,
+        "evidence": "D:\\BuildCache\\padmin-glory\\clean-serving-results.json"
+      }
+    ]
+  },
+  "source_baseline": {
+    "root": "D:/Works/meldry/padmin",
+    "head": "55eb50ec07f4fd867ad8255a7f6e279061eaea95",
+    "rust_file_hashes_verified_unchanged": 98,
+    "worktree": [
+      "?? rustfmt.toml",
+      "?? typos.toml"
+    ]
+  },
+  "original_e2e": {
+    "tests": 77,
+    "assertion_lines": 307,
+    "status_counts": {
+      "executed-current-backend-contract": 2,
+      "executed-semantic-equivalent": 74,
+      "obsolete-source-baseline-assertion": 1
+    },
+    "pending": 0
+  },
+  "reference_cleanup": {
+    "manifest": "docs/reference-removal.json",
+    "deleted_files": 69,
+    "directory_absent": true,
+    "production_source_build_tests_old_framework_matches": 0
+  },
+  "acceptance_limits": [
+    "No real sidecar service or remote federation target in the isolated stack; complete stateful protocol fixture coverage retained",
+    "Palpo absent experimental-features and media quarantine/protect expose real failure; keep_profiles request blocked as unsupported",
+    "Appservice immutable fields use explicit delete/register; URL has real CAS; namespace precheck is non-atomic and exact-pattern only",
+    "No Docker image build/publication because builder storage is C; cached runtime and D-native nginx acceptance are separate",
+    "Synthetic composition/DOM AX evidence is not OS IME/screen-reader acceptance"
+  ]
+}

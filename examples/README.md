@@ -1,3 +1,5 @@
+> Generate your own signing key before starting the stack. No private key is shipped. Run `openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out pasion-signing-key.pem` in this examples directory and protect the resulting file. Never commit it.
+
 # Palpo Stack Example
 
 A complete local development stack running a Matrix homeserver with OAuth/OIDC authentication, an admin dashboard, and Element Web client.
@@ -9,7 +11,7 @@ A complete local development stack running a Matrix homeserver with OAuth/OIDC a
 | **postgres** | PostgreSQL database (shared by palpo and pasion) | `15432` | `5432` |
 | **palpo** | Matrix homeserver (Client-Server API) | `8008`, `8448` | `8008`, `8448` |
 | **pasion** | OAuth 2.0 / OpenID Connect authentication service | `7080` | `7080` |
-| **padmin** | Admin dashboard web UI (nginx + Dioxus WASM) | `7060` | `80` |
+| **padmin** | Admin dashboard web UI (nginx + Glory WASM) | `7060` | `8080` |
 | **element** | Element Web Matrix client | `7070` | `80` |
 
 ## Quick Start
@@ -40,14 +42,14 @@ Run them from the repository root:
 ```bash
 npm install
 npx playwright install chromium
-npm run test:example-stack:fresh
+npm run test:source-baseline:example-stack:fresh
 ```
 
 If you need to inspect the reset flow separately:
 
 ```bash
 npm run stack:reset
-npm run test:example-stack
+npm run test:source-baseline:example-stack
 ```
 
 The smoke-suite implementation and caveats are documented in
@@ -67,7 +69,7 @@ Browser
 
 - **Palpo** is the Matrix homeserver handling Client-Server API and federation.
 - **Pasion** provides OAuth 2.0 / OIDC authentication. Palpo delegates auth to Pasion via `delegated_auth` in `palpo.toml`.
-- **Padmin** is a static Dioxus WASM app served by nginx for managing the homeserver.
+- **Padmin** is a static Glory WASM app served by nginx for managing the homeserver.
 - **Element** is the standard Matrix web client, preconfigured to connect to the local Palpo instance.
 - **PostgreSQL** hosts two databases: `palpo` (homeserver data) and `pasion` (auth data), initialized by `init-db.sh`.
 
@@ -80,7 +82,7 @@ Browser
 | `pasion-signing-key.pem` | Signing key for Pasion JWT tokens |
 | `element-config.json` | Element Web client config: homeserver URL and server name |
 | `init-db.sh` | PostgreSQL entrypoint script that creates the `pasion` database |
-| `nginx.conf` | Reference nginx config for serving Dioxus WASM apps (not mounted by default) |
+| `nginx.conf` | Reference nginx config for serving Glory WASM apps (not mounted by default) |
 
 ## Database
 
@@ -151,3 +153,5 @@ docker compose down
 # Stop and remove all data
 docker compose down -v
 ```
+
+Stage the prebuilt Glory context with `scripts/package-container.ps1` before compose. `PADMIN_BUILD_CONTEXT` defaults to `D:/BuildCache/padmin-glory-branch/container`; set it explicitly for another verified build host. Never run compose --build against C-backed Docker build storage.

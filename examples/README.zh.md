@@ -1,3 +1,5 @@
+> Generate your own signing key before starting the stack. No private key is shipped. Run `openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out pasion-signing-key.pem` in this examples directory and protect the resulting file. Never commit it.
+
 # Palpo 技术栈示例
 
 完整的本地开发环境，包含 Matrix 聊天服务器、OAuth/OIDC 认证服务、管理后台和 Element Web 客户端。
@@ -9,7 +11,7 @@
 | **postgres** | PostgreSQL 数据库（palpo 和 pasion 共用） | `15432` | `5432` |
 | **palpo** | Matrix 聊天服务器（Client-Server API） | `8008`, `8448` | `8008`, `8448` |
 | **pasion** | OAuth 2.0 / OpenID Connect 认证服务 | `7080` | `7080` |
-| **padmin** | 管理后台 Web UI（nginx + Dioxus WASM） | `7060` | `80` |
+| **padmin** | 管理后台 Web UI（nginx + Glory WASM） | `7060` | `80` |
 | **element** | Element Web Matrix 客户端 | `7070` | `80` |
 
 ## 快速开始
@@ -40,14 +42,14 @@ docker compose up -d --build
 ```bash
 npm install
 npx playwright install chromium
-npm run test:example-stack:fresh
+npm run test:source-baseline:example-stack:fresh
 ```
 
 如果需要单独观察重置流程：
 
 ```bash
 npm run stack:reset
-npm run test:example-stack
+npm run test:source-baseline:example-stack
 ```
 
 具体实现和限制说明见 [`../e2e/example-stack/README.md`](../e2e/example-stack/README.md)。
@@ -66,7 +68,7 @@ npm run test:example-stack
 
 - **Palpo** 是 Matrix 聊天服务器，处理 Client-Server API 和联邦协议。
 - **Pasion** 提供 OAuth 2.0 / OIDC 认证服务。Palpo 通过 `palpo.toml` 中的 `delegated_auth` 配置将认证委托给 Pasion。
-- **Padmin** 是基于 Dioxus WASM 的静态管理后台应用，由 nginx 提供服务。
+- **Padmin** 是基于 Glory WASM 的静态管理后台应用，由 nginx 提供服务。
 - **Element** 是标准的 Matrix Web 客户端，已预配置连接到本地 Palpo 实例。
 - **PostgreSQL** 托管两个数据库：`palpo`（服务器数据）和 `pasion`（认证数据），由 `init-db.sh` 初始化。
 
@@ -79,7 +81,7 @@ npm run test:example-stack
 | `pasion-signing-key.pem` | Pasion JWT 令牌签名密钥 |
 | `element-config.json` | Element Web 客户端配置：服务器 URL 和服务器名称 |
 | `init-db.sh` | PostgreSQL 入口脚本，用于创建 `pasion` 数据库 |
-| `nginx.conf` | Dioxus WASM 应用的 nginx 参考配置（默认未挂载） |
+| `nginx.conf` | Glory WASM 应用的 nginx 参考配置（默认未挂载） |
 
 ## 数据库
 

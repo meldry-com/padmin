@@ -19,7 +19,10 @@ pub async fn get_supported_features() -> Result<SupportedFeatures, HttpError> {
         .await
         .map_err(|e| HttpError::message(e.to_string()))?;
 
-    response.json().await.map_err(|e| HttpError::message(e.to_string()))
+    response
+        .json()
+        .await
+        .map_err(|e| HttpError::message(e.to_string()))
 }
 
 pub async fn get_server_version_unauthenticated(base_url: &str) -> Result<String, HttpError> {
@@ -32,8 +35,10 @@ pub async fn get_server_version_unauthenticated(base_url: &str) -> Result<String
         .await
         .map_err(|e| HttpError::message(e.to_string()))?;
 
-    let resp: ServerVersionResponse =
-        response.json().await.map_err(|e| HttpError::message(e.to_string()))?;
+    let resp: ServerVersionResponse = response
+        .json()
+        .await
+        .map_err(|e| HttpError::message(e.to_string()))?;
 
     Ok(resp.server_version)
 }

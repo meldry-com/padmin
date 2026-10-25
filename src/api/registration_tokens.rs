@@ -35,6 +35,7 @@ pub async fn get_registration_tokens_cached() -> Result<Vec<RegistrationTokenRec
 }
 
 pub async fn get_registration_token(token: &str) -> Result<RegistrationTokenRecord, HttpError> {
+    let token = urlencoding::encode(token);
     let url = build_url(
         &format!("/_palpo/admin/v1/registration_tokens/{token}"),
         &[],
@@ -78,6 +79,7 @@ pub async fn create_registration_token(
 }
 
 pub async fn delete_registration_token(token: &str) -> Result<(), HttpError> {
+    let token = urlencoding::encode(token);
     let url = build_url(
         &format!("/_palpo/admin/v1/registration_tokens/{token}"),
         &[],

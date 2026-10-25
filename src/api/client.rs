@@ -31,6 +31,7 @@ where
     T: DeserializeOwned,
     F: Fn(u16, &str) -> (String, Option<MatrixError>),
 {
+    let generation = crate::api::auth::session_generation();
     let start_time = js_sys::Date::now();
 
     let rid = Some(generate_request_id());
@@ -76,6 +77,9 @@ where
         request_id: rid.clone(),
     })?;
 
+    if generation != crate::api::auth::session_generation() {
+        return Err(HttpError::message("Response belongs to a retired session"));
+    }
     let status = response.status();
     let duration_ms = js_sys::Date::now() - start_time;
     perf::record_api_call(url, method, duration_ms, status);
@@ -108,6 +112,9 @@ where
         });
     }
 
+    if generation != crate::api::auth::session_generation() {
+        return Err(HttpError::message("Response belongs to a retired session"));
+    }
     serde_json::from_str(&text).map_err(|e| HttpError {
         message: format!("JSON parse error: {e}"),
         status,
@@ -132,6 +139,7 @@ pub async fn api_client<T: DeserializeOwned>(
     method: &str,
     body: Option<String>,
 ) -> Result<T, HttpError> {
+    let attempted = storage::get_item("access_token");
     let result = raw_fetch::<T, _>(url, method, body.clone(), format_matrix_error).await;
 
     // Any 401 means "this token isn't valid" — the specific errcode
@@ -140,7 +148,11 @@ pub async fn api_client<T: DeserializeOwned>(
     // fails, the shared handler clears session state and AppLayout's
     // heartbeat redirects to the login page on its next tick.
     if let Err(ref err) = result {
-        if err.status == 401 && crate::api::auth::handle_unauthorized().await {
+        if err.status == 401
+            && ((attempted != storage::get_item("access_token")
+                && storage::get_item("access_token").is_some())
+                || crate::api::auth::handle_unauthorized().await)
+        {
             return raw_fetch::<T, _>(url, method, body, format_matrix_error).await;
         }
         if err.status == 403 {
