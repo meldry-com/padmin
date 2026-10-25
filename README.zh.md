@@ -1,8 +1,8 @@
-> Cargo 更新：提交的清单使用固定 Git 源供独立工具解析；构建脚本仍通过 D 盘私有清单和锁编译指定本地检出。详见[依赖来源与更新](docs/dependency-sources.md)。
+> Cargo 依赖统一使用 Glory/Sapid 的 GitHub `.git` 地址和 `main` 分支，`Cargo.lock` 固定实际提交，默认构建使用同一 Git 依赖图与 D 盘缓存。详见[依赖来源与更新](docs/dependency-sources.md)。
 
 > 2026-10-25 视觉修复：以实际旧页面为参照恢复布局，并使用官方 Glory/Sapid main。当前截图矩阵、版本和验收记录见[视觉修复报告](docs/visual-migration-2026-10-25.md)。
 
-> `glory` 分支已接入本地 Glory 与 Sapid，当前验证见[分支集成记录](docs/glory-branch-integration.md)。10 月 23 日的迁移报告保留为参考改写的历史证据。本地编译与测试输出均在 D 盘；Docker 构建器需使用 D 盘或远端存储。
+> 当前 UI 使用 Glory 与 Sapid；[分支集成记录](docs/glory-branch-integration.md)及 10 月 23 日报告描述早期迁移阶段。本地编译与测试输出均在 D 盘；Docker 构建器需使用 D 盘或远端存储。
 
 # Palpo Admin
 
@@ -31,6 +31,7 @@
 
 ## 前置要求
 
+- Python 3.11+
 - [Rust](https://rustup.rs/)（最新稳定版）
 - wasm-bindgen CLI 0.2.129（安装到 `D:/BuildCache/meldry-visual-20261025/padmin/tools`）
 - `wasm32-unknown-unknown` 编译目标：`rustup target add wasm32-unknown-unknown`
@@ -62,7 +63,7 @@ docker run -p 9090:8080 -e PALPO_URL=http://your-palpo:8008 -e PASION_URL=http:/
 镜像使用在 D 盘预构建的 Glory JS/WASM，由非 root nginx 提供静态服务。
 Nginx entrypoint 也会暴露 `/healthz`，方便容器与平台进行存活检查。
 
-CI 检出固定版本的 Glory、Sapid，在远端 Linux runner 构建并测试 WASM，保留原有 push/tag 触发、运行配置冒烟测试、双架构镜像以及 GHCR/可选 Docker Hub 发布。
+CI 按 Cargo.lock 获取 Glory、Sapid 的 Git 提交，在远端 Linux runner 构建并测试 WASM，保留原有 push/tag 触发、运行配置冒烟测试、双架构镜像以及 GHCR/可选 Docker Hub 发布。
 
 ## 完整技术栈示例
 

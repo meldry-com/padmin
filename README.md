@@ -1,8 +1,8 @@
-> Cargo dependency updates: the committed manifest uses pinned Git sources for standalone tooling; the build script still compiles the specified local checkouts through a private D: manifest and lock. See [dependency source handling](docs/dependency-sources.md).
+> Cargo sources: Glory and Sapid use their GitHub `.git` URLs and `main` branches. `Cargo.lock` fixes the resolved commits; build commands use that same Git dependency graph with D: caches. See [dependency source handling](docs/dependency-sources.md).
 
 > Visual restoration (2026-10-25): layouts were checked against the actual original app and rebuilt with official Glory/Sapid main. See the [visual verification record](docs/visual-migration-2026-10-25.md) for versions, coverage and reproducible commands.
 
-> The `glory` branch uses the local Glory and Sapid checkouts. See the [branch integration record](docs/glory-branch-integration.md) for current verification; the October 23 reports describe the earlier reference migration. Local build/test output stays on D:; Docker builds require verified D: or remote builder storage.
+> The current UI uses Glory and Sapid. The [branch integration record](docs/glory-branch-integration.md) and October 23 reports describe earlier stages. Local build/test output stays on D:; Docker builds require verified D: or remote builder storage.
 
 # Palpo Admin
 
@@ -31,6 +31,7 @@ A web-based admin dashboard for [Palpo](https://github.com/palpo-im/palpo) Matri
 
 ## Prerequisites
 
+- Python 3.11+
 - [Rust](https://rustup.rs/) (latest stable)
 - wasm-bindgen CLI 0.2.129 (install under `D:/BuildCache/meldry-visual-20261025/padmin/tools`)
 - `wasm32-unknown-unknown` target: `rustup target add wasm32-unknown-unknown`
@@ -71,7 +72,7 @@ separately before building the runtime image.
 The nginx entrypoint also exposes `/healthz` for container and platform
 liveness checks.
 
-CI checks out pinned Glory and Sapid sources, builds and tests the WASM on remote
+CI resolves Glory and Sapid Git sources at the commits in Cargo.lock, builds and tests the WASM on remote
 Linux runners, then smoke-tests and publishes the existing multi-platform image
 to GHCR and optional Docker Hub on the original push/tag triggers.
 

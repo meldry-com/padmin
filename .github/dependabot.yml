@@ -8,10 +8,6 @@ updates:
     directory: /
     schedule:
       interval: weekly
-    # Update these coordinated git/patch/CI pins together after local UI acceptance.
-    ignore:
-      - dependency-name: glory
-      - dependency-name: sapid
   - package-ecosystem: npm
     directory: /
     schedule:
