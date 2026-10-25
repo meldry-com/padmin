@@ -1,3 +1,5 @@
+> Cargo 更新：提交的清单使用固定 Git 源供独立工具解析；构建脚本仍通过 D 盘私有清单和锁编译指定本地检出。详见[依赖来源与更新](docs/dependency-sources.md)。
+
 > 2026-10-25 视觉修复：以实际旧页面为参照恢复布局，并使用官方 Glory/Sapid main。当前截图矩阵、版本和验收记录见[视觉修复报告](docs/visual-migration-2026-10-25.md)。
 
 > `glory` 分支已接入本地 Glory 与 Sapid，当前验证见[分支集成记录](docs/glory-branch-integration.md)。10 月 23 日的迁移报告保留为参考改写的历史证据。本地编译与测试输出均在 D 盘；Docker 构建器需使用 D 盘或远端存储。

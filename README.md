@@ -1,3 +1,5 @@
+> Cargo dependency updates: the committed manifest uses pinned Git sources for standalone tooling; the build script still compiles the specified local checkouts through a private D: manifest and lock. See [dependency source handling](docs/dependency-sources.md).
+
 > Visual restoration (2026-10-25): layouts were checked against the actual original app and rebuilt with official Glory/Sapid main. See the [visual verification record](docs/visual-migration-2026-10-25.md) for versions, coverage and reproducible commands.
 
 > The `glory` branch uses the local Glory and Sapid checkouts. See the [branch integration record](docs/glory-branch-integration.md) for current verification; the October 23 reports describe the earlier reference migration. Local build/test output stays on D:; Docker builds require verified D: or remote builder storage.

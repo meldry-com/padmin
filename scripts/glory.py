@@ -4,9 +4,11 @@ import json
 import hashlib
 import os
 import platform
+import re
 from pathlib import Path
 import shutil
 import subprocess
+import tomllib
 
 ROOT = Path(__file__).resolve().parents[1]
 WSL = os.name != 'nt' and 'microsoft' in platform.release().lower()
@@ -30,9 +32,48 @@ for path in [CACHE / 'tmp', CACHE / 'target', Path(os.environ['CARGO_HOME'])]:
 def run(*args, capture=False):
     return subprocess.run(args, cwd=ROOT, check=True, text=True, capture_output=capture)
 
+def local_manifest():
+    """Keep bot-facing git sources separate from the checked-out build inputs."""
+    canonical = (ROOT / 'Cargo.toml').read_text(encoding='utf-8')
+    parsed = tomllib.loads(canonical)
+    local = canonical
+    for name, relative in [('glory', '../../glory-rs/main/glory/crates/glory'), ('sapid', '../../glory-rs/main/sapid')]:
+        path = (ROOT / relative).resolve()
+        if not (path / 'Cargo.toml').is_file():
+            raise RuntimeError(f'Missing local {name} checkout: {path}')
+        dependency = dict(parsed['dependencies'][name])
+        for key in ['git', 'rev', 'branch', 'tag']:
+            dependency.pop(key, None)
+        dependency['path'] = path.as_posix()
+        fields = ', '.join(f'{key} = {json.dumps(value)}' for key, value in dependency.items())
+        local, count = re.subn(rf'(?m)^{name} = \{{[^\n]+\}}', lambda _: f'{name} = {{ {fields} }}', local, count=1)
+        if count != 1:
+            raise RuntimeError(f'Expected one inline {name} dependency declaration')
+    # This patch is needed only for canonical git resolution. Local Sapid already
+    # resolves its sibling Glory to exactly the same path as the direct dependency.
+    local = re.sub(r'(?ms)^\[patch\."https://github\.com/sapid-ui/sapid"\]\n.*?(?=^\[|\Z)', '', local)
+    library = (ROOT / parsed.get('lib', {}).get('path', 'src/lib.rs')).resolve()
+    local = local.replace('[lib]', '[lib]\npath = ' + json.dumps(library.as_posix()), 1)
+    directory = CACHE / 'local-manifest'
+    directory.mkdir(exist_ok=True)
+    target = directory / 'Cargo.toml'
+    marker = directory / 'canonical-input.sha256'
+    # Cargo may adapt this private lock from git sources to paths. Never copy it
+    # back to the canonical lock maintained by Dependabot. Re-seed after updates.
+    lock = (ROOT / 'Cargo.lock').read_bytes()
+    signature = hashlib.sha256(local.encode() + b'\0' + lock).hexdigest()
+    if not target.is_file() or not (directory / 'Cargo.lock').is_file() or not marker.is_file() or marker.read_text() != signature:
+        target.write_text(local, encoding='utf-8')
+        (directory / 'Cargo.lock').write_bytes(lock)
+        marker.write_text(signature)
+    return target
+
+def cargo(manifest, command, *args, capture=False):
+    return run('cargo', command, '--manifest-path', str(manifest), *args, capture=capture)
+
 def source_digest():
     files = [p for directory in ['src', 'locales'] for p in (ROOT / directory).rglob('*') if p.is_file()]
-    files += [ROOT / name for name in ['Cargo.toml', 'Cargo.lock', 'bootstrap.js', 'pasion-config.js', 'index.html']]
+    files += [ROOT / name for name in ['Cargo.toml', 'Cargo.lock', 'scripts/glory.py', 'bootstrap.js', 'pasion-config.js', 'index.html']]
     # Capture local framework/widget changes as build inputs as well as app files.
     for library in ['glory', 'sapid']:
         base = (ROOT / '../../glory-rs/main' / library).resolve()
@@ -80,25 +121,27 @@ def main():
     parser.add_argument('--oauth-client-id', default=os.environ.get('PADMIN_OAUTH_CLIENT_ID','01KMQPADM1N000000000000000'))
     parser.add_argument('--palpo-admin-url', default=os.environ.get('PALPO_ADMIN_URL',''))
     args=parser.parse_args()
-    metadata=json.loads(run('cargo','metadata','--no-deps','--format-version','1',capture=True).stdout)
+    manifest = local_manifest()
+    metadata=json.loads(cargo(manifest,'metadata','--no-deps','--format-version','1',capture=True).stdout)
     actual=Path(metadata['target_directory']).resolve()
     expected=(CACHE/'target').resolve()
     if actual != expected or (not REMOTE and not WSL and actual.drive.lower() != 'd:'):
         raise RuntimeError(f'Unexpected Cargo target directory: {actual}')
     print(f'Verified target_directory={actual}',flush=True)
+    print(f'Local build manifest={manifest}',flush=True)
     if args.command=='metadata': return
     if args.command=='fingerprint':
         digest, files = source_digest()
         print(json.dumps({'source_sha256': digest, 'source_files': files}))
         return
-    if args.command=='check': run('cargo','check','--all-targets'); run('cargo','check','--target','wasm32-unknown-unknown')
-    elif args.command=='test': run('cargo','test','--lib')
-    elif args.command=='fmt': run('cargo','fmt','--package','padmin','--','--check')
+    if args.command=='check': cargo(manifest,'check','--all-targets'); cargo(manifest,'check','--target','wasm32-unknown-unknown')
+    elif args.command=='test': cargo(manifest,'test','--lib')
+    elif args.command=='fmt': cargo(manifest,'fmt','--package','padmin','--','--check')
     else:
         source_before, files = source_digest()
-        build_args=['cargo','build','--target','wasm32-unknown-unknown']
+        build_args=['build','--target','wasm32-unknown-unknown']
         if not args.dev: build_args.append('--release')
-        run(*build_args)
+        cargo(manifest,*build_args)
         output=CACHE/'dist'; output.mkdir(exist_ok=True)
         run(os.environ.get('WASM_BINDGEN', 'wasm-bindgen'),str(expected/'wasm32-unknown-unknown'/('debug' if args.dev else 'release')/'padmin.wasm'),'--target','web','--out-dir',str(output/'pkg'))
         (output/'index.html').write_text((ROOT/'index.html').read_text().replace('<base href="/">', '<base href="'+args.base_path.rstrip('/')+'/">'))
@@ -117,6 +160,7 @@ def main():
             'source_files': files,
             'wasm_sha256': hashlib.sha256((output/'pkg/padmin_bg.wasm').read_bytes()).hexdigest(),
             'profile': 'debug' if args.dev else 'release',
+            'local_manifest': str(manifest),
         }, indent=2))
         if args.command=='serve':
             serve(output,args.base_path,args.port)

@@ -61,6 +61,7 @@ jobs:
           rustup default stable
           cargo install wasm-bindgen-cli --version 0.2.129 --locked --root "$PADMIN_BUILD_ROOT/tools"
           export WASM_BINDGEN="$PADMIN_BUILD_ROOT/tools/bin/wasm-bindgen"
+          cargo metadata --locked --format-version 1 > "$PADMIN_BUILD_ROOT/canonical-metadata.json"
           python3 scripts/glory.py check
           python3 scripts/glory.py test
           python3 scripts/glory.py build
@@ -154,6 +155,7 @@ jobs:
           rustup default stable
           cargo install wasm-bindgen-cli --version 0.2.129 --locked --root "$PADMIN_BUILD_ROOT/tools"
           export WASM_BINDGEN="$PADMIN_BUILD_ROOT/tools/bin/wasm-bindgen"
+          cargo metadata --locked --format-version 1 > "$PADMIN_BUILD_ROOT/canonical-metadata.json"
           python3 scripts/glory.py check
           python3 scripts/glory.py test
           python3 scripts/glory.py build

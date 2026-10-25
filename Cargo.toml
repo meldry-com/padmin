@@ -9,8 +9,8 @@ edition = "2024"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-glory = { path = "../../glory-rs/main/glory/crates/glory", features = ["web", "ssr"] }
-sapid = { path = "../../glory-rs/main/sapid" }
+glory = { git = "https://github.com/glory-rs/glory", rev = "b9d06545c701510ba18d5cdb7cd363c102cad906", features = ["web", "ssr"] }
+sapid = { git = "https://github.com/sapid-ui/sapid", rev = "c5c4e23aeb6d37b3f2537545116bac43dbb40a64" }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
 serde-saphyr = "0.0.27"
@@ -65,3 +65,8 @@ debug = 0
 [profile.release]
 opt-level = "s"
 lto = true
+
+# Sapid main references Glory as a sibling checkout; resolve the same pinned
+# Glory source when automated tools fetch Sapid without that local layout.
+[patch."https://github.com/sapid-ui/sapid"]
+glory = { git = "https://github.com/glory-rs/glory", rev = "b9d06545c701510ba18d5cdb7cd363c102cad906" }
