@@ -1,4 +1,5 @@
 pub mod api;
+mod compat;
 pub mod router;
 pub mod types;
 pub mod ui;

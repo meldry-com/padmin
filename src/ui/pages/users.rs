@@ -1,10 +1,10 @@
+use crate::compat::*;
 use crate::ui::widgets as w;
 use crate::{
     api::{known_users, user_extras, users as api},
     types::*,
     utils::error::HttpError,
 };
-use glory::prelude::*;
 use glory::render::{Event, Purpose};
 use std::result::Result;
 use std::{future::Future, rc::Rc};

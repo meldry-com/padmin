@@ -1,6 +1,6 @@
 # Requires a previously verified D: or remote Docker builder; this script only stages files.
 $ErrorActionPreference = 'Stop'
-$env:WASM_BINDGEN = 'D:/BuildCache/glory-website/tools/wasm-bindgen-0.2.129-x86_64-pc-windows-msvc/wasm-bindgen.exe'
+$env:WASM_BINDGEN = 'D:/BuildCache/glory-website/tools/wasm-bindgen-0.2.130-x86_64-pc-windows-msvc/wasm-bindgen.exe'
 python "$PSScriptRoot/glory.py" build
 if ($LASTEXITCODE -ne 0) { throw 'Build failed' }
 $stage = 'D:/BuildCache/meldry-visual-20261025/padmin/container'

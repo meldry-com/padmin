@@ -15,7 +15,7 @@ impl LocalText {
         self.name = Some(value.into());
         self
     }
-    pub fn class(mut self, value: impl Into<glory::Lotus<String>>) -> Self {
+    pub fn class(mut self, value: impl Into<glory::Vary<String>>) -> Self {
         self.inner = Some(self.inner.take().unwrap().class(value));
         self
     }
@@ -41,15 +41,15 @@ pub struct LocalButton {
     callback: Option<Box<dyn Fn()>>,
 }
 impl LocalButton {
-    pub fn name(mut self, value: impl Into<glory::Lotus<String>>) -> Self {
+    pub fn name(mut self, value: impl Into<glory::Vary<String>>) -> Self {
         self.inner = Some(self.inner.take().unwrap().name(value));
         self
     }
-    pub fn class(mut self, value: impl Into<glory::Lotus<String>>) -> Self {
+    pub fn class(mut self, value: impl Into<glory::Vary<String>>) -> Self {
         self.inner = Some(self.inner.take().unwrap().class(value));
         self
     }
-    pub fn enabled(mut self, value: impl Into<glory::Lotus<bool>>) -> Self {
+    pub fn enabled(mut self, value: impl Into<glory::Vary<bool>>) -> Self {
         self.inner = Some(self.inner.take().unwrap().enabled(value));
         self
     }
@@ -90,11 +90,11 @@ impl LocalInput {
         self.hint = value.into();
         self
     }
-    pub fn class(mut self, value: impl Into<glory::Lotus<String>>) -> Self {
+    pub fn class(mut self, value: impl Into<glory::Vary<String>>) -> Self {
         self.inner = Some(self.inner.take().unwrap().class(value));
         self
     }
-    pub fn purpose(mut self, value: impl Into<glory::Lotus<glory::render::Purpose>>) -> Self {
+    pub fn purpose(mut self, value: impl Into<glory::Vary<glory::render::Purpose>>) -> Self {
         self.inner = Some(self.inner.take().unwrap().purpose(value));
         self
     }
@@ -102,7 +102,7 @@ impl LocalInput {
         self.inner = Some(self.inner.take().unwrap().multiline(value));
         self
     }
-    pub fn enabled(mut self, value: impl Into<glory::Lotus<bool>>) -> Self {
+    pub fn enabled(mut self, value: impl Into<glory::Vary<bool>>) -> Self {
         self.inner = Some(self.inner.take().unwrap().enabled(value));
         self
     }
@@ -141,7 +141,7 @@ impl glory::ui::Widget for LocalInput {
         inner.build(scope)
     }
 }
-pub fn localized(scope: &Scope, value: String) -> glory::Lotus<String> {
+pub fn localized(scope: &Scope, value: String) -> glory::Vary<String> {
     match super::context::get(scope) {
         Some(ctx) => {
             let language = ctx.language;

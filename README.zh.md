@@ -33,7 +33,7 @@
 
 - Python 3.11+
 - [Rust](https://rustup.rs/)（最新稳定版）
-- wasm-bindgen CLI 0.2.129（安装到 `D:/BuildCache/meldry-visual-20261025/padmin/tools`）
+- wasm-bindgen CLI 0.2.130（安装到 `D:/BuildCache/meldry-visual-20261025/padmin/tools`）
 - `wasm32-unknown-unknown` 编译目标：`rustup target add wasm32-unknown-unknown`
 
 ## 开发

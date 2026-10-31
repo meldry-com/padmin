@@ -1,12 +1,12 @@
 pub mod context;
 pub mod pages;
 pub mod widgets;
+use crate::compat::*;
 use crate::utils::{
     i18n::{self, Language},
     storage,
 };
 use context::{Command, Context};
-use glory::prelude::*;
 use glory::ui::{View, widget};
 use std::rc::Rc;
 

@@ -55,4 +55,4 @@ Cargo home 为 `D:/BuildCache/cargo`；target、临时目录、浏览器运行�
 
 没有确认的 Glory 框架缺陷，本次未修改 Glory 框架源代码。实际发现并修复的是应用集成问题：OAuth callback 因权限状态变动重挂造成 verifier 重放；同一 Cage revise 内再 get 引起借用冲突；跨会话异步回包；全局存储/缓存所有权；刷新并发；部署 asset/CSP 前缀。回归分别在认证、领域、共享壳及 nginx 套件中。
 
-适配点：精确对齐 wasm-bindgen 0.2.129/web-sys 0.3.106；file picker、clipboard、download 是独立宿主服务，不能向 Glory 管理树注入任意外来节点。普通输入、标签与主题更新仍通过 semantic patches 完成。
+适配点：精确对齐 wasm-bindgen 0.2.130/web-sys 0.3.107；file picker、clipboard、download 是独立宿主服务，不能向 Glory 管理树注入任意外来节点。普通输入、标签与主题更新仍通过 semantic patches 完成。

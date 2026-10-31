@@ -1,9 +1,9 @@
 //! Appservice catalog and structured registration editor.
 use crate::api::appservices as api;
+use crate::compat::*;
 use crate::types::{AppserviceRegistration, AppserviceSummary};
 use crate::ui::widgets::*;
 use crate::utils::error::HttpError;
-use glory::prelude::*;
 use glory::ui::{Scope, View};
 use std::rc::Rc;
 use std::result::Result;

@@ -1,5 +1,6 @@
 //! Dedicated Pasion administration workflows, backed by the Pasion admin API.
 use super::users::{collection_window, remember, stored};
+use crate::compat::each;
 use crate::ui::widgets::{action, confirm, field, label, load_quiet, page, spawn, status, submit};
 use crate::{api::pasion::*, types::*, utils::error::HttpError};
 use glory::{core::Cage, ui::*};

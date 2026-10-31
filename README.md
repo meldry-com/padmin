@@ -33,7 +33,7 @@ A web-based admin dashboard for [Palpo](https://github.com/palpo-im/palpo) Matri
 
 - Python 3.11+
 - [Rust](https://rustup.rs/) (latest stable)
-- wasm-bindgen CLI 0.2.129 (install under `D:/BuildCache/meldry-visual-20261025/padmin/tools`)
+- wasm-bindgen CLI 0.2.130 (install under `D:/BuildCache/meldry-visual-20261025/padmin/tools`)
 - `wasm32-unknown-unknown` target: `rustup target add wasm32-unknown-unknown`
 
 ## Development
