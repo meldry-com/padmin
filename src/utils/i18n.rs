@@ -767,16 +767,291 @@ impl I18n {
         // Pasion upstream providers
         m.insert(
             "pasion.upstream_providers.title".into(),
-            "Upstream Providers".into(),
+            "Upstream OAuth Providers".into(),
         );
         m.insert(
             "pasion.upstream_providers.description".into(),
-            "OIDC identity providers that Pasion federates with".into(),
+            "Manage the OIDC and OAuth2 identity providers users can sign in with".into(),
         );
         m.insert(
             "pasion.upstream_providers.empty".into(),
             "No upstream providers configured".into(),
         );
+        for (key, value) in [
+            (
+                "pasion.upstream_providers.add_provider",
+                "Add provider",
+            ),
+            ("pasion.upstream_providers.view", "View"),
+            ("pasion.upstream_providers.close", "Close"),
+            ("pasion.upstream_providers.enable", "Enable"),
+            ("pasion.upstream_providers.disable", "Disable"),
+            ("pasion.upstream_providers.new_provider", "New provider"),
+            ("pasion.upstream_providers.federation", "Identity federation"),
+            (
+                "pasion.upstream_providers.federation_title",
+                "Upstream identity connections",
+            ),
+            (
+                "pasion.upstream_providers.federation_description",
+                "Providers shown here are available to users on the Pasion login page.",
+            ),
+            (
+                "pasion.upstream_providers.empty_title",
+                "Connect your first identity provider",
+            ),
+            (
+                "pasion.upstream_providers.empty_description",
+                "Add an OIDC or OAuth2 provider to let users sign in with an existing identity. Client secrets are write-only and stay protected after saving.",
+            ),
+            (
+                "pasion.upstream_providers.empty_action",
+                "Add first provider",
+            ),
+            ("pasion.upstream_providers.stat_total", "Providers"),
+            ("pasion.upstream_providers.stat_enabled", "Enabled"),
+            ("pasion.upstream_providers.stat_config", "From config"),
+            ("pasion.upstream_providers.source_config", "Config"),
+            ("pasion.upstream_providers.source_manual", "Managed"),
+            ("pasion.upstream_providers.status_enabled", "Enabled"),
+            ("pasion.upstream_providers.status_disabled", "Disabled"),
+            (
+                "pasion.upstream_providers.search_placeholder",
+                "Search by name, issuer, or client ID...",
+            ),
+            (
+                "pasion.upstream_providers.result_count",
+                "{count} matching providers",
+            ),
+            (
+                "pasion.upstream_providers.no_matches",
+                "No providers match your search",
+            ),
+            (
+                "pasion.upstream_providers.no_matches_description",
+                "Try a different name, issuer, or client ID.",
+            ),
+            ("pasion.upstream_providers.clear_search", "Clear search"),
+            ("pasion.upstream_providers.field_discovery", "Discovery"),
+            ("pasion.upstream_providers.field_pkce", "PKCE"),
+            ("pasion.upstream_providers.field_client_id", "Client ID"),
+            (
+                "pasion.upstream_providers.managed_config_hint",
+                "Managed by the Pasion configuration file.",
+            ),
+            (
+                "pasion.upstream_providers.managed_manual_hint",
+                "Editable from the admin console.",
+            ),
+            (
+                "pasion.upstream_providers.enabled_toast",
+                "Provider enabled",
+            ),
+            (
+                "pasion.upstream_providers.disabled_toast",
+                "Provider disabled",
+            ),
+            (
+                "pasion.upstream_providers.create_title",
+                "Add upstream provider",
+            ),
+            (
+                "pasion.upstream_providers.edit_title",
+                "Edit upstream provider",
+            ),
+            (
+                "pasion.upstream_providers.view_title",
+                "Provider details",
+            ),
+            (
+                "pasion.upstream_providers.create_description",
+                "Connect an OIDC or OAuth2 identity provider for user sign-in.",
+            ),
+            (
+                "pasion.upstream_providers.edit_description",
+                "Update connection details. Leave the client secret blank to keep the stored value.",
+            ),
+            (
+                "pasion.upstream_providers.view_description",
+                "Review the identity provider configuration supplied by Pasion.",
+            ),
+            ("pasion.upstream_providers.eyebrow_new", "New connection"),
+            ("pasion.upstream_providers.eyebrow_edit", "OAuth client"),
+            (
+                "pasion.upstream_providers.eyebrow_config",
+                "Read-only provider",
+            ),
+            (
+                "pasion.upstream_providers.readonly_banner",
+                "This provider is defined in the Pasion configuration file. Change it there to update this connection.",
+            ),
+            (
+                "pasion.upstream_providers.section_identity",
+                "Identity details",
+            ),
+            (
+                "pasion.upstream_providers.section_identity_description",
+                "How this provider appears to users and where its identity is issued.",
+            ),
+            ("pasion.upstream_providers.issuer", "Issuer"),
+            (
+                "pasion.upstream_providers.issuer_help",
+                "Optional for non-OIDC providers. If discovery is disabled, provide the endpoints below.",
+            ),
+            ("pasion.upstream_providers.human_name", "Display name"),
+            ("pasion.upstream_providers.brand_name", "Brand key"),
+            ("pasion.upstream_providers.ui_order", "Login order"),
+            (
+                "pasion.upstream_providers.ui_order_help",
+                "Lower values appear first on the login page.",
+            ),
+            ("pasion.upstream_providers.section_client", "OAuth client"),
+            (
+                "pasion.upstream_providers.section_client_description",
+                "Credentials and authorization settings registered with the provider.",
+            ),
+            ("pasion.upstream_providers.client_id", "Client ID"),
+            ("pasion.upstream_providers.client_secret", "Client secret"),
+            (
+                "pasion.upstream_providers.remove_secret",
+                "Remove stored secret",
+            ),
+            (
+                "pasion.upstream_providers.remove_secret_description",
+                "The provider will stop working until a new secret is supplied.",
+            ),
+            (
+                "pasion.upstream_providers.token_auth_method",
+                "Token endpoint authentication",
+            ),
+            (
+                "pasion.upstream_providers.token_signing_alg",
+                "Token signing algorithm",
+            ),
+            (
+                "pasion.upstream_providers.token_signing_alg_help",
+                "Used only with client_secret_jwt or private_key_jwt.",
+            ),
+            ("pasion.upstream_providers.scope", "Scopes"),
+            (
+                "pasion.upstream_providers.section_discovery",
+                "Discovery and endpoints",
+            ),
+            (
+                "pasion.upstream_providers.section_discovery_description",
+                "Use discovery metadata, or set endpoints explicitly for non-OIDC providers.",
+            ),
+            ("pasion.upstream_providers.discovery_mode", "Discovery mode"),
+            ("pasion.upstream_providers.pkce_mode", "PKCE mode"),
+            ("pasion.upstream_providers.response_mode", "Response mode"),
+            (
+                "pasion.upstream_providers.authorization_endpoint",
+                "Authorization endpoint",
+            ),
+            ("pasion.upstream_providers.token_endpoint", "Token endpoint"),
+            (
+                "pasion.upstream_providers.userinfo_endpoint",
+                "Userinfo endpoint",
+            ),
+            ("pasion.upstream_providers.jwks_uri", "JWKS URI"),
+            (
+                "pasion.upstream_providers.endpoints_help",
+                "Overrides replace discovered values. Authorization and token endpoints are required when discovery is disabled.",
+            ),
+            ("pasion.upstream_providers.section_tokens", "Tokens and userinfo"),
+            (
+                "pasion.upstream_providers.section_tokens_description",
+                "Signature validation and user profile lookup behavior.",
+            ),
+            ("pasion.upstream_providers.id_token_alg", "ID token algorithm"),
+            (
+                "pasion.upstream_providers.userinfo_signed_alg",
+                "Signed userinfo algorithm",
+            ),
+            (
+                "pasion.upstream_providers.fetch_userinfo",
+                "Fetch userinfo endpoint",
+            ),
+            (
+                "pasion.upstream_providers.fetch_userinfo_description",
+                "Request profile data after exchanging the authorization code.",
+            ),
+            (
+                "pasion.upstream_providers.forward_login_hint",
+                "Forward login hint",
+            ),
+            (
+                "pasion.upstream_providers.forward_login_hint_description",
+                "Pass the user's login hint to the upstream provider.",
+            ),
+            ("pasion.upstream_providers.advanced", "Advanced settings"),
+            (
+                "pasion.upstream_providers.advanced_description",
+                "Logout behavior, extra parameters, and claims mapping.",
+            ),
+            (
+                "pasion.upstream_providers.backchannel_logout",
+                "Backchannel logout",
+            ),
+            (
+                "pasion.upstream_providers.extra_params",
+                "Extra authorization parameters",
+            ),
+            (
+                "pasion.upstream_providers.extra_params_help",
+                "One key=value pair per line.",
+            ),
+            (
+                "pasion.upstream_providers.claims_imports",
+                "Claims imports (JSON)",
+            ),
+            (
+                "pasion.upstream_providers.claims_imports_help",
+                "Optional JSON object using the Pasion claims-import schema.",
+            ),
+            (
+                "pasion.upstream_providers.edit_footer_note",
+                "Provider changes take effect on the next sign-in attempt.",
+            ),
+            (
+                "pasion.upstream_providers.view_footer_note",
+                "Configuration-managed providers can only be changed in the Pasion configuration file.",
+            ),
+            (
+                "pasion.upstream_providers.save_changes",
+                "Save changes",
+            ),
+            (
+                "pasion.upstream_providers.create_provider",
+                "Create provider",
+            ),
+            ("pasion.upstream_providers.no_changes", "No changes to save"),
+            (
+                "pasion.upstream_providers.details_not_loaded",
+                "Provider details are not loaded yet",
+            ),
+            ("pasion.upstream_providers.created_toast", "Provider created"),
+            ("pasion.upstream_providers.updated_toast", "Provider updated"),
+            ("pasion.upstream_providers.deleted_toast", "Provider deleted"),
+            (
+                "pasion.upstream_providers.secret_keep",
+                "Leave blank to keep the stored secret",
+            ),
+            (
+                "pasion.upstream_providers.secret_none",
+                "No secret stored",
+            ),
+            (
+                "pasion.upstream_providers.delete_title",
+                "Delete provider",
+            ),
+            (
+                "pasion.upstream_providers.delete_description",
+                "Permanently delete provider '{name}'? Users linked to this provider will lose the ability to sign in with it.",
+            ),
+        ] {
+            m.insert(key.into(), value.into());
+        }
 
         // Pasion local accounts
         m.insert("users.pasion_account".into(), "Identity account".into());
@@ -2245,16 +2520,297 @@ impl I18n {
         // Pasion 上游提供者
         m.insert(
             "pasion.upstream_providers.title".into(),
-            "\u{4e0a}\u{6e38}\u{63d0}\u{4f9b}\u{8005}".into(),
+            "\u{4e0a}\u{6e38} OAuth \u{63d0}\u{4f9b}\u{8005}".into(),
         );
         m.insert(
             "pasion.upstream_providers.description".into(),
-            "Pasion \u{5bf9}\u{63a5}\u{7684} OIDC \u{8eab}\u{4efd}\u{63d0}\u{4f9b}\u{8005}".into(),
+            "\u{7ba1}\u{7406}\u{7528}\u{6237}\u{53ef}\u{7528}\u{4e8e}\u{767b}\u{5f55}\u{7684} OIDC \u{4e0e} OAuth2 \u{8eab}\u{4efd}\u{63d0}\u{4f9b}\u{8005}".into(),
         );
         m.insert(
             "pasion.upstream_providers.empty".into(),
             "\u{6682}\u{672a}\u{914d}\u{7f6e}\u{4e0a}\u{6e38}\u{63d0}\u{4f9b}\u{8005}".into(),
         );
+        for (key, value) in [
+            ("pasion.upstream_providers.add_provider", "添加提供商"),
+            ("pasion.upstream_providers.view", "查看"),
+            ("pasion.upstream_providers.close", "关闭"),
+            ("pasion.upstream_providers.enable", "启用"),
+            ("pasion.upstream_providers.disable", "停用"),
+            ("pasion.upstream_providers.new_provider", "新提供商"),
+            ("pasion.upstream_providers.federation", "身份联合"),
+            (
+                "pasion.upstream_providers.federation_title",
+                "上游身份连接",
+            ),
+            (
+                "pasion.upstream_providers.federation_description",
+                "这里的提供商将显示在 Pasion 登录页，供用户选择登录。",
+            ),
+            (
+                "pasion.upstream_providers.empty_title",
+                "连接第一个身份提供商",
+            ),
+            (
+                "pasion.upstream_providers.empty_description",
+                "添加 OIDC 或 OAuth2 提供商，让用户使用现有身份登录。客户端密钥仅可写入，保存后会被安全隐藏。",
+            ),
+            (
+                "pasion.upstream_providers.empty_action",
+                "添加首个提供商",
+            ),
+            ("pasion.upstream_providers.stat_total", "提供商"),
+            ("pasion.upstream_providers.stat_enabled", "已启用"),
+            ("pasion.upstream_providers.stat_config", "配置来源"),
+            ("pasion.upstream_providers.source_config", "配置文件"),
+            ("pasion.upstream_providers.source_manual", "后台管理"),
+            ("pasion.upstream_providers.status_enabled", "已启用"),
+            ("pasion.upstream_providers.status_disabled", "已停用"),
+            (
+                "pasion.upstream_providers.search_placeholder",
+                "按名称、签发者或客户端 ID 搜索...",
+            ),
+            (
+                "pasion.upstream_providers.result_count",
+                "{count} 个匹配的提供商",
+            ),
+            (
+                "pasion.upstream_providers.no_matches",
+                "没有匹配的提供商",
+            ),
+            (
+                "pasion.upstream_providers.no_matches_description",
+                "请尝试其他名称、签发者或客户端 ID。",
+            ),
+            ("pasion.upstream_providers.clear_search", "清除搜索"),
+            ("pasion.upstream_providers.field_discovery", "发现模式"),
+            ("pasion.upstream_providers.field_pkce", "PKCE"),
+            ("pasion.upstream_providers.field_client_id", "客户端 ID"),
+            (
+                "pasion.upstream_providers.managed_config_hint",
+                "由 Pasion 配置文件管理。",
+            ),
+            (
+                "pasion.upstream_providers.managed_manual_hint",
+                "可在管理后台编辑。",
+            ),
+            (
+                "pasion.upstream_providers.enabled_toast",
+                "提供商已启用",
+            ),
+            (
+                "pasion.upstream_providers.disabled_toast",
+                "提供商已停用",
+            ),
+            (
+                "pasion.upstream_providers.create_title",
+                "添加上游提供商",
+            ),
+            (
+                "pasion.upstream_providers.edit_title",
+                "编辑上游提供商",
+            ),
+            (
+                "pasion.upstream_providers.view_title",
+                "提供商详情",
+            ),
+            (
+                "pasion.upstream_providers.create_description",
+                "连接 OIDC 或 OAuth2 身份提供商，供用户登录。",
+            ),
+            (
+                "pasion.upstream_providers.edit_description",
+                "更新连接信息。客户端密钥留空时会保留已存储的密钥。",
+            ),
+            (
+                "pasion.upstream_providers.view_description",
+                "查看 Pasion 提供的身份提供商配置。",
+            ),
+            ("pasion.upstream_providers.eyebrow_new", "新建连接"),
+            ("pasion.upstream_providers.eyebrow_edit", "OAuth 客户端"),
+            (
+                "pasion.upstream_providers.eyebrow_config",
+                "只读提供商",
+            ),
+            (
+                "pasion.upstream_providers.readonly_banner",
+                "此提供商来自 Pasion 配置文件。如需修改，请更新配置文件后刷新页面。",
+            ),
+            (
+                "pasion.upstream_providers.section_identity",
+                "身份信息",
+            ),
+            (
+                "pasion.upstream_providers.section_identity_description",
+                "设置用户看到的名称，以及身份签发来源。",
+            ),
+            ("pasion.upstream_providers.issuer", "签发者"),
+            (
+                "pasion.upstream_providers.issuer_help",
+                "非 OIDC 提供商可留空。关闭发现模式时，请填写下方的端点。",
+            ),
+            ("pasion.upstream_providers.human_name", "显示名称"),
+            ("pasion.upstream_providers.brand_name", "品牌标识"),
+            ("pasion.upstream_providers.ui_order", "登录排序"),
+            (
+                "pasion.upstream_providers.ui_order_help",
+                "数值越小，在登录页显示越靠前。",
+            ),
+            ("pasion.upstream_providers.section_client", "OAuth 客户端"),
+            (
+                "pasion.upstream_providers.section_client_description",
+                "提供商处注册的凭据与授权设置。",
+            ),
+            ("pasion.upstream_providers.client_id", "客户端 ID"),
+            ("pasion.upstream_providers.client_secret", "客户端密钥"),
+            (
+                "pasion.upstream_providers.remove_secret",
+                "删除已存储的密钥",
+            ),
+            (
+                "pasion.upstream_providers.remove_secret_description",
+                "删除后提供商将无法继续登录，直到设置新密钥。",
+            ),
+            (
+                "pasion.upstream_providers.token_auth_method",
+                "令牌端点认证方式",
+            ),
+            (
+                "pasion.upstream_providers.token_signing_alg",
+                "令牌端点签名算法",
+            ),
+            (
+                "pasion.upstream_providers.token_signing_alg_help",
+                "仅用于 client_secret_jwt 或 private_key_jwt。",
+            ),
+            ("pasion.upstream_providers.scope", "作用域"),
+            (
+                "pasion.upstream_providers.section_discovery",
+                "发现与端点",
+            ),
+            (
+                "pasion.upstream_providers.section_discovery_description",
+                "使用发现元数据，或为非 OIDC 提供商手动填写端点。",
+            ),
+            ("pasion.upstream_providers.discovery_mode", "发现模式"),
+            ("pasion.upstream_providers.pkce_mode", "PKCE 模式"),
+            ("pasion.upstream_providers.response_mode", "响应模式"),
+            (
+                "pasion.upstream_providers.authorization_endpoint",
+                "授权端点",
+            ),
+            ("pasion.upstream_providers.token_endpoint", "令牌端点"),
+            (
+                "pasion.upstream_providers.userinfo_endpoint",
+                "用户信息端点",
+            ),
+            ("pasion.upstream_providers.jwks_uri", "JWKS URI"),
+            (
+                "pasion.upstream_providers.endpoints_help",
+                "覆盖项会替换自动发现的值。关闭发现模式时，必须填写授权端点和令牌端点。",
+            ),
+            (
+                "pasion.upstream_providers.section_tokens",
+                "令牌与用户信息",
+            ),
+            (
+                "pasion.upstream_providers.section_tokens_description",
+                "设置签名校验与用户资料查询行为。",
+            ),
+            (
+                "pasion.upstream_providers.id_token_alg",
+                "ID Token 算法",
+            ),
+            (
+                "pasion.upstream_providers.userinfo_signed_alg",
+                "用户信息响应签名算法",
+            ),
+            (
+                "pasion.upstream_providers.fetch_userinfo",
+                "获取用户信息端点",
+            ),
+            (
+                "pasion.upstream_providers.fetch_userinfo_description",
+                "交换授权码后请求用户资料。",
+            ),
+            (
+                "pasion.upstream_providers.forward_login_hint",
+                "转发 login_hint",
+            ),
+            (
+                "pasion.upstream_providers.forward_login_hint_description",
+                "将用户的登录提示传递给上游提供商。",
+            ),
+            (
+                "pasion.upstream_providers.advanced",
+                "高级设置",
+            ),
+            (
+                "pasion.upstream_providers.advanced_description",
+                "注销行为、附加参数与声明映射。",
+            ),
+            (
+                "pasion.upstream_providers.backchannel_logout",
+                "后通道注销",
+            ),
+            (
+                "pasion.upstream_providers.extra_params",
+                "附加授权参数",
+            ),
+            (
+                "pasion.upstream_providers.extra_params_help",
+                "每行填写一个 key=value 参数。",
+            ),
+            (
+                "pasion.upstream_providers.claims_imports",
+                "声明导入（JSON）",
+            ),
+            (
+                "pasion.upstream_providers.claims_imports_help",
+                "可选，使用 Pasion 声明导入规范填写 JSON 对象。",
+            ),
+            (
+                "pasion.upstream_providers.edit_footer_note",
+                "提供商变更将在下一次登录尝试时生效。",
+            ),
+            (
+                "pasion.upstream_providers.view_footer_note",
+                "由配置文件管理的提供商只能在 Pasion 配置文件中修改。",
+            ),
+            (
+                "pasion.upstream_providers.save_changes",
+                "保存更改",
+            ),
+            (
+                "pasion.upstream_providers.create_provider",
+                "创建提供商",
+            ),
+            ("pasion.upstream_providers.no_changes", "没有需要保存的更改"),
+            (
+                "pasion.upstream_providers.details_not_loaded",
+                "提供商详情尚未加载",
+            ),
+            ("pasion.upstream_providers.created_toast", "提供商已创建"),
+            ("pasion.upstream_providers.updated_toast", "提供商已更新"),
+            ("pasion.upstream_providers.deleted_toast", "提供商已删除"),
+            (
+                "pasion.upstream_providers.secret_keep",
+                "留空以保留已存储的密钥",
+            ),
+            (
+                "pasion.upstream_providers.secret_none",
+                "尚未存储密钥",
+            ),
+            (
+                "pasion.upstream_providers.delete_title",
+                "删除提供商",
+            ),
+            (
+                "pasion.upstream_providers.delete_description",
+                "确定永久删除提供商“{name}”吗？已关联此提供商的用户将无法再通过它登录。",
+            ),
+        ] {
+            m.insert(key.into(), value.into());
+        }
 
         // Pasion 本地账号
         m.insert(
