@@ -18,13 +18,12 @@ use crate::components::ui::button::{Button, ButtonSize, ButtonVariant};
 use crate::components::ui::dialog::{ConfirmDialog, Modal, ModalSize};
 use crate::components::ui::error_banner::ErrorBanner;
 use crate::components::ui::icons::Icon;
-use crate::components::ui::input::{Input, Label};
+use crate::components::ui::input::{Input, Label, SearchInput};
 use crate::components::ui::loading::{PageSkeleton, Spinner};
 use crate::components::ui::page_header::PageHeader;
-use crate::components::ui::table::*;
 use crate::components::ui::toast::{ToastVariant, show_toast};
 use crate::types::PasionUpstreamProvider;
-use crate::utils::i18n::t;
+use crate::utils::i18n::{t, t_with};
 
 const SELECT_CLASS: &str =
     "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm";
@@ -178,6 +177,41 @@ fn require<'a>(field: &str, value: &'a str) -> Result<&'a str, String> {
     } else {
         Ok(value)
     }
+}
+
+fn provider_display_name(provider: &PasionUpstreamProvider) -> String {
+    provider
+        .human_name
+        .as_deref()
+        .filter(|value| !value.is_empty())
+        .or_else(|| {
+            provider
+                .brand_name
+                .as_deref()
+                .filter(|value| !value.is_empty())
+        })
+        .or_else(|| provider.issuer.as_deref().filter(|value| !value.is_empty()))
+        .unwrap_or(&provider.id)
+        .to_string()
+}
+
+fn provider_initial(name: &str) -> String {
+    name.chars()
+        .find(|character| !character.is_whitespace())
+        .map(|character| character.to_uppercase().collect())
+        .unwrap_or_else(|| "?".to_string())
+}
+
+fn provider_is_config(provider: &PasionUpstreamProvider) -> bool {
+    provider.source.as_deref() == Some("config")
+}
+
+fn display_optional(value: &Option<String>) -> String {
+    value
+        .as_deref()
+        .filter(|value| !value.is_empty())
+        .unwrap_or("-")
+        .to_string()
 }
 
 fn create_provider_body(form: &ProviderForm) -> Result<Value, String> {
@@ -409,9 +443,52 @@ fn EnumSelect(
 }
 
 #[component]
+fn FormSection(title: String, description: String, children: Element) -> Element {
+    rsx! {
+        section { class: "provider-form-section",
+            div { class: "provider-form-section-heading",
+                h3 { "{title}" }
+                p { "{description}" }
+            }
+            div { class: "provider-form-grid", {children} }
+        }
+    }
+}
+
+#[component]
+fn FormCheck(
+    checked: bool,
+    disabled: bool,
+    label: String,
+    description: String,
+    #[props(default)] class: String,
+    onchange: EventHandler<bool>,
+) -> Element {
+    rsx! {
+        label { class: if disabled { "provider-check disabled {class}" } else { "provider-check {class}" },
+            input {
+                r#type: "checkbox",
+                checked,
+                disabled,
+                oninput: move |event: FormEvent| {
+                    onchange.call(event.value() == "true" || event.value() == "on");
+                },
+            }
+            span { class: "provider-check-copy",
+                strong { "{label}" }
+                if !description.is_empty() {
+                    small { "{description}" }
+                }
+            }
+        }
+    }
+}
+
+#[component]
 pub fn UpstreamProvidersPage() -> Element {
     let mut providers_data =
         use_resource(|| async { pasion::pasion_get_upstream_providers().await });
+    let mut provider_search = use_signal(String::new);
 
     let mut form_open = use_signal(|| false);
     let mut form = use_signal(ProviderForm::default);
@@ -436,7 +513,10 @@ pub fn UpstreamProvidersPage() -> Element {
                 Some(provider) => match update_provider_body(&form_data, provider) {
                     Ok(Some(body)) => body,
                     Ok(None) => {
-                        show_toast("No changes to save", ToastVariant::Default);
+                        show_toast(
+                            &t("pasion.upstream_providers.no_changes"),
+                            ToastVariant::Default,
+                        );
                         return;
                     }
                     Err(message) => {
@@ -445,7 +525,10 @@ pub fn UpstreamProvidersPage() -> Element {
                     }
                 },
                 None => {
-                    show_toast("Provider details are not loaded yet", ToastVariant::Error);
+                    show_toast(
+                        &t("pasion.upstream_providers.details_not_loaded"),
+                        ToastVariant::Error,
+                    );
                     return;
                 }
             },
@@ -467,21 +550,22 @@ pub fn UpstreamProvidersPage() -> Element {
             };
             match res {
                 Ok(_) => {
-                    show_toast(
-                        if is_editing_now {
-                            "Provider updated"
-                        } else {
-                            "Provider created"
-                        },
-                        ToastVariant::Success,
-                    );
+                    let message = if is_editing_now {
+                        t("pasion.upstream_providers.updated_toast")
+                    } else {
+                        t("pasion.upstream_providers.created_toast")
+                    };
+                    show_toast(&message, ToastVariant::Success);
                     form_open.set(false);
                     form.set(ProviderForm::for_create());
                     editing_provider_id.set(None);
                     loaded_provider.set(None);
                     providers_data.restart();
                 }
-                Err(e) => show_toast(&format!("Failed: {}", e.message), ToastVariant::Error),
+                Err(e) => show_toast(
+                    &format!("{}: {}", t("common.failed"), e.message),
+                    ToastVariant::Error,
+                ),
             }
             saving.set(false);
         });
@@ -492,12 +576,18 @@ pub fn UpstreamProvidersPage() -> Element {
             spawn(async move {
                 match pasion::pasion_delete_upstream_provider(&id).await {
                     Ok(_) => {
-                        show_toast("Provider deleted", ToastVariant::Success);
+                        show_toast(
+                            &t("pasion.upstream_providers.deleted_toast"),
+                            ToastVariant::Success,
+                        );
                         delete_open.set(false);
                         delete_target.set(None);
                         providers_data.restart();
                     }
-                    Err(e) => show_toast(&format!("Failed: {}", e.message), ToastVariant::Error),
+                    Err(e) => show_toast(
+                        &format!("{}: {}", t("common.failed"), e.message),
+                        ToastVariant::Error,
+                    ),
                 }
             });
         }
@@ -505,6 +595,12 @@ pub fn UpstreamProvidersPage() -> Element {
 
     let is_saving = *saving.read();
     let is_editing = editing_provider_id.read().is_some();
+    let is_view_only = is_editing
+        && loaded_provider
+            .read()
+            .as_ref()
+            .is_some_and(provider_is_config);
+    let fields_disabled = is_saving || is_view_only;
     let loading_provider_id = loading_provider.read().clone();
     let has_stored_secret = is_editing
         && loaded_provider
@@ -512,12 +608,41 @@ pub fn UpstreamProvidersPage() -> Element {
             .as_ref()
             .is_some_and(|provider| provider.has_client_secret);
     let client_secret_placeholder = if has_stored_secret {
-        "Leave blank to keep existing secret".to_string()
+        t("pasion.upstream_providers.secret_keep")
     } else if is_editing {
-        "No secret stored".to_string()
+        t("pasion.upstream_providers.secret_none")
     } else {
         String::new()
     };
+    let current_human_name = form.read().human_name.trim().to_string();
+    let current_brand_name = form.read().brand_name.trim().to_string();
+    let sheet_name = if !current_human_name.is_empty() {
+        current_human_name
+    } else if !current_brand_name.is_empty() {
+        current_brand_name
+    } else {
+        t("pasion.upstream_providers.new_provider")
+    };
+    let sheet_initial = provider_initial(&sheet_name);
+    let sheet_title = if is_view_only {
+        t("pasion.upstream_providers.view_title")
+    } else if is_editing {
+        t("pasion.upstream_providers.edit_title")
+    } else {
+        t("pasion.upstream_providers.create_title")
+    };
+    let sheet_description = if is_view_only {
+        t("pasion.upstream_providers.view_description")
+    } else if is_editing {
+        t("pasion.upstream_providers.edit_description")
+    } else {
+        t("pasion.upstream_providers.create_description")
+    };
+    let delete_provider_name = delete_target.read().clone().unwrap_or_default();
+    let delete_description = t_with(
+        "pasion.upstream_providers.delete_description",
+        &[("name", &delete_provider_name)],
+    );
 
     rsx! {
         div { class: "space-y-6",
@@ -527,163 +652,315 @@ pub fn UpstreamProvidersPage() -> Element {
                 Button {
                     variant: ButtonVariant::Outline,
                     onclick: move |_| providers_data.restart(),
-                    "Refresh"
+                    Icon { name: "refresh-cw".to_string(), class: "h-4 w-4 mr-2".to_string() }
+                    {t("common.refresh")}
                 }
                 Button {
                     onclick: move |_| {
                         form.set(ProviderForm::for_create());
                         editing_provider_id.set(None);
                         loaded_provider.set(None);
+                        provider_search.set(String::new());
                         form_open.set(true);
                     },
                     Icon { name: "plus".to_string(), class: "h-4 w-4 mr-2".to_string() }
-                    "Add Provider"
+                    {t("pasion.upstream_providers.add_provider")}
                 }
             }
 
             match &*providers_data.read() {
-                Some(Ok(providers)) => rsx! {
-                    div { class: "rounded-md border",
-                        Table {
-                            TableHeader {
-                                TableRow {
-                                    TableHead { "Name" }
-                                    TableHead { "Issuer" }
-                                    TableHead { "Source" }
-                                    TableHead { "Status" }
-                                    TableHead { class: "text-right".to_string(), "Actions" }
+                Some(Ok(providers)) => {
+                    let query = provider_search.read().trim().to_lowercase();
+                    let filtered: Vec<&PasionUpstreamProvider> = providers
+                        .iter()
+                        .filter(|provider| {
+                            if query.is_empty() {
+                                return true;
+                            }
+                            let searchable = [
+                                provider.human_name.as_deref(),
+                                provider.brand_name.as_deref(),
+                                provider.issuer.as_deref(),
+                                provider.client_id.as_deref(),
+                            ]
+                            .into_iter()
+                            .flatten()
+                            .collect::<Vec<_>>()
+                            .join(" ")
+                            .to_lowercase();
+                            searchable.contains(&query)
+                        })
+                        .collect();
+                    let total_count = providers.len().to_string();
+                    let enabled_count = providers
+                        .iter()
+                        .filter(|provider| provider.disabled_at.is_none())
+                        .count()
+                        .to_string();
+                    let config_count = providers
+                        .iter()
+                        .filter(|provider| provider_is_config(provider))
+                        .count()
+                        .to_string();
+
+                    rsx! {
+                        if providers.is_empty() {
+                            div { class: "provider-empty",
+                                div { class: "provider-empty-icon",
+                                    Icon { name: "shield".to_string(), class: "h-7 w-7".to_string() }
+                                }
+                                div { class: "provider-empty-copy",
+                                    p { class: "provider-eyebrow", {t("pasion.upstream_providers.federation")} }
+                                    h2 { {t("pasion.upstream_providers.empty_title")} }
+                                    p { {t("pasion.upstream_providers.empty_description")} }
+                                }
+                                Button {
+                                    onclick: move |_| {
+                                        form.set(ProviderForm::for_create());
+                                        editing_provider_id.set(None);
+                                        loaded_provider.set(None);
+                                        form_open.set(true);
+                                    },
+                                    Icon { name: "plus".to_string(), class: "h-4 w-4 mr-2".to_string() }
+                                    {t("pasion.upstream_providers.empty_action")}
                                 }
                             }
-                            TableBody {
-                                if providers.is_empty() {
-                                    EmptyRow { colspan: 5, message: t("pasion.upstream_providers.empty") }
-                                } else {
-                                    for provider in providers.iter() {
+                        } else {
+                            div { class: "provider-overview",
+                                div { class: "provider-overview-copy",
+                                    div { class: "provider-overview-icon",
+                                        Icon { name: "globe".to_string(), class: "h-5 w-5".to_string() }
+                                    }
+                                    div {
+                                        p { class: "provider-eyebrow", {t("pasion.upstream_providers.federation")} }
+                                        h2 { {t("pasion.upstream_providers.federation_title")} }
+                                        p { {t("pasion.upstream_providers.federation_description")} }
+                                    }
+                                }
+                                div { class: "provider-overview-stats",
+                                    div { class: "provider-stat",
+                                        strong { "{total_count}" }
+                                        span { {t("pasion.upstream_providers.stat_total")} }
+                                    }
+                                    div { class: "provider-stat",
+                                        strong { "{enabled_count}" }
+                                        span { {t("pasion.upstream_providers.stat_enabled")} }
+                                    }
+                                    div { class: "provider-stat",
+                                        strong { "{config_count}" }
+                                        span { {t("pasion.upstream_providers.stat_config")} }
+                                    }
+                                }
+                            }
+
+                            div { class: "provider-toolbar",
+                                div { class: "provider-search",
+                                    SearchInput {
+                                        placeholder: t("pasion.upstream_providers.search_placeholder"),
+                                        value: provider_search.read().clone(),
+                                        oninput: move |event: FormEvent| provider_search.set(event.value()),
+                                    }
+                                }
+                                span { class: "provider-result-count",
+                                    {t_with(
+                                        "pasion.upstream_providers.result_count",
+                                        &[("count", &filtered.len().to_string())],
+                                    )}
+                                }
+                            }
+
+                            if filtered.is_empty() {
+                                div { class: "provider-no-results",
+                                    Icon { name: "globe".to_string(), class: "h-6 w-6".to_string() }
+                                    div {
+                                        strong { {t("pasion.upstream_providers.no_matches")} }
+                                        p { {t("pasion.upstream_providers.no_matches_description")} }
+                                    }
+                                    Button {
+                                        variant: ButtonVariant::Outline,
+                                        size: ButtonSize::Sm,
+                                        onclick: move |_| provider_search.set(String::new()),
+                                        {t("pasion.upstream_providers.clear_search")}
+                                    }
+                                }
+                            } else {
+                                div { class: "provider-grid",
+                                    for provider in filtered.iter().copied() {
                                         {
                                             let pid = provider.id.clone();
                                             let pid_edit = pid.clone();
                                             let pid_toggle = pid.clone();
                                             let pid_delete = pid.clone();
-                                            let display_name = provider
-                                                .human_name
-                                                .clone()
-                                                .filter(|s| !s.is_empty())
-                                                .or_else(|| {
-                                                    provider
-                                                        .brand_name
-                                                        .clone()
-                                                        .filter(|s| !s.is_empty())
-                                                })
-                                                .or_else(|| {
-                                                    provider
-                                                        .issuer
-                                                        .clone()
-                                                        .filter(|s| !s.is_empty())
-                                                })
-                                                .unwrap_or_else(|| pid.clone());
-                                            let issuer = provider.issuer.clone().unwrap_or_else(|| "-".into());
-                                            let source = provider.source.clone().unwrap_or_else(|| "manual".into());
-                                            let is_config = source == "config";
+                                            let display_name = provider_display_name(provider);
+                                            let initial = provider_initial(&display_name);
+                                            let issuer = display_optional(&provider.issuer);
+                                            let client_id = display_optional(&provider.client_id);
+                                            let discovery = display_optional(&provider.discovery_mode);
+                                            let pkce = display_optional(&provider.pkce_mode);
+                                            let is_config = provider_is_config(provider);
                                             let is_disabled = provider.disabled_at.is_some();
                                             let busy = toggling.read().as_deref() == Some(pid.as_str());
                                             let is_loading_current =
                                                 loading_provider_id.as_deref() == Some(pid.as_str());
 
                                             rsx! {
-                                                TableRow { key: "{pid}",
-                                                    TableCell {
-                                                        div { class: "space-y-1",
-                                                            span { class: "font-medium", "{display_name}" }
-                                                            if let Some(brand_name) = provider.brand_name.clone() {
-                                                                if !brand_name.is_empty() {
-                                                                    div { class: "text-xs text-muted-foreground", "{brand_name}" }
+                                                article { class: "provider-card", key: "{pid}",
+                                                    div { class: "provider-card-header",
+                                                        div { class: "provider-mark", "{initial}" }
+                                                        div { class: "provider-card-heading",
+                                                            h3 { "{display_name}" }
+                                                            p { class: "provider-issuer", title: "{issuer}", "{issuer}" }
+                                                        }
+                                                        div { class: "provider-badges",
+                                                            if is_config {
+                                                                Badge {
+                                                                    variant: BadgeVariant::Outline,
+                                                                    {t("pasion.upstream_providers.source_config")}
+                                                                }
+                                                            } else {
+                                                                Badge {
+                                                                    variant: BadgeVariant::Secondary,
+                                                                    {t("pasion.upstream_providers.source_manual")}
+                                                                }
+                                                            }
+                                                            if is_disabled {
+                                                                Badge {
+                                                                    variant: BadgeVariant::Secondary,
+                                                                    {t("pasion.upstream_providers.status_disabled")}
+                                                                }
+                                                            } else {
+                                                                Badge {
+                                                                    variant: BadgeVariant::Success,
+                                                                    {t("pasion.upstream_providers.status_enabled")}
                                                                 }
                                                             }
                                                         }
                                                     }
-                                                    TableCell {
-                                                        span { class: "text-xs text-muted-foreground font-mono", "{issuer}" }
-                                                    }
-                                                    TableCell {
-                                                        if is_config {
-                                                            Badge { variant: BadgeVariant::Outline, "config" }
-                                                        } else {
-                                                            Badge { variant: BadgeVariant::Secondary, "manual" }
+                                                    div { class: "provider-card-details",
+                                                        div { class: "provider-card-detail",
+                                                            span { {t("pasion.upstream_providers.field_discovery")} }
+                                                            strong { "{discovery}" }
+                                                        }
+                                                        div { class: "provider-card-detail",
+                                                            span { {t("pasion.upstream_providers.field_pkce")} }
+                                                            strong { "{pkce}" }
+                                                        }
+                                                        div { class: "provider-card-detail provider-card-detail-wide",
+                                                            span { {t("pasion.upstream_providers.field_client_id")} }
+                                                            strong { class: "font-mono", title: "{client_id}", "{client_id}" }
                                                         }
                                                     }
-                                                    TableCell {
-                                                        if is_disabled {
-                                                            Badge { variant: BadgeVariant::Secondary, "Disabled" }
-                                                        } else {
-                                                            Badge { variant: BadgeVariant::Success, "Enabled" }
+                                                    div { class: "provider-card-footer",
+                                                        span { class: "provider-card-hint",
+                                                            if is_config {
+                                                                {t("pasion.upstream_providers.managed_config_hint")}
+                                                            } else {
+                                                                {t("pasion.upstream_providers.managed_manual_hint")}
+                                                            }
                                                         }
-                                                    }
-                                                    TableCell { class: "text-right space-x-1".to_string(),
-                                                        if !is_config {
-                                                            Button {
-                                                                variant: ButtonVariant::Ghost,
-                                                                size: ButtonSize::Sm,
-                                                                disabled: is_loading_current,
-                                                                onclick: move |_| {
-                                                                    let id = pid_edit.clone();
-                                                                    loading_provider.set(Some(id.clone()));
-                                                                    spawn(async move {
-                                                                        match pasion::pasion_get_upstream_provider(&id).await {
-                                                                            Ok(provider) => {
-                                                                                form.set(ProviderForm::from_provider(&provider));
-                                                                                loaded_provider.set(Some(provider));
-                                                                                editing_provider_id.set(Some(id));
-                                                                                form_open.set(true);
+                                                        div { class: "provider-card-actions",
+                                                            if is_config {
+                                                                Button {
+                                                                    variant: ButtonVariant::Outline,
+                                                                    size: ButtonSize::Sm,
+                                                                    disabled: is_loading_current,
+                                                                    onclick: move |_| {
+                                                                        let id = pid_edit.clone();
+                                                                        loading_provider.set(Some(id.clone()));
+                                                                        spawn(async move {
+                                                                            match pasion::pasion_get_upstream_provider(&id).await {
+                                                                                Ok(provider) => {
+                                                                                    form.set(ProviderForm::from_provider(&provider));
+                                                                                    loaded_provider.set(Some(provider));
+                                                                                    editing_provider_id.set(Some(id));
+                                                                                    form_open.set(true);
+                                                                                }
+                                                                                Err(e) => show_toast(&format!("{}: {}", t("common.failed"), e.message), ToastVariant::Error),
                                                                             }
-                                                                            Err(e) => show_toast(&format!("Failed: {}", e.message), ToastVariant::Error),
-                                                                        }
-                                                                        loading_provider.set(None);
-                                                                    });
-                                                                },
-                                                                if is_loading_current {
-                                                                    Spinner { class: "mr-2".to_string() }
-                                                                }
-                                                                {t("common.edit")}
-                                                            }
-                                                        }
-                                                        Button {
-                                                            variant: ButtonVariant::Ghost,
-                                                            size: ButtonSize::Sm,
-                                                            disabled: busy,
-                                                            onclick: move |_| {
-                                                                let id = pid_toggle.clone();
-                                                                toggling.set(Some(id.clone()));
-                                                                spawn(async move {
-                                                                    let res = if is_disabled {
-                                                                        pasion::pasion_enable_upstream_provider(&id).await
-                                                                    } else {
-                                                                        pasion::pasion_disable_upstream_provider(&id).await
-                                                                    };
-                                                                    match res {
-                                                                        Ok(_) => {
-                                                                            show_toast(
-                                                                                if is_disabled { "Provider enabled" } else { "Provider disabled" },
-                                                                                ToastVariant::Success,
-                                                                            );
-                                                                            providers_data.restart();
-                                                                        }
-                                                                        Err(e) => show_toast(&format!("Failed: {}", e.message), ToastVariant::Error),
+                                                                            loading_provider.set(None);
+                                                                        });
+                                                                    },
+                                                                    if is_loading_current {
+                                                                        Spinner { class: "mr-2".to_string() }
                                                                     }
-                                                                    toggling.set(None);
-                                                                });
-                                                            },
-                                                            if is_disabled { "Enable" } else { "Disable" }
-                                                        }
-                                                        if !is_config {
-                                                            Button {
-                                                                variant: ButtonVariant::Ghost,
-                                                                size: ButtonSize::Sm,
-                                                                class: "text-destructive hover:text-destructive".to_string(),
-                                                                onclick: move |_| {
-                                                                    delete_target.set(Some(pid_delete.clone()));
-                                                                    delete_open.set(true);
-                                                                },
-                                                                "Delete"
+                                                                    Icon { name: "key".to_string(), class: "h-4 w-4 mr-2".to_string() }
+                                                                    {t("pasion.upstream_providers.view")}
+                                                                }
+                                                            } else {
+                                                                Button {
+                                                                    variant: ButtonVariant::Outline,
+                                                                    size: ButtonSize::Sm,
+                                                                    disabled: is_loading_current,
+                                                                    onclick: move |_| {
+                                                                        let id = pid_edit.clone();
+                                                                        loading_provider.set(Some(id.clone()));
+                                                                        spawn(async move {
+                                                                            match pasion::pasion_get_upstream_provider(&id).await {
+                                                                                Ok(provider) => {
+                                                                                    form.set(ProviderForm::from_provider(&provider));
+                                                                                    loaded_provider.set(Some(provider));
+                                                                                    editing_provider_id.set(Some(id));
+                                                                                    form_open.set(true);
+                                                                                }
+                                                                                Err(e) => show_toast(&format!("{}: {}", t("common.failed"), e.message), ToastVariant::Error),
+                                                                            }
+                                                                            loading_provider.set(None);
+                                                                        });
+                                                                    },
+                                                                    if is_loading_current {
+                                                                        Spinner { class: "mr-2".to_string() }
+                                                                    }
+                                                                    Icon { name: "edit".to_string(), class: "h-4 w-4 mr-2".to_string() }
+                                                                    {t("common.edit")}
+                                                                }
+                                                                Button {
+                                                                    variant: ButtonVariant::Ghost,
+                                                                    size: ButtonSize::Sm,
+                                                                    disabled: busy,
+                                                                    onclick: move |_| {
+                                                                        let id = pid_toggle.clone();
+                                                                        toggling.set(Some(id.clone()));
+                                                                        spawn(async move {
+                                                                            let res = if is_disabled {
+                                                                                pasion::pasion_enable_upstream_provider(&id).await
+                                                                            } else {
+                                                                                pasion::pasion_disable_upstream_provider(&id).await
+                                                                            };
+                                                                            match res {
+                                                                                Ok(_) => {
+                                                                                    let message = if is_disabled {
+                                                                                        t("pasion.upstream_providers.enabled_toast")
+                                                                                    } else {
+                                                                                        t("pasion.upstream_providers.disabled_toast")
+                                                                                    };
+                                                                                    show_toast(
+                                                                                        &message,
+                                                                                        ToastVariant::Success,
+                                                                                    );
+                                                                                    providers_data.restart();
+                                                                                }
+                                                                                Err(e) => show_toast(&format!("{}: {}", t("common.failed"), e.message), ToastVariant::Error),
+                                                                            }
+                                                                            toggling.set(None);
+                                                                        });
+                                                                    },
+                                                                    if is_disabled {
+                                                                        {t("pasion.upstream_providers.enable")}
+                                                                    } else {
+                                                                        {t("pasion.upstream_providers.disable")}
+                                                                    }
+                                                                }
+                                                                Button {
+                                                                    variant: ButtonVariant::Ghost,
+                                                                    size: ButtonSize::Sm,
+                                                                    class: "text-destructive hover:text-destructive".to_string(),
+                                                                    onclick: move |_| {
+                                                                        delete_target.set(Some(pid_delete.clone()));
+                                                                        delete_open.set(true);
+                                                                    },
+                                                                    Icon { name: "trash".to_string(), class: "h-4 w-4 mr-2".to_string() }
+                                                                    {t("common.delete")}
+                                                                }
                                                             }
                                                         }
                                                     }
@@ -716,269 +993,393 @@ pub fn UpstreamProvidersPage() -> Element {
                 }
             },
             size: ModalSize::Xl2,
-            panel_class: "max-h-[90vh] overflow-y-auto".to_string(),
-                    h2 { class: "text-lg font-semibold",
-                        if is_editing { "Edit Upstream Provider" } else { "Add Upstream Provider" }
-                    }
-                    p { class: "text-sm text-muted-foreground mb-4",
-                        if is_editing {
-                            "Update the provider metadata and advanced settings. Leave client secret blank to keep the current secret."
-                        } else {
-                            "Configure an OIDC / OAuth2 identity provider that users can sign in with."
+            default_padding: false,
+            container_class: "oauth-provider-modal".to_string(),
+            panel_class: "oauth-provider-sheet".to_string(),
+            div {
+                class: "provider-sheet",
+                role: "dialog",
+                aria_modal: "true",
+                aria_labelledby: "upstream-provider-sheet-title",
+                aria_describedby: "upstream-provider-sheet-description",
+                div { class: "provider-sheet-header",
+                    div { class: "provider-sheet-identity",
+                        div { class: "provider-mark provider-mark-lg", "{sheet_initial}" }
+                        div {
+                            p { class: "provider-eyebrow",
+                                if is_view_only {
+                                    {t("pasion.upstream_providers.eyebrow_config")}
+                                } else if is_editing {
+                                    {t("pasion.upstream_providers.eyebrow_edit")}
+                                } else {
+                                    {t("pasion.upstream_providers.eyebrow_new")}
+                                }
+                            }
+                            h2 { id: "upstream-provider-sheet-title", "{sheet_title}" }
+                            p { id: "upstream-provider-sheet-description", "{sheet_description}" }
                         }
                     }
-                    div { class: "grid grid-cols-1 sm:grid-cols-2 gap-3",
-                        h3 { class: "text-sm font-semibold sm:col-span-2", "General" }
-                        div { class: "space-y-1 sm:col-span-2",
-                            Label { "Issuer" }
+                    button {
+                        r#type: "button",
+                        class: "provider-sheet-close",
+                        aria_label: t("pasion.upstream_providers.close"),
+                        title: t("pasion.upstream_providers.close"),
+                        disabled: is_saving,
+                        onclick: move |_| {
+                            if !is_saving {
+                                form_open.set(false);
+                                editing_provider_id.set(None);
+                                loaded_provider.set(None);
+                            }
+                        },
+                        Icon { name: "x".to_string(), class: "h-5 w-5".to_string() }
+                    }
+                }
+                if is_view_only {
+                    div { class: "provider-readonly-banner",
+                        Icon { name: "lock".to_string(), class: "h-4 w-4".to_string() }
+                        span { {t("pasion.upstream_providers.readonly_banner")} }
+                    }
+                }
+                div { class: "provider-sheet-body",
+                    FormSection {
+                        title: t("pasion.upstream_providers.section_identity"),
+                        description: t("pasion.upstream_providers.section_identity_description"),
+                        div { class: "provider-field provider-field-wide",
+                            Label { r#for: "provider-issuer",
+                                {t("pasion.upstream_providers.issuer")}
+                            }
                             Input {
+                                id: "provider-issuer".to_string(),
                                 placeholder: "https://accounts.google.com".to_string(),
                                 value: form.read().issuer.clone(),
                                 oninput: move |e: FormEvent| form.write().issuer = e.value(),
-                                disabled: is_saving,
+                                disabled: fields_disabled,
                             }
-                            p { class: "text-xs text-muted-foreground",
-                                "Optional for non-OIDC providers such as GitHub (set discovery to disabled and fill in the endpoints below)."
+                            p { class: "provider-field-help",
+                                {t("pasion.upstream_providers.issuer_help")}
                             }
                         }
-                        div { class: "space-y-1",
-                            Label { "Human name" }
+                        div { class: "provider-field",
+                            Label { r#for: "provider-human-name",
+                                {t("pasion.upstream_providers.human_name")}
+                            }
                             Input {
+                                id: "provider-human-name".to_string(),
                                 placeholder: "Google".to_string(),
                                 value: form.read().human_name.clone(),
                                 oninput: move |e: FormEvent| form.write().human_name = e.value(),
-                                disabled: is_saving,
+                                disabled: fields_disabled,
                             }
                         }
-                        div { class: "space-y-1",
-                            Label { "Brand" }
+                        div { class: "provider-field",
+                            Label { r#for: "provider-brand-name",
+                                {t("pasion.upstream_providers.brand_name")}
+                            }
                             Input {
+                                id: "provider-brand-name".to_string(),
                                 placeholder: "google".to_string(),
                                 value: form.read().brand_name.clone(),
                                 oninput: move |e: FormEvent| form.write().brand_name = e.value(),
-                                disabled: is_saving,
+                                disabled: fields_disabled,
                             }
                         }
-                        div { class: "space-y-1",
-                            Label { "UI order" }
+                        div { class: "provider-field",
+                            Label { r#for: "provider-ui-order",
+                                {t("pasion.upstream_providers.ui_order")}
+                            }
                             Input {
+                                id: "provider-ui-order".to_string(),
                                 r#type: "number".to_string(),
                                 value: form.read().ui_order.clone(),
                                 oninput: move |e: FormEvent| form.write().ui_order = e.value(),
-                                disabled: is_saving,
+                                disabled: fields_disabled,
                             }
-                            p { class: "text-xs text-muted-foreground", "Lower values are shown first on the login page." }
+                            p { class: "provider-field-help",
+                                {t("pasion.upstream_providers.ui_order_help")}
+                            }
                         }
+                    }
 
-                        h3 { class: "text-sm font-semibold sm:col-span-2 pt-2", "Client" }
-                        div { class: "space-y-1",
-                            Label { "Client ID" }
+                    FormSection {
+                        title: t("pasion.upstream_providers.section_client"),
+                        description: t("pasion.upstream_providers.section_client_description"),
+                        div { class: "provider-field",
+                            Label { r#for: "provider-client-id",
+                                {t("pasion.upstream_providers.client_id")}
+                            }
                             Input {
+                                id: "provider-client-id".to_string(),
                                 value: form.read().client_id.clone(),
                                 oninput: move |e: FormEvent| form.write().client_id = e.value(),
-                                disabled: is_saving,
+                                disabled: fields_disabled,
                             }
                         }
-                        div { class: "space-y-1",
-                            Label { "Client secret" }
+                        div { class: "provider-field provider-field-wide",
+                            Label { r#for: "provider-client-secret",
+                                {t("pasion.upstream_providers.client_secret")}
+                            }
                             Input {
+                                id: "provider-client-secret".to_string(),
                                 r#type: "password".to_string(),
                                 autocomplete: "off".to_string(),
                                 placeholder: client_secret_placeholder,
                                 value: form.read().client_secret.clone(),
                                 oninput: move |e: FormEvent| form.write().client_secret = e.value(),
-                                disabled: is_saving || form.read().clear_client_secret,
+                                disabled: fields_disabled || form.read().clear_client_secret,
                             }
                             if has_stored_secret {
-                                div { class: "flex items-center gap-2",
-                                    input {
-                                        r#type: "checkbox",
-                                        checked: form.read().clear_client_secret,
-                                        oninput: move |e: FormEvent| {
-                                            let checked = e.value() == "true" || e.value() == "on";
+                                FormCheck {
+                                    checked: form.read().clear_client_secret,
+                                    disabled: fields_disabled,
+                                    label: t("pasion.upstream_providers.remove_secret"),
+                                    description: t("pasion.upstream_providers.remove_secret_description"),
+                                    class: "provider-check-compact".to_string(),
+                                    onchange: move |checked| {
                                             let mut f = form.write();
                                             f.clear_client_secret = checked;
                                             if checked {
                                                 f.client_secret.clear();
                                             }
-                                        },
-                                        disabled: is_saving,
                                     }
-                                    Label { "Remove stored secret" }
                                 }
                             }
                         }
-                        div { class: "space-y-1",
-                            Label { "Token auth method" }
+                        div { class: "provider-field",
+                            Label { r#for: "provider-token-auth-method",
+                                {t("pasion.upstream_providers.token_auth_method")}
+                            }
                             EnumSelect {
                                 value: form.read().token_endpoint_auth_method.clone(),
                                 options: TOKEN_AUTH_METHODS,
-                                disabled: is_saving,
+                                disabled: fields_disabled,
                                 onchange: move |v: String| form.write().token_endpoint_auth_method = v,
                             }
                         }
-                        div { class: "space-y-1",
-                            Label { "Token endpoint signing alg" }
+                        div { class: "provider-field",
+                            Label { r#for: "provider-token-signing-alg",
+                                {t("pasion.upstream_providers.token_signing_alg")}
+                            }
                             Input {
+                                id: "provider-token-signing-alg".to_string(),
                                 placeholder: "RS256".to_string(),
                                 value: form.read().token_endpoint_signing_alg.clone(),
                                 oninput: move |e: FormEvent| form.write().token_endpoint_signing_alg = e.value(),
-                                disabled: is_saving,
+                                disabled: fields_disabled,
                             }
-                            p { class: "text-xs text-muted-foreground", "Only for client_secret_jwt / private_key_jwt." }
+                            p { class: "provider-field-help",
+                                {t("pasion.upstream_providers.token_signing_alg_help")}
+                            }
                         }
-                        div { class: "space-y-1 sm:col-span-2",
-                            Label { "Scope" }
+                        div { class: "provider-field provider-field-wide",
+                            Label { r#for: "provider-scope",
+                                {t("pasion.upstream_providers.scope")}
+                            }
                             Input {
+                                id: "provider-scope".to_string(),
                                 value: form.read().scope.clone(),
                                 oninput: move |e: FormEvent| form.write().scope = e.value(),
-                                disabled: is_saving,
-                            }
-                        }
-
-                        h3 { class: "text-sm font-semibold sm:col-span-2 pt-2", "Discovery & endpoints" }
-                        div { class: "space-y-1",
-                            Label { "Discovery mode" }
-                            EnumSelect {
-                                value: form.read().discovery_mode.clone(),
-                                options: DISCOVERY_MODES,
-                                disabled: is_saving,
-                                onchange: move |v: String| form.write().discovery_mode = v,
-                            }
-                        }
-                        div { class: "space-y-1",
-                            Label { "PKCE mode" }
-                            EnumSelect {
-                                value: form.read().pkce_mode.clone(),
-                                options: PKCE_MODES,
-                                disabled: is_saving,
-                                onchange: move |v: String| form.write().pkce_mode = v,
-                            }
-                        }
-                        div { class: "space-y-1",
-                            Label { "Response mode" }
-                            EnumSelect {
-                                value: form.read().response_mode.clone(),
-                                options: RESPONSE_MODES,
-                                disabled: is_saving,
-                                onchange: move |v: String| form.write().response_mode = v,
-                            }
-                        }
-                        div { class: "space-y-1 sm:col-span-2",
-                            Label { "Authorization endpoint" }
-                            Input {
-                                placeholder: "https://github.com/login/oauth/authorize".to_string(),
-                                value: form.read().authorization_endpoint_override.clone(),
-                                oninput: move |e: FormEvent| form.write().authorization_endpoint_override = e.value(),
-                                disabled: is_saving,
-                            }
-                        }
-                        div { class: "space-y-1 sm:col-span-2",
-                            Label { "Token endpoint" }
-                            Input {
-                                placeholder: "https://github.com/login/oauth/access_token".to_string(),
-                                value: form.read().token_endpoint_override.clone(),
-                                oninput: move |e: FormEvent| form.write().token_endpoint_override = e.value(),
-                                disabled: is_saving,
-                            }
-                        }
-                        div { class: "space-y-1 sm:col-span-2",
-                            Label { "Userinfo endpoint" }
-                            Input {
-                                placeholder: "https://api.github.com/user".to_string(),
-                                value: form.read().userinfo_endpoint_override.clone(),
-                                oninput: move |e: FormEvent| form.write().userinfo_endpoint_override = e.value(),
-                                disabled: is_saving,
-                            }
-                        }
-                        div { class: "space-y-1 sm:col-span-2",
-                            Label { "JWKS URI" }
-                            Input {
-                                value: form.read().jwks_uri_override.clone(),
-                                oninput: move |e: FormEvent| form.write().jwks_uri_override = e.value(),
-                                disabled: is_saving,
-                            }
-                            p { class: "text-xs text-muted-foreground",
-                                "Endpoints override discovered values; with discovery disabled, authorization and token endpoints are required."
-                            }
-                        }
-
-                        h3 { class: "text-sm font-semibold sm:col-span-2 pt-2", "Tokens & userinfo" }
-                        div { class: "space-y-1",
-                            Label { "ID token alg" }
-                            Input {
-                                value: form.read().id_token_signed_response_alg.clone(),
-                                oninput: move |e: FormEvent| form.write().id_token_signed_response_alg = e.value(),
-                                disabled: is_saving,
-                            }
-                        }
-                        div { class: "space-y-1",
-                            Label { "Userinfo signed response alg" }
-                            Input {
-                                placeholder: "(unsigned)".to_string(),
-                                value: form.read().userinfo_signed_response_alg.clone(),
-                                oninput: move |e: FormEvent| form.write().userinfo_signed_response_alg = e.value(),
-                                disabled: is_saving,
-                            }
-                        }
-                        div { class: "flex items-center gap-2",
-                            input {
-                                r#type: "checkbox",
-                                checked: form.read().fetch_userinfo,
-                                oninput: move |e: FormEvent| {
-                                    form.write().fetch_userinfo = e.value() == "true" || e.value() == "on";
-                                },
-                                disabled: is_saving,
-                            }
-                            Label { "Fetch userinfo endpoint" }
-                        }
-                        div { class: "flex items-center gap-2",
-                            input {
-                                r#type: "checkbox",
-                                checked: form.read().forward_login_hint,
-                                oninput: move |e: FormEvent| {
-                                    form.write().forward_login_hint = e.value() == "true" || e.value() == "on";
-                                },
-                                disabled: is_saving,
-                            }
-                            Label { "Forward login_hint" }
-                        }
-
-                        h3 { class: "text-sm font-semibold sm:col-span-2 pt-2", "Advanced" }
-                        div { class: "space-y-1",
-                            Label { "Backchannel logout" }
-                            EnumSelect {
-                                value: form.read().on_backchannel_logout.clone(),
-                                options: BACKCHANNEL_LOGOUT_MODES,
-                                disabled: is_saving,
-                                onchange: move |v: String| form.write().on_backchannel_logout = v,
-                            }
-                        }
-                        div { class: "space-y-1 sm:col-span-2",
-                            Label { "Extra authorization parameters" }
-                            textarea {
-                                class: "flex min-h-[72px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                                placeholder: "prompt=consent",
-                                value: form.read().additional_authorization_parameters.clone(),
-                                oninput: move |e: FormEvent| form.write().additional_authorization_parameters = e.value(),
-                                disabled: is_saving,
-                            }
-                            p { class: "text-xs text-muted-foreground", "One key=value pair per line." }
-                        }
-                        div { class: "space-y-1 sm:col-span-2",
-                            Label { "Claims imports (JSON, optional)" }
-                            textarea {
-                                class: "flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                                value: form.read().claims_imports.clone(),
-                                oninput: move |e: FormEvent| form.write().claims_imports = e.value(),
-                                disabled: is_saving,
-                            }
-                            p { class: "text-xs text-muted-foreground",
-                                "Optional. JSON object — see the pasion docs for the claims-import schema."
+                                disabled: fields_disabled,
                             }
                         }
                     }
-                    div { class: "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 mt-6",
+
+                    FormSection {
+                        title: t("pasion.upstream_providers.section_discovery"),
+                        description: t("pasion.upstream_providers.section_discovery_description"),
+                        div { class: "provider-field",
+                            Label { r#for: "provider-discovery-mode",
+                                {t("pasion.upstream_providers.discovery_mode")}
+                            }
+                            EnumSelect {
+                                value: form.read().discovery_mode.clone(),
+                                options: DISCOVERY_MODES,
+                                disabled: fields_disabled,
+                                onchange: move |v: String| form.write().discovery_mode = v,
+                            }
+                        }
+                        div { class: "provider-field",
+                            Label { r#for: "provider-pkce-mode",
+                                {t("pasion.upstream_providers.pkce_mode")}
+                            }
+                            EnumSelect {
+                                value: form.read().pkce_mode.clone(),
+                                options: PKCE_MODES,
+                                disabled: fields_disabled,
+                                onchange: move |v: String| form.write().pkce_mode = v,
+                            }
+                        }
+                        div { class: "provider-field",
+                            Label { r#for: "provider-response-mode",
+                                {t("pasion.upstream_providers.response_mode")}
+                            }
+                            EnumSelect {
+                                value: form.read().response_mode.clone(),
+                                options: RESPONSE_MODES,
+                                disabled: fields_disabled,
+                                onchange: move |v: String| form.write().response_mode = v,
+                            }
+                        }
+                        div { class: "provider-field provider-field-wide",
+                            Label { r#for: "provider-authorization-endpoint",
+                                {t("pasion.upstream_providers.authorization_endpoint")}
+                            }
+                            Input {
+                                id: "provider-authorization-endpoint".to_string(),
+                                placeholder: "https://github.com/login/oauth/authorize".to_string(),
+                                value: form.read().authorization_endpoint_override.clone(),
+                                oninput: move |e: FormEvent| form.write().authorization_endpoint_override = e.value(),
+                                disabled: fields_disabled,
+                            }
+                        }
+                        div { class: "provider-field provider-field-wide",
+                            Label { r#for: "provider-token-endpoint",
+                                {t("pasion.upstream_providers.token_endpoint")}
+                            }
+                            Input {
+                                id: "provider-token-endpoint".to_string(),
+                                placeholder: "https://github.com/login/oauth/access_token".to_string(),
+                                value: form.read().token_endpoint_override.clone(),
+                                oninput: move |e: FormEvent| form.write().token_endpoint_override = e.value(),
+                                disabled: fields_disabled,
+                            }
+                        }
+                        div { class: "provider-field provider-field-wide",
+                            Label { r#for: "provider-userinfo-endpoint",
+                                {t("pasion.upstream_providers.userinfo_endpoint")}
+                            }
+                            Input {
+                                id: "provider-userinfo-endpoint".to_string(),
+                                placeholder: "https://api.github.com/user".to_string(),
+                                value: form.read().userinfo_endpoint_override.clone(),
+                                oninput: move |e: FormEvent| form.write().userinfo_endpoint_override = e.value(),
+                                disabled: fields_disabled,
+                            }
+                        }
+                        div { class: "provider-field provider-field-wide",
+                            Label { r#for: "provider-jwks-uri",
+                                {t("pasion.upstream_providers.jwks_uri")}
+                            }
+                            Input {
+                                id: "provider-jwks-uri".to_string(),
+                                value: form.read().jwks_uri_override.clone(),
+                                oninput: move |e: FormEvent| form.write().jwks_uri_override = e.value(),
+                                disabled: fields_disabled,
+                            }
+                            p { class: "provider-field-help",
+                                {t("pasion.upstream_providers.endpoints_help")}
+                            }
+                        }
+                    }
+
+                    FormSection {
+                        title: t("pasion.upstream_providers.section_tokens"),
+                        description: t("pasion.upstream_providers.section_tokens_description"),
+                        div { class: "provider-field",
+                            Label { r#for: "provider-id-token-alg",
+                                {t("pasion.upstream_providers.id_token_alg")}
+                            }
+                            Input {
+                                id: "provider-id-token-alg".to_string(),
+                                value: form.read().id_token_signed_response_alg.clone(),
+                                oninput: move |e: FormEvent| form.write().id_token_signed_response_alg = e.value(),
+                                disabled: fields_disabled,
+                            }
+                        }
+                        div { class: "provider-field",
+                            Label { r#for: "provider-userinfo-alg",
+                                {t("pasion.upstream_providers.userinfo_signed_alg")}
+                            }
+                            Input {
+                                id: "provider-userinfo-alg".to_string(),
+                                placeholder: "(unsigned)".to_string(),
+                                value: form.read().userinfo_signed_response_alg.clone(),
+                                oninput: move |e: FormEvent| form.write().userinfo_signed_response_alg = e.value(),
+                                disabled: fields_disabled,
+                            }
+                        }
+                        FormCheck {
+                            checked: form.read().fetch_userinfo,
+                            disabled: fields_disabled,
+                            label: t("pasion.upstream_providers.fetch_userinfo"),
+                            description: t("pasion.upstream_providers.fetch_userinfo_description"),
+                            onchange: move |checked| form.write().fetch_userinfo = checked,
+                        }
+                        FormCheck {
+                            checked: form.read().forward_login_hint,
+                            disabled: fields_disabled,
+                            label: t("pasion.upstream_providers.forward_login_hint"),
+                            description: t("pasion.upstream_providers.forward_login_hint_description"),
+                            onchange: move |checked| form.write().forward_login_hint = checked,
+                        }
+                    }
+
+                    details { class: "provider-advanced",
+                        summary {
+                            div {
+                                Icon { name: "code".to_string(), class: "h-4 w-4".to_string() }
+                                span {
+                                    strong { {t("pasion.upstream_providers.advanced")} }
+                                    small { {t("pasion.upstream_providers.advanced_description")} }
+                                }
+                            }
+                            Icon { name: "chevron-down".to_string(), class: "h-4 w-4".to_string() }
+                        }
+                        div { class: "provider-advanced-body",
+                            div { class: "provider-field",
+                                Label { r#for: "provider-backchannel-logout",
+                                    {t("pasion.upstream_providers.backchannel_logout")}
+                                }
+                                EnumSelect {
+                                    value: form.read().on_backchannel_logout.clone(),
+                                    options: BACKCHANNEL_LOGOUT_MODES,
+                                    disabled: fields_disabled,
+                                    onchange: move |v: String| form.write().on_backchannel_logout = v,
+                                }
+                            }
+                            div { class: "provider-field provider-field-wide",
+                                Label { r#for: "provider-extra-params",
+                                    {t("pasion.upstream_providers.extra_params")}
+                                }
+                                textarea {
+                                    id: "provider-extra-params",
+                                    class: "provider-textarea",
+                                    placeholder: "prompt=consent",
+                                    value: form.read().additional_authorization_parameters.clone(),
+                                    oninput: move |e: FormEvent| form.write().additional_authorization_parameters = e.value(),
+                                    disabled: fields_disabled,
+                                }
+                                p { class: "provider-field-help",
+                                    {t("pasion.upstream_providers.extra_params_help")}
+                                }
+                            }
+                            div { class: "provider-field provider-field-wide",
+                                Label { r#for: "provider-claims-imports",
+                                    {t("pasion.upstream_providers.claims_imports")}
+                                }
+                                textarea {
+                                    id: "provider-claims-imports",
+                                    class: "provider-textarea provider-textarea-lg",
+                                    value: form.read().claims_imports.clone(),
+                                    oninput: move |e: FormEvent| form.write().claims_imports = e.value(),
+                                    disabled: fields_disabled,
+                                }
+                                p { class: "provider-field-help",
+                                    {t("pasion.upstream_providers.claims_imports_help")}
+                                }
+                            }
+                        }
+                    }
+                }
+                div { class: "provider-sheet-footer",
+                    p { class: "provider-sheet-footer-note",
+                        if is_view_only {
+                            {t("pasion.upstream_providers.view_footer_note")}
+                        } else {
+                            {t("pasion.upstream_providers.edit_footer_note")}
+                        }
+                    }
+                    div { class: "provider-sheet-footer-actions",
                         Button {
                             variant: ButtonVariant::Outline,
                             disabled: is_saving,
@@ -987,25 +1388,34 @@ pub fn UpstreamProvidersPage() -> Element {
                                 editing_provider_id.set(None);
                                 loaded_provider.set(None);
                             },
-                            "Cancel"
+                            if is_view_only {
+                                {t("pasion.upstream_providers.close")}
+                            } else {
+                                {t("common.cancel")}
+                            }
                         }
-                        Button {
-                            disabled: is_saving,
-                            onclick: handle_save,
-                            if is_saving { Spinner { class: "mr-2".to_string() } }
-                            if is_editing { "Save" } else { "Create" }
+                        if !is_view_only {
+                            Button {
+                                disabled: is_saving,
+                                onclick: handle_save,
+                                if is_saving { Spinner { class: "mr-2".to_string() } }
+                                if is_editing {
+                                    {t("pasion.upstream_providers.save_changes")}
+                                } else {
+                                    {t("pasion.upstream_providers.create_provider")}
+                                }
+                            }
                         }
                     }
+                }
+            }
         }
 
         ConfirmDialog {
             open: *delete_open.read(),
-            title: "Delete provider".to_string(),
-            description: format!(
-                "Permanently delete provider '{}'? Users linked to this provider will lose the ability to sign in with it.",
-                delete_target.read().clone().unwrap_or_default()
-            ),
-            confirm_text: "Delete".to_string(),
+            title: t("pasion.upstream_providers.delete_title"),
+            description: delete_description,
+            confirm_text: t("common.delete"),
             destructive: true,
             on_confirm: handle_delete_confirm,
             on_cancel: move |_| { delete_open.set(false); delete_target.set(None); },
@@ -1124,5 +1534,31 @@ mod tests {
     fn invalid_parameter_line_is_rejected() {
         assert!(parse_parameters("no-equals-sign").is_err());
         assert!(parse_parameters("=value").is_err());
+    }
+
+    #[test]
+    fn provider_card_helpers_fall_back_cleanly() {
+        let provider = stored_github();
+        assert_eq!(provider_display_name(&provider), "GitHub");
+        assert_eq!(provider_initial(&provider_display_name(&provider)), "G");
+
+        let fallback = PasionUpstreamProvider {
+            id: "provider-id".into(),
+            ..Default::default()
+        };
+        assert_eq!(provider_display_name(&fallback), "provider-id");
+        assert_eq!(provider_initial("provider-id"), "P");
+    }
+
+    #[test]
+    fn config_sources_are_read_only() {
+        let manual = stored_github();
+        assert!(!provider_is_config(&manual));
+
+        let config = PasionUpstreamProvider {
+            source: Some("config".into()),
+            ..manual
+        };
+        assert!(provider_is_config(&config));
     }
 }
